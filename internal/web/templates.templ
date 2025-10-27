@@ -340,6 +340,30 @@ templ GraphView(cfg *config.Config) {
 						<option value="concentric">Concentric</option>
 					</select>
 				</div>
+				<div class="graph-control-group">
+					<label for="filter-type">Node Type:</label>
+					<select id="filter-type" name="type">
+						<option value="all">All Types</option>
+						<option value="host">Hosts Only</option>
+						<option value="container">Containers Only</option>
+					</select>
+				</div>
+				<div class="graph-control-group">
+					<label for="filter-status">Status:</label>
+					<select id="filter-status" name="status">
+						<option value="all">All Status</option>
+						<option value="running">Running</option>
+						<option value="stopped">Stopped</option>
+						<option value="paused">Paused</option>
+					</select>
+				</div>
+				<div class="graph-control-group">
+					<label for="filter-datacenter">Datacenter:</label>
+					<select id="filter-datacenter" name="datacenter">
+						<option value="all">All Datacenters</option>
+					</select>
+				</div>
+				<button class="btn btn-secondary" id="btn-clear-filters">Clear Filters</button>
 			</div>
 		</div>
 
@@ -396,17 +420,25 @@ templ GraphView(cfg *config.Config) {
 		<script>
 		(function() {
 			let cy;
+			let originalData = { nodes: [], edges: [] };
+			let currentFilters = { type: 'all', status: 'all', datacenter: 'all' };
 
 			// Initialize Cytoscape
 			function initGraph(layout = 'cose') {
 				fetch('/api/v1/graph')
 					.then(response => response.json())
 					.then(data => {
-						// Transform data to Cytoscape format
-						const elements = {
+						// Store original data
+						originalData = {
 							nodes: data.nodes || [],
 							edges: data.edges || []
 						};
+
+						// Populate datacenter filter with unique datacenters
+						populateDatacenterFilter(originalData.nodes);
+
+						// Apply current filters
+						const elements = applyFilters(originalData, currentFilters);
 
 						// Update stats
 						const stats = {
@@ -597,6 +629,212 @@ templ GraphView(cfg *config.Config) {
 				link.click();
 				document.body.removeChild(link);
 			}
+
+			// Populate datacenter filter with unique datacenters from nodes
+			function populateDatacenterFilter(nodes) {
+				const datacenters = new Set();
+				nodes.forEach(node => {
+					if (node.data && node.data.datacenter) {
+						datacenters.add(node.data.datacenter);
+					}
+				});
+
+				const select = document.getElementById('filter-datacenter');
+				// Keep the "All Datacenters" option
+				select.innerHTML = '<option value="all">All Datacenters</option>';
+
+				// Add unique datacenters
+				Array.from(datacenters).sort().forEach(dc => {
+					const option = document.createElement('option');
+					option.value = dc;
+					option.textContent = dc;
+					select.appendChild(option);
+				});
+			}
+
+			// Apply filters to graph data
+			function applyFilters(data, filters) {
+				let filteredNodes = data.nodes.filter(node => {
+					const nodeData = node.data;
+
+					// Filter by type
+					if (filters.type !== 'all' && nodeData.type !== filters.type) {
+						return false;
+					}
+
+					// Filter by status
+					if (filters.status !== 'all' && nodeData.status !== filters.status) {
+						return false;
+					}
+
+					// Filter by datacenter (for hosts and containers)
+					if (filters.datacenter !== 'all' && nodeData.datacenter !== filters.datacenter) {
+						return false;
+					}
+
+					return true;
+				});
+
+				// Get IDs of filtered nodes
+				const nodeIds = new Set(filteredNodes.map(n => n.data.id));
+
+				// Filter edges to only include those connecting visible nodes
+				const filteredEdges = data.edges.filter(edge => {
+					const source = edge.data.source;
+					const target = edge.data.target;
+					return nodeIds.has(source) && nodeIds.has(target);
+				});
+
+				return {
+					nodes: filteredNodes,
+					edges: filteredEdges
+				};
+			}
+
+			// Reapply filters and redraw graph
+			function reapplyFilters() {
+				const layout = document.getElementById('layout-select').value;
+				const filteredData = applyFilters(originalData, currentFilters);
+
+				// Update stats
+				const stats = {
+					nodes: filteredData.nodes.length,
+					hosts: filteredData.nodes.filter(n => n.data.type === 'host').length,
+					containers: filteredData.nodes.filter(n => n.data.type === 'container').length,
+					edges: filteredData.edges.length
+				};
+
+				document.getElementById('stat-nodes').textContent = stats.nodes;
+				document.getElementById('stat-hosts').textContent = stats.hosts;
+				document.getElementById('stat-containers').textContent = stats.containers;
+				document.getElementById('stat-edges').textContent = stats.edges;
+
+				// Recreate graph with filtered data
+				if (cy) {
+					cy.destroy();
+				}
+
+				cy = cytoscape({
+					container: document.getElementById('cy'),
+					elements: filteredData,
+					style: [
+						{
+							selector: 'node',
+							style: {
+								'background-color': '#6366f1',
+								'label': 'data(label)',
+								'color': '#f1f5f9',
+								'text-valign': 'center',
+								'text-halign': 'center',
+								'font-size': '12px',
+								'width': 60,
+								'height': 60,
+								'border-width': 2,
+								'border-color': '#8b5cf6'
+							}
+						},
+						{
+							selector: 'node[type="host"]',
+							style: {
+								'background-color': '#6366f1',
+								'shape': 'rectangle',
+								'width': 80,
+								'height': 60,
+								'border-color': '#4f46e5'
+							}
+						},
+						{
+							selector: 'node[type="container"]',
+							style: {
+								'background-color': '#10b981',
+								'shape': 'ellipse',
+								'width': 60,
+								'height': 60
+							}
+						},
+						{
+							selector: 'node[status="stopped"]',
+							style: {
+								'background-color': '#94a3b8',
+								'opacity': 0.7
+							}
+						},
+						{
+							selector: 'node[status="running"]',
+							style: {
+								'background-color': '#10b981'
+							}
+						},
+						{
+							selector: 'edge',
+							style: {
+								'width': 2,
+								'line-color': '#475569',
+								'target-arrow-color': '#475569',
+								'target-arrow-shape': 'triangle',
+								'curve-style': 'bezier',
+								'arrow-scale': 1.5
+							}
+						},
+						{
+							selector: 'node:selected',
+							style: {
+								'border-width': 4,
+								'border-color': '#f59e0b'
+							}
+						}
+					],
+					layout: {
+						name: layout,
+						animate: true,
+						animationDuration: 500,
+						fit: true,
+						padding: 50,
+						randomize: false,
+						componentSpacing: 100,
+						nodeRepulsion: 400000,
+						idealEdgeLength: 100,
+						edgeElasticity: 100
+					}
+				});
+
+				// Re-add tooltips
+				cy.on('tap', 'node', function(evt) {
+					const node = evt.target;
+					const data = node.data();
+					let info = `Type: ${data.type}\\nID: ${data.id}\\nStatus: ${data.status || 'N/A'}`;
+					if (data.type === 'host') {
+						info += `\\nIP: ${data.ip || 'N/A'}\\nCPU: ${data.cpu || 'N/A'}\\nMemory: ${data.memory ? (data.memory / 1024 / 1024 / 1024).toFixed(1) + ' GB' : 'N/A'}`;
+					} else if (data.type === 'container') {
+						info += `\\nImage: ${data.image || 'N/A'}`;
+					}
+					alert(info);
+				});
+			}
+
+			// Filter event listeners
+			document.getElementById('filter-type').addEventListener('change', function(e) {
+				currentFilters.type = e.target.value;
+				reapplyFilters();
+			});
+
+			document.getElementById('filter-status').addEventListener('change', function(e) {
+				currentFilters.status = e.target.value;
+				reapplyFilters();
+			});
+
+			document.getElementById('filter-datacenter').addEventListener('change', function(e) {
+				currentFilters.datacenter = e.target.value;
+				reapplyFilters();
+			});
+
+			document.getElementById('btn-clear-filters').addEventListener('click', function() {
+				currentFilters = { type: 'all', status: 'all', datacenter: 'all' };
+				document.getElementById('filter-type').value = 'all';
+				document.getElementById('filter-status').value = 'all';
+				document.getElementById('filter-datacenter').value = 'all';
+				reapplyFilters();
+			});
 
 			// WebSocket connection for real-time updates
 			let ws = null;
