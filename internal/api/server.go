@@ -192,11 +192,6 @@ func (s *Server) setupRoutes() {
 	users.POST("/api-keys", s.generateAPIKey, s.authMiddle.RequireAuth)
 	users.DELETE("/api-keys/:index", s.revokeAPIKey, s.authMiddle.RequireAuth)
 
-	// WebSocket routes
-	ws := v1.Group("/ws")
-	ws.GET("/graph", s.HandleWebSocket, s.authMiddle.RequireRead)   // WebSocket connection for graph updates
-	ws.GET("/stats", s.GetWebSocketStats, s.authMiddle.RequireRead) // WebSocket stats
-
 	// Graph visualization routes
 	graph := v1.Group("/graph")
 	graph.GET("", s.GetGraphData, s.authMiddle.RequireRead)
@@ -205,6 +200,11 @@ func (s *Server) setupRoutes() {
 
 	// Web UI routes
 	webHandler := web.NewHandler(s.storage, s.config)
+
+	// WebSocket routes (use web auth middleware for session cookie support)
+	ws := v1.Group("/ws")
+	ws.GET("/graph", s.HandleWebSocket, webHandler.WebAuthMiddleware)   // WebSocket connection for graph updates
+	ws.GET("/stats", s.GetWebSocketStats, webHandler.WebAuthMiddleware) // WebSocket stats
 	s.echo.Static("/static", "static")
 
 	// Public routes (redirect to login if not authenticated)
