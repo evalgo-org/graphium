@@ -84,6 +84,9 @@ func (s *Server) createHost(c echo.Context) error {
 		})
 	}
 
+	// Broadcast WebSocket event
+	s.BroadcastGraphEvent(EventHostAdded, host)
+
 	return c.JSON(http.StatusCreated, host)
 }
 
@@ -120,6 +123,9 @@ func (s *Server) updateHost(c echo.Context) error {
 		})
 	}
 
+	// Broadcast WebSocket event
+	s.BroadcastGraphEvent(EventHostUpdated, host)
+
 	return c.JSON(http.StatusOK, host)
 }
 
@@ -143,6 +149,9 @@ func (s *Server) deleteHost(c echo.Context) error {
 			Details: err.Error(),
 		})
 	}
+
+	// Broadcast WebSocket event
+	s.BroadcastGraphEvent(EventHostRemoved, map[string]string{"id": id})
 
 	return c.JSON(http.StatusOK, MessageResponse{
 		Message: "host deleted successfully",

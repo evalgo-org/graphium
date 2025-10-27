@@ -90,6 +90,9 @@ func (s *Server) createContainer(c echo.Context) error {
 		})
 	}
 
+	// Broadcast WebSocket event
+	s.BroadcastGraphEvent(EventContainerAdded, container)
+
 	return c.JSON(http.StatusCreated, container)
 }
 
@@ -126,6 +129,9 @@ func (s *Server) updateContainer(c echo.Context) error {
 		})
 	}
 
+	// Broadcast WebSocket event
+	s.BroadcastGraphEvent(EventContainerUpdated, container)
+
 	return c.JSON(http.StatusOK, container)
 }
 
@@ -149,6 +155,9 @@ func (s *Server) deleteContainer(c echo.Context) error {
 			Details: err.Error(),
 		})
 	}
+
+	// Broadcast WebSocket event
+	s.BroadcastGraphEvent(EventContainerRemoved, map[string]string{"id": id})
 
 	return c.JSON(http.StatusOK, MessageResponse{
 		Message: "container deleted successfully",
