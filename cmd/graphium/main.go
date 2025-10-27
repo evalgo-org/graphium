@@ -8,6 +8,50 @@ import (
 	"evalgo.org/graphium/internal/version"
 )
 
+// @title Graphium API
+// @version 0.1.0
+// @description Graphium is a semantic container orchestration platform that uses knowledge graphs and JSON-LD to manage multi-host Docker infrastructure with intelligent querying, graph traversal, and real-time insights.
+// @description
+// @description ## Features
+// @description - JSON-LD/Schema.org semantic models
+// @description - REST API for container and host management
+// @description - Graph visualization and traversal
+// @description - Real-time Docker agent integration
+// @description - WebSocket support for live updates
+// @description
+// @description ## Authentication
+// @description Currently, the API does not require authentication. Authentication will be added in Phase 12.
+
+// @contact.name Graphium API Support
+// @contact.url https://github.com/[org]/graphium
+// @contact.email support@graphium.io
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8095
+// @BasePath /api/v1
+
+// @schemes http https
+
+// @tag.name Containers
+// @tag.description Operations related to container management
+
+// @tag.name Hosts
+// @tag.description Operations related to host management
+
+// @tag.name Queries
+// @tag.description Graph query and traversal operations
+
+// @tag.name Statistics
+// @tag.description Statistics and metrics endpoints
+
+// @tag.name Graph
+// @tag.description Graph visualization endpoints
+
+// @tag.name WebSocket
+// @tag.description WebSocket endpoints for real-time updates
+
 var (
 	Version   = "dev"
 	BuildTime = "unknown"

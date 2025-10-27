@@ -10,6 +10,19 @@ import (
 )
 
 // listContainers handles GET /api/v1/containers
+// @Summary List containers
+// @Description Get a paginated list of containers with optional filtering by status, host, or datacenter
+// @Tags Containers
+// @Accept json
+// @Produce json
+// @Param status query string false "Filter by container status (running, stopped, paused, etc.)"
+// @Param host query string false "Filter by host ID"
+// @Param datacenter query string false "Filter by datacenter location"
+// @Param limit query int false "Maximum number of items to return (default: 100, max: 1000)" minimum(1) maximum(1000)
+// @Param offset query int false "Number of items to skip (default: 0)" minimum(0)
+// @Success 200 {object} PaginatedContainersResponse "Successfully retrieved containers"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /containers [get]
 func (s *Server) listContainers(c echo.Context) error {
 	// Parse query parameters
 	filters := make(map[string]interface{})
@@ -53,6 +66,16 @@ func (s *Server) listContainers(c echo.Context) error {
 }
 
 // getContainer handles GET /api/v1/containers/:id
+// @Summary Get container by ID
+// @Description Get detailed information about a specific container by its ID
+// @Tags Containers
+// @Accept json
+// @Produce json
+// @Param id path string true "Container ID"
+// @Success 200 {object} models.Container "Successfully retrieved container"
+// @Failure 400 {object} APIError "Bad request - Container ID is required"
+// @Failure 404 {object} APIError "Container not found"
+// @Router /containers/{id} [get]
 func (s *Server) getContainer(c echo.Context) error {
 	id := c.Param("id")
 
@@ -69,6 +92,16 @@ func (s *Server) getContainer(c echo.Context) error {
 }
 
 // createContainer handles POST /api/v1/containers
+// @Summary Create a new container
+// @Description Create a new container with the provided JSON-LD data
+// @Tags Containers
+// @Accept json
+// @Produce json
+// @Param container body models.Container true "Container object (JSON-LD format)"
+// @Success 201 {object} models.Container "Successfully created container"
+// @Failure 400 {object} APIError "Bad request - Invalid request body or validation errors"
+// @Failure 500 {object} APIError "Internal server error"
+// @Router /containers [post]
 func (s *Server) createContainer(c echo.Context) error {
 	var container models.Container
 
@@ -105,6 +138,18 @@ func (s *Server) createContainer(c echo.Context) error {
 }
 
 // updateContainer handles PUT /api/v1/containers/:id
+// @Summary Update a container
+// @Description Update an existing container with new JSON-LD data
+// @Tags Containers
+// @Accept json
+// @Produce json
+// @Param id path string true "Container ID"
+// @Param container body models.Container true "Updated container object (JSON-LD format)"
+// @Success 200 {object} models.Container "Successfully updated container"
+// @Failure 400 {object} APIError "Bad request - Invalid request body or validation errors"
+// @Failure 404 {object} APIError "Container not found"
+// @Failure 500 {object} APIError "Internal server error"
+// @Router /containers/{id} [put]
 func (s *Server) updateContainer(c echo.Context) error {
 	id := c.Param("id")
 

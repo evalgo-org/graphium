@@ -1,0 +1,432 @@
+basePath: /api/v1
+definitions:
+  api.APIError:
+    properties:
+      code:
+        type: integer
+      context:
+        additionalProperties: true
+        type: object
+      details:
+        type: string
+      field_errors:
+        additionalProperties:
+          type: string
+        type: object
+      message:
+        type: string
+    type: object
+  api.ErrorResponse:
+    properties:
+      details:
+        type: string
+      error:
+        type: string
+    type: object
+  api.GraphData:
+    properties:
+      edges:
+        items:
+          $ref: '#/definitions/api.GraphEdge'
+        type: array
+      nodes:
+        items:
+          $ref: '#/definitions/api.GraphNode'
+        type: array
+    type: object
+  api.GraphEdge:
+    properties:
+      data:
+        $ref: '#/definitions/api.GraphEdgeData'
+    type: object
+  api.GraphEdgeData:
+    properties:
+      id:
+        type: string
+      label:
+        type: string
+      source:
+        type: string
+      target:
+        type: string
+      type:
+        description: '"hosted_on", "connects_to", "depends_on"'
+        type: string
+    type: object
+  api.GraphNode:
+    properties:
+      data:
+        $ref: '#/definitions/api.GraphNodeData'
+    type: object
+  api.GraphNodeData:
+    properties:
+      cpu:
+        type: integer
+      id:
+        type: string
+      image:
+        type: string
+      ip:
+        type: string
+      label:
+        type: string
+      location:
+        type: string
+      memory:
+        type: integer
+      metadata:
+        additionalProperties:
+          type: string
+        type: object
+      status:
+        type: string
+      type:
+        description: '"host", "container"'
+        type: string
+    type: object
+  api.PaginatedContainersResponse:
+    properties:
+      containers:
+        items:
+          $ref: '#/definitions/models.Container'
+        type: array
+      count:
+        description: Number of items in current page
+        type: integer
+      limit:
+        description: Items per page
+        type: integer
+      offset:
+        description: Current offset
+        type: integer
+      total:
+        description: Total number of items
+        type: integer
+    type: object
+  models.Container:
+    properties:
+      '@context':
+        description: Context is the JSON-LD @context URL (typically https://schema.org)
+        type: string
+      '@id':
+        description: ID is the unique container identifier (maps to CouchDB _id)
+        type: string
+      '@type':
+        description: Type is the JSON-LD @type (SoftwareApplication for containers)
+        type: string
+      _rev:
+        description: Rev is the CouchDB document revision for optimistic locking
+        type: string
+      dateCreated:
+        description: Created is the ISO 8601 timestamp when the container was created
+        type: string
+      environment:
+        additionalProperties:
+          type: string
+        description: Env contains environment variables passed to the container
+        type: object
+      executableName:
+        description: Image is the container image name (executableName in Schema.org)
+        type: string
+      hostedOn:
+        description: HostedOn is the ID of the host running this container (creates
+          graph relationship)
+        type: string
+      name:
+        description: Name is the human-readable container name (required, indexed)
+        type: string
+      ports:
+        description: Ports are the network port mappings for this container
+        items:
+          $ref: '#/definitions/models.Port'
+        type: array
+      status:
+        description: Status is the container runtime status (running, stopped, paused,
+          etc.)
+        type: string
+    type: object
+  models.Port:
+    properties:
+      containerPort:
+        description: ContainerPort is the port number inside the container
+        type: integer
+      hostPort:
+        description: HostPort is the port number on the host machine
+        type: integer
+      protocol:
+        description: Protocol is the network protocol (tcp, udp, sctp)
+        type: string
+    type: object
+host: localhost:8095
+info:
+  contact:
+    email: support@graphium.io
+    name: Graphium API Support
+    url: https://github.com/[org]/graphium
+  description: |-
+    Graphium is a semantic container orchestration platform that uses knowledge graphs and JSON-LD to manage multi-host Docker infrastructure with intelligent querying, graph traversal, and real-time insights.
+
+    ## Features
+    - JSON-LD/Schema.org semantic models
+    - REST API for container and host management
+    - Graph visualization and traversal
+    - Real-time Docker agent integration
+    - WebSocket support for live updates
+
+    ## Authentication
+    Currently, the API does not require authentication. Authentication will be added in Phase 12.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Graphium API
+  version: 0.1.0
+paths:
+  /containers:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of containers with optional filtering by status,
+        host, or datacenter
+      parameters:
+      - description: Filter by container status (running, stopped, paused, etc.)
+        in: query
+        name: status
+        type: string
+      - description: Filter by host ID
+        in: query
+        name: host
+        type: string
+      - description: Filter by datacenter location
+        in: query
+        name: datacenter
+        type: string
+      - description: 'Maximum number of items to return (default: 100, max: 1000)'
+        in: query
+        maximum: 1000
+        minimum: 1
+        name: limit
+        type: integer
+      - description: 'Number of items to skip (default: 0)'
+        in: query
+        minimum: 0
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved containers
+          schema:
+            $ref: '#/definitions/api.PaginatedContainersResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: List containers
+      tags:
+      - Containers
+    post:
+      consumes:
+      - application/json
+      description: Create a new container with the provided JSON-LD data
+      parameters:
+      - description: Container object (JSON-LD format)
+        in: body
+        name: container
+        required: true
+        schema:
+          $ref: '#/definitions/models.Container'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created container
+          schema:
+            $ref: '#/definitions/models.Container'
+        "400":
+          description: Bad request - Invalid request body or validation errors
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      summary: Create a new container
+      tags:
+      - Containers
+  /containers/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific container by its ID
+      parameters:
+      - description: Container ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved container
+          schema:
+            $ref: '#/definitions/models.Container'
+        "400":
+          description: Bad request - Container ID is required
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "404":
+          description: Container not found
+          schema:
+            $ref: '#/definitions/api.APIError'
+      summary: Get container by ID
+      tags:
+      - Containers
+    put:
+      consumes:
+      - application/json
+      description: Update an existing container with new JSON-LD data
+      parameters:
+      - description: Container ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated container object (JSON-LD format)
+        in: body
+        name: container
+        required: true
+        schema:
+          $ref: '#/definitions/models.Container'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully updated container
+          schema:
+            $ref: '#/definitions/models.Container'
+        "400":
+          description: Bad request - Invalid request body or validation errors
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "404":
+          description: Container not found
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      summary: Update a container
+      tags:
+      - Containers
+  /graph:
+    get:
+      description: Returns nodes and edges for graph visualization
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.GraphData'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get graph visualization data
+      tags:
+      - graph
+  /graph/layout:
+    get:
+      description: Returns graph data with layout coordinates
+      parameters:
+      - description: Layout algorithm
+        enum:
+        - force
+        - hierarchical
+        - circle
+        - grid
+        in: query
+        name: layout
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.GraphData'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get graph with layout
+      tags:
+      - graph
+  /graph/stats:
+    get:
+      description: Returns statistics about nodes and edges
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get graph statistics
+      tags:
+      - graph
+  /ws/graph:
+    get:
+      consumes:
+      - application/json
+      description: Establishes a WebSocket connection for receiving real-time graph
+        events
+      produces:
+      - application/json
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+      summary: WebSocket endpoint for real-time graph updates
+      tags:
+      - websocket
+  /ws/stats:
+    get:
+      description: Returns statistics about WebSocket connections
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get WebSocket statistics
+      tags:
+      - websocket
+schemes:
+- http
+- https
+swagger: "2.0"
+tags:
+- description: Operations related to container management
+  name: Containers
+- description: Operations related to host management
+  name: Hosts
+- description: Graph query and traversal operations
+  name: Queries
+- description: Statistics and metrics endpoints
+  name: Statistics
+- description: Graph visualization endpoints
+  name: Graph
+- description: WebSocket endpoints for real-time updates
+  name: WebSocket

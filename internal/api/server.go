@@ -9,11 +9,13 @@ import (
 	"log"
 	"net/http"
 
+	_ "evalgo.org/graphium/docs" // Import generated docs
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/internal/web"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
 	"golang.org/x/time/rate"
 )
 
@@ -111,6 +113,9 @@ func (s *Server) setupRoutes() {
 	// Health check
 	s.echo.GET("/health", s.healthCheck)
 	s.echo.GET("/", s.healthCheck)
+
+	// Swagger UI documentation
+	s.echo.GET("/docs/*", echoSwagger.WrapHandler)
 
 	// API v1 group
 	v1 := s.echo.Group("/api/v1")
