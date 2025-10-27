@@ -69,6 +69,9 @@ func (s *Server) setupMiddleware() {
 	// Recover middleware
 	s.echo.Use(middleware.Recover())
 
+	// Security headers middleware
+	s.echo.Use(SecurityHeaders)
+
 	// CORS middleware
 	if len(s.config.Security.AllowedOrigins) > 0 {
 		s.echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -87,6 +90,12 @@ func (s *Server) setupMiddleware() {
 			rate.Limit(s.config.Security.RateLimit),
 		)))
 	}
+
+	// Content-Type validation middleware for API routes
+	s.echo.Use(ValidateContentType)
+
+	// Accept header validation middleware
+	s.echo.Use(ValidateAcceptHeader)
 
 	// Timeout middleware - disabled due to incompatibility with Templ streaming
 	// The timeout is still enforced at the HTTP server level (see Start method)
@@ -108,29 +117,31 @@ func (s *Server) setupRoutes() {
 
 	// Container routes
 	containers := v1.Group("/containers")
+	containers.Use(ValidateQueryParams) // Validate query parameters for list operations
 	containers.GET("", s.listContainers)
-	containers.GET("/:id", s.getContainer)
+	containers.GET("/:id", s.getContainer, ValidateIDFormat)
 	containers.POST("", s.createContainer)
-	containers.PUT("/:id", s.updateContainer)
-	containers.DELETE("/:id", s.deleteContainer)
+	containers.PUT("/:id", s.updateContainer, ValidateIDFormat)
+	containers.DELETE("/:id", s.deleteContainer, ValidateIDFormat)
 	containers.POST("/bulk", s.bulkCreateContainers)
 
 	// Host routes
 	hosts := v1.Group("/hosts")
+	hosts.Use(ValidateQueryParams) // Validate query parameters for list operations
 	hosts.GET("", s.listHosts)
-	hosts.GET("/:id", s.getHost)
+	hosts.GET("/:id", s.getHost, ValidateIDFormat)
 	hosts.POST("", s.createHost)
-	hosts.PUT("/:id", s.updateHost)
-	hosts.DELETE("/:id", s.deleteHost)
+	hosts.PUT("/:id", s.updateHost, ValidateIDFormat)
+	hosts.DELETE("/:id", s.deleteHost, ValidateIDFormat)
 	hosts.POST("/bulk", s.bulkCreateHosts)
 
 	// Query routes
 	query := v1.Group("/query")
-	query.GET("/containers/by-host/:hostId", s.getContainersByHost)
+	query.GET("/containers/by-host/:hostId", s.getContainersByHost, ValidateIDFormat)
 	query.GET("/containers/by-status/:status", s.getContainersByStatus)
 	query.GET("/hosts/by-datacenter/:datacenter", s.getHostsByDatacenter)
-	query.GET("/traverse/:id", s.traverseGraph)
-	query.GET("/dependents/:id", s.getDependents)
+	query.GET("/traverse/:id", s.traverseGraph, ValidateIDFormat)
+	query.GET("/dependents/:id", s.getDependents, ValidateIDFormat)
 	query.GET("/topology/:datacenter", s.getDatacenterTopology)
 
 	// Statistics routes
