@@ -25,6 +25,9 @@ func (s *Server) listContainers(c echo.Context) error {
 		filters["location"] = datacenter
 	}
 
+	// Parse pagination parameters
+	limit, offset := parsePagination(c)
+
 	containers, err := s.storage.ListContainers(filters)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
@@ -33,8 +36,17 @@ func (s *Server) listContainers(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, ContainersResponse{
+	// Get total count before pagination
+	total := len(containers)
+
+	// Apply pagination
+	containers = paginateSliceContainers(containers, limit, offset)
+
+	return c.JSON(http.StatusOK, PaginatedContainersResponse{
 		Count:      len(containers),
+		Total:      total,
+		Limit:      limit,
+		Offset:     offset,
 		Containers: containers,
 	})
 }

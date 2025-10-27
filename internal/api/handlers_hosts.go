@@ -19,6 +19,9 @@ func (s *Server) listHosts(c echo.Context) error {
 		filters["location"] = datacenter
 	}
 
+	// Parse pagination parameters
+	limit, offset := parsePagination(c)
+
 	hosts, err := s.storage.ListHosts(filters)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
@@ -27,9 +30,18 @@ func (s *Server) listHosts(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, HostsResponse{
-		Count: len(hosts),
-		Hosts: hosts,
+	// Get total count before pagination
+	total := len(hosts)
+
+	// Apply pagination
+	hosts = paginateSliceHosts(hosts, limit, offset)
+
+	return c.JSON(http.StatusOK, PaginatedHostsResponse{
+		Count:  len(hosts),
+		Total:  total,
+		Limit:  limit,
+		Offset: offset,
+		Hosts:  hosts,
 	})
 }
 

@@ -29,6 +29,24 @@ type HostsResponse struct {
 	Hosts []*models.Host `json:"hosts"`
 }
 
+// PaginatedContainersResponse represents a paginated list of containers.
+type PaginatedContainersResponse struct {
+	Count      int                 `json:"count"`      // Number of items in current page
+	Total      int                 `json:"total"`      // Total number of items
+	Limit      int                 `json:"limit"`      // Items per page
+	Offset     int                 `json:"offset"`     // Current offset
+	Containers []*models.Container `json:"containers"`
+}
+
+// PaginatedHostsResponse represents a paginated list of hosts.
+type PaginatedHostsResponse struct {
+	Count  int            `json:"count"`  // Number of items in current page
+	Total  int            `json:"total"`  // Total number of items
+	Limit  int            `json:"limit"`  // Items per page
+	Offset int            `json:"offset"` // Current offset
+	Hosts  []*models.Host `json:"hosts"`
+}
+
 // BulkResponse represents a bulk operation response.
 type BulkResponse struct {
 	Total   int             `json:"total"`
