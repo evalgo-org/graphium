@@ -207,8 +207,8 @@ func (s *Server) setupRoutes() {
 	webHandler := web.NewHandler(s.storage, s.config)
 	s.echo.Static("/static", "static")
 
-	// Public routes (no auth required)
-	s.echo.GET("/", webHandler.Dashboard, webHandler.WebOptionalAuthMiddleware)
+	// Public routes (redirect to login if not authenticated)
+	s.echo.GET("/", webHandler.Dashboard, webHandler.WebAuthMiddleware)
 
 	// Authentication routes (no auth required for login, required for logout)
 	webAuth := s.echo.Group("/web/auth")
@@ -233,9 +233,9 @@ func (s *Server) setupRoutes() {
 	webUsers.POST("/:id/api-keys/generate", webHandler.GenerateAPIKey)
 	webUsers.POST("/:id/api-keys/:index/revoke", webHandler.RevokeAPIKey)
 
-	// Container and host routes (with optional auth for better UX)
+	// Container and host routes (authentication REQUIRED)
 	webGroup := s.echo.Group("/web")
-	webGroup.Use(webHandler.WebOptionalAuthMiddleware)
+	webGroup.Use(webHandler.WebAuthMiddleware) // Require authentication for all web pages
 	webGroup.GET("/containers", webHandler.ContainersList)
 	webGroup.GET("/containers/table", webHandler.ContainersTable)
 	webGroup.GET("/containers/:id", webHandler.ContainerDetail)
