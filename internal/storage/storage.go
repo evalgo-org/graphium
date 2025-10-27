@@ -293,16 +293,22 @@ func (s *Storage) DeleteHost(id, rev string) error {
 
 // ListHosts retrieves all hosts matching the given filters.
 func (s *Storage) ListHosts(filters map[string]interface{}) ([]*models.Host, error) {
-	// Build query with filters
-	qb := db.NewQueryBuilder().
-		Where("@type", "$eq", "ComputerServer")
-
-	// Apply additional filters
-	for field, value := range filters {
-		qb = qb.And().Where(field, "$eq", value)
+	// Build query with filters - accept both ComputerServer and ComputerSystem types
+	// Use direct MangoQuery since QueryBuilder may not support $in properly
+	selector := map[string]interface{}{
+		"@type": map[string]interface{}{
+			"$in": []string{"ComputerServer", "ComputerSystem"},
+		},
 	}
 
-	query := qb.Build()
+	// Apply additional filters to the selector
+	for field, value := range filters {
+		selector[field] = map[string]interface{}{"$eq": value}
+	}
+
+	query := db.MangoQuery{
+		Selector: selector,
+	}
 
 	// Execute query
 	hosts, err := db.FindTyped[models.Host](s.service, query)
