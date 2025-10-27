@@ -1820,7 +1820,7 @@ templ userFormFields(user *models.User, isNew bool) {
 
 					<div class="form-group">
 						<label for="username">Username *</label>
-						<input type="text" id="username" name="username" value={ user.Username } required disabled={ !isNew }/>
+						<input type="text" id="username" name="username" value={ user.Username } required disabled?={ !isNew }/>
 						if !isNew {
 							<small class="form-text">Username cannot be changed</small>
 						}
