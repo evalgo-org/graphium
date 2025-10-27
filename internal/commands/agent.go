@@ -26,10 +26,11 @@ func init() {
 	agentCmd.Flags().String("datacenter", "", "Datacenter name")
 	agentCmd.Flags().String("docker-socket", "", "Docker socket path")
 
-	viper.BindPFlag("agent.api_url", agentCmd.Flags().Lookup("api-url"))
-	viper.BindPFlag("agent.host_id", agentCmd.Flags().Lookup("host-id"))
-	viper.BindPFlag("agent.datacenter", agentCmd.Flags().Lookup("datacenter"))
-	viper.BindPFlag("agent.docker_socket", agentCmd.Flags().Lookup("docker-socket"))
+	// These should never fail as flags are defined above
+	_ = viper.BindPFlag("agent.api_url", agentCmd.Flags().Lookup("api-url"))             //nolint:errcheck
+	_ = viper.BindPFlag("agent.host_id", agentCmd.Flags().Lookup("host-id"))             //nolint:errcheck
+	_ = viper.BindPFlag("agent.datacenter", agentCmd.Flags().Lookup("datacenter"))       //nolint:errcheck
+	_ = viper.BindPFlag("agent.docker_socket", agentCmd.Flags().Lookup("docker-socket")) //nolint:errcheck
 }
 
 func runAgent(cmd *cobra.Command, args []string) error {

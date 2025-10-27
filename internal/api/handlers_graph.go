@@ -4,8 +4,6 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-
-	"evalgo.org/graphium/models"
 )
 
 // GraphNode represents a node in the visualization graph
@@ -304,33 +302,4 @@ func (s *Server) GetGraphLayout(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, graphData)
-}
-
-// Helper function to convert Host to GraphNode
-func hostToNode(host *models.Host) GraphNode {
-	return GraphNode{
-		Data: GraphNodeData{
-			ID:       host.ID,
-			Label:    host.Name,
-			Type:     "host",
-			Status:   host.Status,
-			IP:       host.IPAddress,
-			CPU:      host.CPU,
-			Memory:   host.Memory,
-			Location: host.Datacenter,
-		},
-	}
-}
-
-// Helper function to convert Container to GraphNode
-func containerToNode(container *models.Container) GraphNode {
-	return GraphNode{
-		Data: GraphNodeData{
-			ID:     container.ID,
-			Label:  container.Name,
-			Type:   "container",
-			Status: container.Status,
-			Image:  container.Image,
-		},
-	}
 }

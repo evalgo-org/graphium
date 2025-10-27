@@ -212,7 +212,7 @@ func Load(cfgFile string) (*Config, error) {
 
 	v.SetConfigFile(".env")
 	v.SetConfigType("env")
-	v.MergeInConfig()
+	_ = v.MergeInConfig() // Ignore error if .env file doesn't exist
 
 	v.SetEnvPrefix("CG")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))

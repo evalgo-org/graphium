@@ -38,8 +38,9 @@ func init() {
 	rootCmd.PersistentFlags().String("log-level", "", "log level (debug, info, warn, error)")
 	rootCmd.PersistentFlags().String("log-format", "", "log format (json, text)")
 
-	viper.BindPFlag("logging.level", rootCmd.PersistentFlags().Lookup("log-level"))
-	viper.BindPFlag("logging.format", rootCmd.PersistentFlags().Lookup("log-format"))
+	// These should never fail as flags are defined above
+	_ = viper.BindPFlag("logging.level", rootCmd.PersistentFlags().Lookup("log-level"))   //nolint:errcheck
+	_ = viper.BindPFlag("logging.format", rootCmd.PersistentFlags().Lookup("log-format")) //nolint:errcheck
 
 	rootCmd.AddCommand(serverCmd)
 	rootCmd.AddCommand(agentCmd)

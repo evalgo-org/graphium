@@ -326,7 +326,7 @@ func (a *Agent) periodicSync(ctx context.Context) {
 // dockerToGraphium converts a Docker container to Graphium container model.
 func (a *Agent) dockerToGraphium(inspect types.ContainerJSON) *models.Container {
 	// Map Docker state to Graphium status
-	status := "unknown"
+	var status string
 	if inspect.State.Running {
 		status = "running"
 	} else if inspect.State.Paused {
@@ -344,13 +344,17 @@ func (a *Agent) dockerToGraphium(inspect types.ContainerJSON) *models.Container 
 	for port, bindings := range inspect.HostConfig.PortBindings {
 		for _, binding := range bindings {
 			var hostPort int
-			fmt.Sscanf(binding.HostPort, "%d", &hostPort)
+			if _, err := fmt.Sscanf(binding.HostPort, "%d", &hostPort); err != nil {
+				continue // Skip invalid port format
+			}
 
 			var containerPort int
 			var protocol string
 			parts := strings.Split(string(port), "/")
 			if len(parts) == 2 {
-				fmt.Sscanf(parts[0], "%d", &containerPort)
+				if _, err := fmt.Sscanf(parts[0], "%d", &containerPort); err != nil {
+					continue // Skip invalid port format
+				}
 				protocol = parts[1]
 			}
 
