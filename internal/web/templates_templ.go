@@ -211,7 +211,7 @@ func Dashboard(stats *storage.Statistics) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"quick-actions\"><h3>Quick Actions</h3><div class=\"action-buttons\"><a href=\"/containers\" class=\"btn btn-primary\">View All Containers</a> <a href=\"/hosts\" class=\"btn btn-secondary\">View All Hosts</a> <a href=\"/topology\" class=\"btn btn-info\">View Topology</a></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"quick-actions\"><h3>Quick Actions</h3><div class=\"action-buttons\"><a href=\"/web/containers\" class=\"btn btn-primary\">View All Containers</a> <a href=\"/web/hosts\" class=\"btn btn-secondary\">View All Hosts</a> <a href=\"/web/topology\" class=\"btn btn-info\">View Topology</a></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
