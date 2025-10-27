@@ -78,6 +78,12 @@ func (s *Server) GetGraphData(c echo.Context) error {
 		Edges: make([]GraphEdge, 0),
 	}
 
+	// Build a set of valid host IDs for edge validation
+	validHosts := make(map[string]bool)
+	for _, host := range hosts {
+		validHosts[host.ID] = true
+	}
+
 	// Add host nodes
 	for _, host := range hosts {
 		node := GraphNode{
@@ -115,8 +121,8 @@ func (s *Server) GetGraphData(c echo.Context) error {
 		}
 		graphData.Nodes = append(graphData.Nodes, node)
 
-		// Add edge from container to host
-		if container.HostedOn != "" {
+		// Add edge from container to host (only if host exists)
+		if container.HostedOn != "" && validHosts[container.HostedOn] {
 			edge := GraphEdge{
 				Data: GraphEdgeData{
 					ID:     container.ID + "-" + container.HostedOn,
@@ -243,6 +249,12 @@ func (s *Server) GetGraphLayout(c echo.Context) error {
 		Edges: make([]GraphEdge, 0),
 	}
 
+	// Build a set of valid host IDs for edge validation
+	validHostsLayout := make(map[string]bool)
+	for _, host := range hosts {
+		validHostsLayout[host.ID] = true
+	}
+
 	// Add host nodes
 	for _, host := range hosts {
 		node := GraphNode{
@@ -273,7 +285,8 @@ func (s *Server) GetGraphLayout(c echo.Context) error {
 		}
 		graphData.Nodes = append(graphData.Nodes, node)
 
-		if container.HostedOn != "" {
+		// Add edge only if host exists
+		if container.HostedOn != "" && validHostsLayout[container.HostedOn] {
 			edge := GraphEdge{
 				Data: GraphEdgeData{
 					ID:     container.ID + "-" + container.HostedOn,
