@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["go", "git", "curl", "cacert"]
+nixPkgs = ["go", "git", "curl"]
 
 [phases.install]
 cmds = ["go mod download"]
