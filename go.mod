@@ -3,7 +3,7 @@ module evalgo.org/graphium
 go 1.24.7
 
 require (
-	eve.evalgo.org v0.0.7
+	eve.evalgo.org v0.0.8-0.20251027161652-62a4ff5e39a1
 	github.com/a-h/templ v0.3.960
 	github.com/docker/docker v28.5.1+incompatible
 	github.com/go-playground/validator/v10 v10.23.0
@@ -109,7 +109,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/openziti/channel/v4 v4.2.41 // indirect
-	github.com/openziti/edge-api v0.26.50 // indirect
+	github.com/openziti/edge-api v0.26.51 // indirect
 	github.com/openziti/foundation/v2 v2.0.79 // indirect
 	github.com/openziti/identity v1.0.118 // indirect
 	github.com/openziti/metrics v1.4.2 // indirect
