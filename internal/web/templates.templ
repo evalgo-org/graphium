@@ -383,6 +383,9 @@ templ GraphView(cfg *config.Config) {
 					<button class="btn btn-primary" id="btn-fit">Fit to Screen</button>
 					<button class="btn btn-secondary" id="btn-center">Center</button>
 					<button class="btn btn-secondary" id="btn-refresh">Refresh Data</button>
+					<button class="btn btn-secondary" id="btn-export-png">Export PNG</button>
+					<button class="btn btn-secondary" id="btn-export-svg">Export SVG</button>
+					<button class="btn btn-secondary" id="btn-export-json">Export JSON</button>
 				</div>
 			</div>
 
@@ -552,6 +555,48 @@ templ GraphView(cfg *config.Config) {
 				const layout = document.getElementById('layout-select').value;
 				initGraph(layout);
 			});
+
+			// Export button handlers
+			document.getElementById('btn-export-png').addEventListener('click', function() {
+				if (!cy) return;
+				const png = cy.png({ full: true, scale: 2 });
+				downloadFile(png, 'graphium-graph.png');
+				showNotification('Graph exported as PNG', 'success');
+			});
+
+			document.getElementById('btn-export-svg').addEventListener('click', function() {
+				if (!cy) return;
+				const svg = cy.svg({ full: true, scale: 1 });
+				const blob = new Blob([svg], { type: 'image/svg+xml' });
+				const url = URL.createObjectURL(blob);
+				downloadFile(url, 'graphium-graph.svg');
+				URL.revokeObjectURL(url);
+				showNotification('Graph exported as SVG', 'success');
+			});
+
+			document.getElementById('btn-export-json').addEventListener('click', function() {
+				if (!cy) return;
+				const graphData = {
+					nodes: cy.nodes().map(node => node.json()),
+					edges: cy.edges().map(edge => edge.json())
+				};
+				const json = JSON.stringify(graphData, null, 2);
+				const blob = new Blob([json], { type: 'application/json' });
+				const url = URL.createObjectURL(blob);
+				downloadFile(url, 'graphium-graph.json');
+				URL.revokeObjectURL(url);
+				showNotification('Graph exported as JSON', 'success');
+			});
+
+			// Helper function to download files
+			function downloadFile(url, filename) {
+				const link = document.createElement('a');
+				link.href = url;
+				link.download = filename;
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+			}
 
 			// WebSocket connection for real-time updates
 			let ws = null;
