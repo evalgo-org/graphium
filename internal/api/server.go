@@ -33,6 +33,9 @@ func New(cfg *config.Config, store *storage.Storage) *Server {
 	e.HideBanner = true
 	e.HidePort = true
 
+	// Set custom error handler
+	e.HTTPErrorHandler = HTTPErrorHandler
+
 	// Create WebSocket hub
 	hub := NewHub()
 

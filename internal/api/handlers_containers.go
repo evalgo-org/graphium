@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	_ "evalgo.org/graphium/internal/storage" // imported for Server.storage field
@@ -55,12 +56,13 @@ func (s *Server) listContainers(c echo.Context) error {
 func (s *Server) getContainer(c echo.Context) error {
 	id := c.Param("id")
 
+	if id == "" {
+		return BadRequestError("Container ID is required", "The 'id' parameter cannot be empty")
+	}
+
 	container, err := s.storage.GetContainer(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, ErrorResponse{
-			Error:   "container not found",
-			Details: err.Error(),
-		})
+		return NotFoundError("Container", id)
 	}
 
 	return c.JSON(http.StatusOK, container)
@@ -71,22 +73,19 @@ func (s *Server) createContainer(c echo.Context) error {
 	var container models.Container
 
 	if err := c.Bind(&container); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid request body",
-			Details: err.Error(),
-		})
+		return BadRequestError("Invalid request body", "Failed to parse JSON: "+err.Error())
 	}
 
 	// Validate required fields
+	fieldErrors := make(map[string]string)
 	if container.Name == "" {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: "name is required",
-		})
+		fieldErrors["name"] = "Container name is required"
 	}
 	if container.Image == "" {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: "image is required",
-		})
+		fieldErrors["image"] = "Container image (executableName) is required"
+	}
+	if len(fieldErrors) > 0 {
+		return ValidationError("Validation failed", fieldErrors)
 	}
 
 	// Generate ID if not provided
@@ -96,10 +95,7 @@ func (s *Server) createContainer(c echo.Context) error {
 
 	// Save container
 	if err := s.storage.SaveContainer(&container); err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "failed to create container",
-			Details: err.Error(),
-		})
+		return InternalError("Failed to create container", err.Error())
 	}
 
 	// Broadcast WebSocket event
@@ -112,21 +108,31 @@ func (s *Server) createContainer(c echo.Context) error {
 func (s *Server) updateContainer(c echo.Context) error {
 	id := c.Param("id")
 
+	if id == "" {
+		return BadRequestError("Container ID is required", "The 'id' parameter cannot be empty")
+	}
+
 	// Check if container exists
 	existing, err := s.storage.GetContainer(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, ErrorResponse{
-			Error:   "container not found",
-			Details: err.Error(),
-		})
+		return NotFoundError("Container", id)
 	}
 
 	var container models.Container
 	if err := c.Bind(&container); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid request body",
-			Details: err.Error(),
-		})
+		return BadRequestError("Invalid request body", "Failed to parse JSON: "+err.Error())
+	}
+
+	// Validate required fields
+	fieldErrors := make(map[string]string)
+	if container.Name == "" {
+		fieldErrors["name"] = "Container name is required"
+	}
+	if container.Image == "" {
+		fieldErrors["image"] = "Container image (executableName) is required"
+	}
+	if len(fieldErrors) > 0 {
+		return ValidationError("Validation failed", fieldErrors)
 	}
 
 	// Preserve ID and revision
@@ -135,10 +141,7 @@ func (s *Server) updateContainer(c echo.Context) error {
 
 	// Update container
 	if err := s.storage.SaveContainer(&container); err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "failed to update container",
-			Details: err.Error(),
-		})
+		return InternalError("Failed to update container", err.Error())
 	}
 
 	// Broadcast WebSocket event
@@ -151,21 +154,19 @@ func (s *Server) updateContainer(c echo.Context) error {
 func (s *Server) deleteContainer(c echo.Context) error {
 	id := c.Param("id")
 
+	if id == "" {
+		return BadRequestError("Container ID is required", "The 'id' parameter cannot be empty")
+	}
+
 	// Get container to retrieve revision
 	container, err := s.storage.GetContainer(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, ErrorResponse{
-			Error:   "container not found",
-			Details: err.Error(),
-		})
+		return NotFoundError("Container", id)
 	}
 
 	// Delete container
 	if err := s.storage.DeleteContainer(id, container.Rev); err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "failed to delete container",
-			Details: err.Error(),
-		})
+		return InternalError("Failed to delete container", err.Error())
 	}
 
 	// Broadcast WebSocket event
@@ -182,26 +183,34 @@ func (s *Server) bulkCreateContainers(c echo.Context) error {
 	var containers []*models.Container
 
 	if err := c.Bind(&containers); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid request body",
-			Details: err.Error(),
-		})
+		return BadRequestError("Invalid request body", "Failed to parse JSON array: "+err.Error())
 	}
 
-	// Generate IDs for containers without one
-	for _, container := range containers {
+	if len(containers) == 0 {
+		return BadRequestError("Empty request", "At least one container must be provided")
+	}
+
+	// Validate containers and generate IDs
+	fieldErrors := make(map[string]string)
+	for i, container := range containers {
+		if container.Name == "" {
+			fieldErrors[fmt.Sprintf("containers[%d].name", i)] = "Container name is required"
+		}
+		if container.Image == "" {
+			fieldErrors[fmt.Sprintf("containers[%d].image", i)] = "Container image is required"
+		}
 		if container.ID == "" {
 			container.ID = generateID("container", container.Name)
 		}
+	}
+	if len(fieldErrors) > 0 {
+		return ValidationError("Validation failed for one or more containers", fieldErrors)
 	}
 
 	// Bulk save
 	results, err := s.storage.BulkSaveContainers(containers)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "failed to bulk create containers",
-			Details: err.Error(),
-		})
+		return InternalError("Failed to bulk create containers", err.Error())
 	}
 
 	// Count successes and failures
@@ -227,12 +236,13 @@ func (s *Server) bulkCreateContainers(c echo.Context) error {
 func (s *Server) getContainersByHost(c echo.Context) error {
 	hostID := c.Param("hostId")
 
+	if hostID == "" {
+		return BadRequestError("Host ID is required", "The 'hostId' parameter cannot be empty")
+	}
+
 	containers, err := s.storage.GetContainersByHost(hostID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "failed to get containers by host",
-			Details: err.Error(),
-		})
+		return InternalError("Failed to query containers by host", err.Error())
 	}
 
 	return c.JSON(http.StatusOK, ContainersResponse{
@@ -245,12 +255,22 @@ func (s *Server) getContainersByHost(c echo.Context) error {
 func (s *Server) getContainersByStatus(c echo.Context) error {
 	status := c.Param("status")
 
+	if status == "" {
+		return BadRequestError("Status is required", "The 'status' parameter cannot be empty")
+	}
+
+	// Validate status value
+	validStatuses := map[string]bool{
+		"running": true, "stopped": true, "paused": true,
+		"restarting": true, "exited": true, "dead": true,
+	}
+	if !validStatuses[status] {
+		return BadRequestError("Invalid status", fmt.Sprintf("Status must be one of: running, stopped, paused, restarting, exited, dead. Got: %s", status))
+	}
+
 	containers, err := s.storage.GetContainersByStatus(status)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "failed to get containers by status",
-			Details: err.Error(),
-		})
+		return InternalError("Failed to query containers by status", err.Error())
 	}
 
 	return c.JSON(http.StatusOK, ContainersResponse{

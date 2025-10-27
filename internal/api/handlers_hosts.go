@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"evalgo.org/graphium/models"
@@ -24,10 +25,7 @@ func (s *Server) listHosts(c echo.Context) error {
 
 	hosts, err := s.storage.ListHosts(filters)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "failed to list hosts",
-			Details: err.Error(),
-		})
+		return InternalError("Failed to list hosts", err.Error())
 	}
 
 	// Get total count before pagination
@@ -49,12 +47,13 @@ func (s *Server) listHosts(c echo.Context) error {
 func (s *Server) getHost(c echo.Context) error {
 	id := c.Param("id")
 
+	if id == "" {
+		return BadRequestError("Host ID is required", "The 'id' parameter cannot be empty")
+	}
+
 	host, err := s.storage.GetHost(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, ErrorResponse{
-			Error:   "host not found",
-			Details: err.Error(),
-		})
+		return NotFoundError("Host", id)
 	}
 
 	return c.JSON(http.StatusOK, host)
@@ -65,22 +64,19 @@ func (s *Server) createHost(c echo.Context) error {
 	var host models.Host
 
 	if err := c.Bind(&host); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid request body",
-			Details: err.Error(),
-		})
+		return BadRequestError("Invalid request body", "Failed to parse JSON: "+err.Error())
 	}
 
 	// Validate required fields
+	fieldErrors := make(map[string]string)
 	if host.Name == "" {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: "name is required",
-		})
+		fieldErrors["name"] = "Host name is required"
 	}
 	if host.IPAddress == "" {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: "ipAddress is required",
-		})
+		fieldErrors["ipAddress"] = "Host IP address is required"
+	}
+	if len(fieldErrors) > 0 {
+		return ValidationError("Validation failed", fieldErrors)
 	}
 
 	// Generate ID if not provided
@@ -90,10 +86,7 @@ func (s *Server) createHost(c echo.Context) error {
 
 	// Save host
 	if err := s.storage.SaveHost(&host); err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "failed to create host",
-			Details: err.Error(),
-		})
+		return InternalError("Failed to create host", err.Error())
 	}
 
 	// Broadcast WebSocket event
@@ -106,21 +99,31 @@ func (s *Server) createHost(c echo.Context) error {
 func (s *Server) updateHost(c echo.Context) error {
 	id := c.Param("id")
 
+	if id == "" {
+		return BadRequestError("Host ID is required", "The 'id' parameter cannot be empty")
+	}
+
 	// Check if host exists
 	existing, err := s.storage.GetHost(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, ErrorResponse{
-			Error:   "host not found",
-			Details: err.Error(),
-		})
+		return NotFoundError("Host", id)
 	}
 
 	var host models.Host
 	if err := c.Bind(&host); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid request body",
-			Details: err.Error(),
-		})
+		return BadRequestError("Invalid request body", "Failed to parse JSON: "+err.Error())
+	}
+
+	// Validate required fields
+	fieldErrors := make(map[string]string)
+	if host.Name == "" {
+		fieldErrors["name"] = "Host name is required"
+	}
+	if host.IPAddress == "" {
+		fieldErrors["ipAddress"] = "Host IP address is required"
+	}
+	if len(fieldErrors) > 0 {
+		return ValidationError("Validation failed", fieldErrors)
 	}
 
 	// Preserve ID and revision
@@ -129,10 +132,7 @@ func (s *Server) updateHost(c echo.Context) error {
 
 	// Update host
 	if err := s.storage.SaveHost(&host); err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "failed to update host",
-			Details: err.Error(),
-		})
+		return InternalError("Failed to update host", err.Error())
 	}
 
 	// Broadcast WebSocket event
@@ -145,21 +145,19 @@ func (s *Server) updateHost(c echo.Context) error {
 func (s *Server) deleteHost(c echo.Context) error {
 	id := c.Param("id")
 
+	if id == "" {
+		return BadRequestError("Host ID is required", "The 'id' parameter cannot be empty")
+	}
+
 	// Get host to retrieve revision
 	host, err := s.storage.GetHost(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, ErrorResponse{
-			Error:   "host not found",
-			Details: err.Error(),
-		})
+		return NotFoundError("Host", id)
 	}
 
 	// Delete host
 	if err := s.storage.DeleteHost(id, host.Rev); err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "failed to delete host",
-			Details: err.Error(),
-		})
+		return InternalError("Failed to delete host", err.Error())
 	}
 
 	// Broadcast WebSocket event
@@ -176,26 +174,34 @@ func (s *Server) bulkCreateHosts(c echo.Context) error {
 	var hosts []*models.Host
 
 	if err := c.Bind(&hosts); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid request body",
-			Details: err.Error(),
-		})
+		return BadRequestError("Invalid request body", "Failed to parse JSON array: "+err.Error())
 	}
 
-	// Generate IDs for hosts without one
-	for _, host := range hosts {
+	if len(hosts) == 0 {
+		return BadRequestError("Empty request", "At least one host must be provided")
+	}
+
+	// Validate hosts and generate IDs
+	fieldErrors := make(map[string]string)
+	for i, host := range hosts {
+		if host.Name == "" {
+			fieldErrors[fmt.Sprintf("hosts[%d].name", i)] = "Host name is required"
+		}
+		if host.IPAddress == "" {
+			fieldErrors[fmt.Sprintf("hosts[%d].ipAddress", i)] = "Host IP address is required"
+		}
 		if host.ID == "" {
 			host.ID = generateID("host", host.Name)
 		}
+	}
+	if len(fieldErrors) > 0 {
+		return ValidationError("Validation failed for one or more hosts", fieldErrors)
 	}
 
 	// Bulk save
 	results, err := s.storage.BulkSaveHosts(hosts)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "failed to bulk create hosts",
-			Details: err.Error(),
-		})
+		return InternalError("Failed to bulk create hosts", err.Error())
 	}
 
 	// Count successes and failures
@@ -221,12 +227,13 @@ func (s *Server) bulkCreateHosts(c echo.Context) error {
 func (s *Server) getHostsByDatacenter(c echo.Context) error {
 	datacenter := c.Param("datacenter")
 
+	if datacenter == "" {
+		return BadRequestError("Datacenter is required", "The 'datacenter' parameter cannot be empty")
+	}
+
 	hosts, err := s.storage.GetHostsByDatacenter(datacenter)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "failed to get hosts by datacenter",
-			Details: err.Error(),
-		})
+		return InternalError("Failed to query hosts by datacenter", err.Error())
 	}
 
 	return c.JSON(http.StatusOK, HostsResponse{
