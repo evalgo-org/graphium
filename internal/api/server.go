@@ -6,6 +6,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"evalgo.org/graphium/internal/config"
@@ -21,6 +22,7 @@ type Server struct {
 	echo    *echo.Echo
 	storage *storage.Storage
 	config  *config.Config
+	wsHub   *Hub // WebSocket hub for real-time updates
 }
 
 // New creates a new API server instance.
@@ -31,12 +33,19 @@ func New(cfg *config.Config, store *storage.Storage) *Server {
 	e.HideBanner = true
 	e.HidePort = true
 
+	// Create WebSocket hub
+	hub := NewHub()
+
 	// Create server instance
 	server := &Server{
 		echo:    e,
 		storage: store,
 		config:  cfg,
+		wsHub:   hub,
 	}
+
+	// Start WebSocket hub in background
+	go hub.Run()
 
 	// Setup middleware
 	server.setupMiddleware()
@@ -137,8 +146,10 @@ func (s *Server) setupRoutes() {
 	// Database info
 	v1.GET("/info", s.getDatabaseInfo)
 
-	// WebSocket route for real-time updates
-	v1.GET("/ws", s.handleWebSocket)
+	// WebSocket routes
+	ws := v1.Group("/ws")
+	ws.GET("/graph", s.HandleWebSocket)  // WebSocket connection for graph updates
+	ws.GET("/stats", s.GetWebSocketStats) // WebSocket stats
 
 	// Graph visualization routes
 	graph := v1.Group("/graph")
@@ -222,4 +233,15 @@ func (s *Server) healthCheck(c echo.Context) error {
 		},
 		"uptime": info.InstanceStartTime,
 	})
+}
+
+// BroadcastGraphEvent broadcasts a graph event to all WebSocket clients
+func (s *Server) BroadcastGraphEvent(eventType GraphEventType, data interface{}) {
+	event := GraphEvent{
+		Type: eventType,
+		Data: data,
+	}
+	if err := s.wsHub.BroadcastEvent(event); err != nil {
+		log.Printf("Failed to broadcast event: %v", err)
+	}
 }
