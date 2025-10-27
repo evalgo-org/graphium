@@ -2,11 +2,14 @@
 package auth
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/models"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
 
@@ -160,4 +163,109 @@ func IsAdmin(c echo.Context) bool {
 // CanWrite checks if the current user can write
 func CanWrite(c echo.Context) bool {
 	return HasRole(c, models.RoleAdmin) || HasRole(c, models.RoleUser)
+}
+
+// RequireAPIKey is middleware that requires a valid API key
+func (m *Middleware) RequireAPIKey(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// Skip if no API keys are configured
+		if len(m.config.Security.APIKeys) == 0 {
+			return next(c)
+		}
+
+		// Extract API key from Authorization header or X-API-Key header
+		apiKey := c.Request().Header.Get("X-API-Key")
+		if apiKey == "" {
+			// Try Authorization header with "ApiKey" scheme
+			authHeader := c.Request().Header.Get("Authorization")
+			if authHeader != "" {
+				parts := strings.SplitN(authHeader, " ", 2)
+				if len(parts) == 2 && parts[0] == "ApiKey" {
+					apiKey = parts[1]
+				}
+			}
+		}
+
+		if apiKey == "" {
+			return echo.NewHTTPError(http.StatusUnauthorized, "missing API key")
+		}
+
+		// Check if API key is valid
+		validKey := false
+		for _, key := range m.config.Security.APIKeys {
+			if key == apiKey {
+				validKey = true
+				break
+			}
+		}
+
+		if !validKey {
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid API key")
+		}
+
+		return next(c)
+	}
+}
+
+// RequireAgentAuth is middleware that requires agent authentication
+func (m *Middleware) RequireAgentAuth(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// Skip if agent authentication is not configured
+		if m.config.Security.AgentTokenSecret == "" {
+			return next(c)
+		}
+
+		// Extract token from Authorization header
+		authHeader := c.Request().Header.Get("Authorization")
+		if authHeader == "" {
+			return echo.NewHTTPError(http.StatusUnauthorized, "missing agent token")
+		}
+
+		// Parse Bearer token
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid authorization header format")
+		}
+
+		tokenString := parts[1]
+
+		// Validate agent token (same validation as JWT but with agent secret)
+		token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+			// Verify signing method
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return []byte(m.config.Security.AgentTokenSecret), nil
+		})
+
+		if err != nil {
+			if errors.Is(err, jwt.ErrTokenExpired) {
+				return echo.NewHTTPError(http.StatusUnauthorized, "agent token has expired")
+			}
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid agent token")
+		}
+
+		claims, ok := token.Claims.(*Claims)
+		if !ok || !token.Valid {
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid agent token")
+		}
+
+		// Verify this is an agent token (has agent role)
+		isAgent := false
+		for _, role := range claims.Roles {
+			if role == models.RoleAgent {
+				isAgent = true
+				break
+			}
+		}
+
+		if !isAgent {
+			return echo.NewHTTPError(http.StatusForbidden, "token does not have agent permissions")
+		}
+
+		// Store claims in context
+		c.Set(ContextKeyClaims, claims)
+
+		return next(c)
+	}
 }

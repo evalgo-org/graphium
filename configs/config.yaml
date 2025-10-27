@@ -3,6 +3,16 @@ server:
   port: 8095
   debug: false
 
+  # TLS/HTTPS configuration
+  tls_enabled: false  # Set to true to enable HTTPS
+  tls_cert: /path/to/cert.pem
+  tls_key: /path/to/key.pem
+
+  # Timeouts
+  read_timeout: 30s
+  write_timeout: 30s
+  shutdown_timeout: 10s
+
 couchdb:
   url: http://localhost:5985
   database: graphium
@@ -22,6 +32,15 @@ security:
   jwt_secret: change-me-in-production-use-a-secure-random-string
   jwt_expiration: 24h
   refresh_token_expiration: 168h  # 7 days
+
+  # Agent authentication
+  agent_token_secret: change-me-in-production-use-different-secret-for-agents
+
+  # API Keys (for service-to-service authentication)
+  # Generate with: openssl rand -base64 32
+  api_keys: []
+    # - "sk_prod_abc123..."
+    # - "sk_test_xyz789..."
 
   # Rate limiting (requests per second, 0 = disabled)
   rate_limit: 100
