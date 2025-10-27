@@ -61,6 +61,7 @@ templ LayoutWithUser(title string, user *models.User) {
 			<span class="sun-icon">☀️</span>
 			<span class="moon-icon">🌙</span>
 		</button>
+
 		<script>
 			// Theme toggle functionality
 			(function() {
@@ -159,13 +160,53 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 	}
 }
 
+// Pagination component
+templ Pagination(pagination PaginationInfo, baseURL string, queryParams string) {
+	<div class="pagination">
+		<div class="pagination-info">
+			Showing { fmt.Sprintf("%d-%d", (pagination.Page-1)*pagination.PageSize+1, min((pagination.Page-1)*pagination.PageSize+pagination.PageSize, pagination.TotalItems)) } of { fmt.Sprintf("%d", pagination.TotalItems) }
+		</div>
+		<div class="pagination-controls">
+			if pagination.HasPrev {
+				if queryParams != "" {
+					<a href={ templ.URL(fmt.Sprintf("%s?%s&page=%d", baseURL, queryParams, pagination.Page-1)) } class="btn btn-secondary">← Previous</a>
+				} else {
+					<a href={ templ.URL(fmt.Sprintf("%s?page=%d", baseURL, pagination.Page-1)) } class="btn btn-secondary">← Previous</a>
+				}
+			} else {
+				<span class="btn btn-secondary disabled">← Previous</span>
+			}
+			<span class="pagination-current">Page { fmt.Sprintf("%d", pagination.Page) } of { fmt.Sprintf("%d", pagination.TotalPages) }</span>
+			if pagination.HasNext {
+				if queryParams != "" {
+					<a href={ templ.URL(fmt.Sprintf("%s?%s&page=%d", baseURL, queryParams, pagination.Page+1)) } class="btn btn-secondary">Next →</a>
+				} else {
+					<a href={ templ.URL(fmt.Sprintf("%s?page=%d", baseURL, pagination.Page+1)) } class="btn btn-secondary">Next →</a>
+				}
+			} else {
+				<span class="btn btn-secondary disabled">Next →</span>
+			}
+		</div>
+	</div>
+}
+
 // Containers list template (with user)
-templ ContainersListWithUser(containers []*models.Container, user *models.User) {
+templ ContainersListWithUser(containers []*models.Container, pagination PaginationInfo, user *models.User) {
 	@LayoutWithUser("Containers", user) {
 		<div class="page-header">
 			<h2>Containers</h2>
-			<div class="filters" hx-get="/web/containers/table" hx-target="#containers-table" hx-trigger="change">
-				<select name="status" hx-get="/web/containers/table" hx-target="#containers-table">
+			<div class="filters">
+				<input
+					type="text"
+					name="search"
+					class="search-input"
+					placeholder="Search by name..."
+					hx-get="/web/containers/table"
+					hx-target="#containers-table"
+					hx-trigger="keyup changed delay:300ms"
+					hx-include="[name='status']"
+				/>
+				<select name="status" hx-get="/web/containers/table" hx-target="#containers-table" hx-trigger="change" hx-include="[name='search']">
 					<option value="">All Statuses</option>
 					<option value="running">Running</option>
 					<option value="stopped">Stopped</option>
@@ -176,7 +217,7 @@ templ ContainersListWithUser(containers []*models.Container, user *models.User) 
 		</div>
 
 		<div id="containers-table">
-			@ContainersTable(containers)
+			@ContainersTableWithPagination(containers, pagination, "")
 		</div>
 	}
 }
@@ -232,13 +273,72 @@ templ ContainersTable(containers []*models.Container) {
 	</div>
 }
 
+// Containers table with pagination (for HTMX updates)
+templ ContainersTableWithPagination(containers []*models.Container, pagination PaginationInfo, queryParams string) {
+	<div class="table-container">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Image</th>
+					<th>Status</th>
+					<th>Host</th>
+					<th>Created</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				if len(containers) == 0 {
+					<tr>
+						<td colspan="6" class="no-data">No containers found</td>
+					</tr>
+				}
+				for _, container := range containers {
+					<tr>
+						<td>
+							<strong>{ container.Name }</strong>
+							<br/>
+							<small class="text-muted">{ container.ID[:12] }</small>
+						</td>
+						<td>{ container.Image }</td>
+						<td>
+							<span class={ fmt.Sprintf("badge badge-%s", container.Status) }>
+								{ container.Status }
+							</span>
+						</td>
+						<td>{ container.HostedOn }</td>
+						<td>{ container.Created }</td>
+						<td>
+							<div class="action-buttons">
+								<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)) } class="btn-icon" title="View Details">👁️</a>
+								<a href={ templ.URL(fmt.Sprintf("/web/containers/%s/logs", container.ID)) } class="btn-icon" title="View Logs">📄</a>
+							</div>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+		@Pagination(pagination, "/web/containers", queryParams)
+	</div>
+}
+
 // Hosts list template (with user)
-templ HostsListWithUser(hosts []*models.Host, user *models.User) {
+templ HostsListWithUser(hosts []*models.Host, pagination PaginationInfo, user *models.User) {
 	@LayoutWithUser("Hosts", user) {
 		<div class="page-header">
 			<h2>Hosts</h2>
 			<div class="filters">
-				<select name="status" hx-get="/web/hosts/table" hx-target="#hosts-table">
+				<input
+					type="text"
+					name="search"
+					class="search-input"
+					placeholder="Search by name..."
+					hx-get="/web/hosts/table"
+					hx-target="#hosts-table"
+					hx-trigger="keyup changed delay:300ms"
+					hx-include="[name='status']"
+				/>
+				<select name="status" hx-get="/web/hosts/table" hx-target="#hosts-table" hx-trigger="change" hx-include="[name='search']">
 					<option value="">All Statuses</option>
 					<option value="active">Active</option>
 					<option value="inactive">Inactive</option>
@@ -248,7 +348,7 @@ templ HostsListWithUser(hosts []*models.Host, user *models.User) {
 		</div>
 
 		<div id="hosts-table">
-			@HostsTable(hosts)
+			@HostsTableWithPagination(hosts, pagination, "")
 		</div>
 	}
 }
@@ -303,6 +403,57 @@ templ HostsTable(hosts []*models.Host) {
 		<div class="table-footer">
 			<p>Total: { fmt.Sprintf("%d", len(hosts)) } hosts</p>
 		</div>
+	</div>
+}
+
+// Hosts table with pagination (for HTMX updates)
+templ HostsTableWithPagination(hosts []*models.Host, pagination PaginationInfo, queryParams string) {
+	<div class="table-container">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>IP Address</th>
+					<th>CPU</th>
+					<th>Memory</th>
+					<th>Status</th>
+					<th>Datacenter</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				if len(hosts) == 0 {
+					<tr>
+						<td colspan="7" class="no-data">No hosts found</td>
+					</tr>
+				}
+				for _, host := range hosts {
+					<tr>
+						<td>
+							<strong>{ host.Name }</strong>
+							<br/>
+							<small class="text-muted">{ host.ID }</small>
+						</td>
+						<td>{ host.IPAddress }</td>
+						<td>{ fmt.Sprintf("%d cores", host.CPU) }</td>
+						<td>{ fmt.Sprintf("%.1f GB", float64(host.Memory) / 1024 / 1024 / 1024) }</td>
+						<td>
+							<span class={ fmt.Sprintf("badge badge-%s", host.Status) }>
+								{ host.Status }
+							</span>
+						</td>
+						<td>{ host.Datacenter }</td>
+						<td>
+							<div class="action-buttons">
+								<a href={ templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)) } class="btn-icon" title="View Details">👁️</a>
+								<a href={ templ.URL(fmt.Sprintf("/web/containers?host=%s", host.ID)) } class="btn-icon" title="View Containers">📦</a>
+							</div>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+		@Pagination(pagination, "/web/hosts", queryParams)
 	</div>
 }
 
@@ -637,7 +788,7 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 							} else if (data.type === 'container') {
 								info += `\\nImage: ${data.image || 'N/A'}`;
 							}
-							alert(info);
+							showNodeInfoModal(data);
 						});
 					})
 					.catch(error => {
@@ -883,17 +1034,11 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 					}
 				});
 
-				// Re-add tooltips
+				// Re-add node click handlers for modal
 				cy.on('tap', 'node', function(evt) {
 					const node = evt.target;
 					const data = node.data();
-					let info = `Type: ${data.type}\\nID: ${data.id}\\nStatus: ${data.status || 'N/A'}`;
-					if (data.type === 'host') {
-						info += `\\nIP: ${data.ip || 'N/A'}\\nCPU: ${data.cpu || 'N/A'}\\nMemory: ${data.memory ? (data.memory / 1024 / 1024 / 1024).toFixed(1) + ' GB' : 'N/A'}`;
-					} else if (data.type === 'container') {
-						info += `\\nImage: ${data.image || 'N/A'}`;
-					}
-					alert(info);
+					showNodeInfoModal(data);
 				});
 			}
 
@@ -1217,41 +1362,197 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 				const hosts = cy.nodes('[type="host"]').length;
 				const containers = cy.nodes('[type="container"]').length;
 				const edges = cy.edges().length;
+				const totalNodes = hosts + containers;
 
-				document.getElementById('node-count').textContent = hosts + containers;
-				document.getElementById('edge-count').textContent = edges;
+				const nodeCountEl = document.getElementById('stat-nodes');
+				const hostCountEl = document.getElementById('stat-hosts');
+				const containerCountEl = document.getElementById('stat-containers');
+				const edgeCountEl = document.getElementById('stat-edges');
+
+				if (nodeCountEl) nodeCountEl.textContent = totalNodes;
+				if (hostCountEl) hostCountEl.textContent = hosts;
+				if (containerCountEl) containerCountEl.textContent = containers;
+				if (edgeCountEl) edgeCountEl.textContent = edges;
 			}
+
+			// Activity tracking system (replaces individual notifications)
+			const activityLog = {
+				items: [],
+				maxItems: 100,
+				counters: {},
+				lastUpdate: Date.now(),
+				batchTimeout: null,
+
+				add: function(message, type = 'info') {
+					// Update counter for batch aggregation
+					const key = `${type}:${message}`;
+					if (!this.counters[key]) {
+						this.counters[key] = { count: 0, type: type, message: message, firstSeen: Date.now() };
+					}
+					this.counters[key].count++;
+					this.counters[key].lastSeen = Date.now();
+
+					// Schedule batch update
+					clearTimeout(this.batchTimeout);
+					this.batchTimeout = setTimeout(() => this.flushBatch(), 2000);
+				},
+
+				flushBatch: function() {
+					// Convert counters to log items
+					for (const key in this.counters) {
+						const counter = this.counters[key];
+						const displayMessage = counter.count > 1
+							? `${counter.message} (${counter.count}x)`
+							: counter.message;
+
+						this.items.unshift({
+							message: displayMessage,
+							type: counter.type,
+							timestamp: counter.lastSeen,
+							count: counter.count
+						});
+					}
+
+					// Clear counters
+					this.counters = {};
+
+					// Keep only last maxItems
+					if (this.items.length > this.maxItems) {
+						this.items = this.items.slice(0, this.maxItems);
+					}
+
+					this.render();
+					this.showBadge();
+				},
+
+				render: function() {
+					const container = document.getElementById('activityList');
+					if (!container) return;
+
+					const html = this.items.map(item => {
+						const time = new Date(item.timestamp).toLocaleTimeString();
+						const icon = {
+							success: '✓',
+							info: 'ℹ',
+							warning: '⚠',
+							error: '✗'
+						}[item.type] || 'ℹ';
+
+						return `
+							<div class="activity-item activity-${item.type}">
+								<span class="activity-icon">${icon}</span>
+								<span class="activity-message">${item.message}</span>
+								<span class="activity-time">${time}</span>
+							</div>
+						`;
+					}).join('');
+
+					container.innerHTML = html || '<div class="activity-empty">No recent activity</div>';
+				},
+
+				showBadge: function() {
+					const badge = document.getElementById('activityBadge');
+					const totalCount = this.items.reduce((sum, item) => sum + (item.count || 1), 0);
+
+					if (totalCount > 0) {
+						badge.textContent = totalCount > 99 ? '99+' : totalCount;
+						badge.style.display = 'flex';
+					}
+				},
+
+				clearBadge: function() {
+					const badge = document.getElementById('activityBadge');
+					badge.style.display = 'none';
+				}
+			};
 
 			function showNotification(message, type = 'info') {
-				const colors = {
-					success: '#10b981',
-					info: '#3b82f6',
-					warning: '#f59e0b',
-					error: '#ef4444'
-				};
-
-				const notification = document.createElement('div');
-				notification.style.cssText = `
-					position: fixed;
-					bottom: 20px;
-					right: 20px;
-					background: ${colors[type]};
-					color: white;
-					padding: 12px 20px;
-					border-radius: 4px;
-					font-size: 14px;
-					z-index: 1000;
-					box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-					animation: slideIn 0.3s ease-out;
-				`;
-				notification.textContent = message;
-				document.body.appendChild(notification);
-
-				setTimeout(() => {
-					notification.style.animation = 'slideOut 0.3s ease-in';
-					setTimeout(() => notification.remove(), 300);
-				}, 3000);
+				activityLog.add(message, type);
 			}
+
+			// Activity panel toggle functions
+			window.toggleActivityPanel = function() {
+				const panel = document.getElementById('activityPanel');
+				const isOpen = panel.classList.contains('open');
+
+				if (isOpen) {
+					panel.classList.remove('open');
+				} else {
+					panel.classList.add('open');
+					activityLog.clearBadge();
+					activityLog.render();
+				}
+			};
+
+			window.clearActivityLog = function() {
+				activityLog.items = [];
+				activityLog.counters = [];
+				activityLog.render();
+				activityLog.clearBadge();
+			};
+
+			// Node info modal functions (exposed globally for onclick handlers)
+			window.showNodeInfoModal = function(data) {
+				const modal = document.getElementById('nodeInfoModal');
+				const title = document.getElementById('nodeInfoTitle');
+				const typeEl = document.getElementById('nodeInfoType');
+				const content = document.getElementById('nodeInfoContent');
+
+				// Set title based on type
+				const icon = data.type === 'host' ? '🖥️' : '📦';
+				title.textContent = icon + ' ' + (data.label || data.id);
+
+				// Set type badge
+				typeEl.textContent = data.type.toUpperCase();
+				typeEl.className = 'node-info-type ' + (data.type === 'host' ? 'type-host' : 'type-container');
+
+				// Build content based on type
+				let html = '';
+				html += '<div class="node-info-row"><span class="node-info-label">ID:</span><span class="node-info-value">' + (data.id || 'N/A') + '</span></div>';
+				html += '<div class="node-info-row"><span class="node-info-label">Status:</span><span class="node-info-value"><span class="badge badge-' + (data.status || 'unknown') + '">' + (data.status || 'N/A').toUpperCase() + '</span></span></div>';
+
+				if (data.type === 'host') {
+					html += '<div class="node-info-row"><span class="node-info-label">IP Address:</span><span class="node-info-value">' + (data.ip || 'N/A') + '</span></div>';
+					html += '<div class="node-info-row"><span class="node-info-label">CPU:</span><span class="node-info-value">' + (data.cpu || 'N/A') + '</span></div>';
+					if (data.memory) {
+						const memoryGB = (data.memory / 1024 / 1024 / 1024).toFixed(1);
+						html += '<div class="node-info-row"><span class="node-info-label">Memory:</span><span class="node-info-value">' + memoryGB + ' GB</span></div>';
+					} else {
+						html += '<div class="node-info-row"><span class="node-info-label">Memory:</span><span class="node-info-value">N/A</span></div>';
+					}
+					if (data.datacenter) {
+						html += '<div class="node-info-row"><span class="node-info-label">Datacenter:</span><span class="node-info-value">' + data.datacenter + '</span></div>';
+					}
+				} else if (data.type === 'container') {
+					html += '<div class="node-info-row"><span class="node-info-label">Image:</span><span class="node-info-value">' + (data.image || 'N/A') + '</span></div>';
+					if (data.command) {
+						html += '<div class="node-info-row"><span class="node-info-label">Command:</span><span class="node-info-value" style="font-family: monospace; font-size: 0.85rem;">' + data.command + '</span></div>';
+					}
+				}
+
+				content.innerHTML = html;
+				modal.style.display = 'flex';
+			};
+
+			window.closeNodeInfoModal = function() {
+				const modal = document.getElementById('nodeInfoModal');
+				modal.style.display = 'none';
+			};
+
+			// Close modal when clicking outside (on the backdrop)
+			window.addEventListener('click', function(event) {
+				const modal = document.getElementById('nodeInfoModal');
+				if (event.target === modal) {
+					closeNodeInfoModal();
+				}
+			});
+
+			// Close modal on Escape key
+			document.addEventListener('keydown', function(event) {
+				if (event.key === 'Escape') {
+					closeNodeInfoModal();
+				}
+			});
 
 			// Initialize graph on page load
 			initGraph();
@@ -1260,6 +1561,43 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 			setTimeout(connectWebSocket, 1000);
 		})();
 		</script>
+
+		<!-- Activity Panel -->
+		<div id="activityPanel" class="activity-panel">
+			<div class="activity-header">
+				<h3>Activity Log</h3>
+				<div class="activity-header-actions">
+					<button type="button" class="btn-icon" onclick="clearActivityLog()" title="Clear all">✕</button>
+					<button type="button" class="btn-icon" onclick="toggleActivityPanel()" title="Close">▼</button>
+				</div>
+			</div>
+			<div class="activity-body">
+				<div id="activityList"></div>
+			</div>
+		</div>
+
+		<!-- Activity Toggle Button -->
+		<button id="activityToggle" class="activity-toggle" onclick="toggleActivityPanel()">
+			<span class="activity-icon">📊</span>
+			<span class="activity-label">Activity</span>
+			<span id="activityBadge" class="activity-badge">0</span>
+		</button>
+
+		<!-- Node Info Modal -->
+		<div id="nodeInfoModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3 id="nodeInfoTitle">Node Information</h3>
+					<span class="node-info-type" id="nodeInfoType">NODE</span>
+				</div>
+				<div class="modal-body">
+					<div id="nodeInfoContent"></div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" onclick="closeNodeInfoModal()">Close</button>
+				</div>
+			</div>
+		</div>
 	}
 }
 
@@ -1627,9 +1965,14 @@ templ UsersList(users []*models.User, currentUser *models.User) {
 								<a href={ templ.URL(fmt.Sprintf("/web/users/%s", user.ID)) } class="btn-icon" title="View Details">👁️</a>
 								if user.ID != currentUser.ID {
 									<a href={ templ.URL(fmt.Sprintf("/web/users/%s/edit", user.ID)) } class="btn-icon" title="Edit User">✏️</a>
-									<form method="POST" action={ templ.URL(fmt.Sprintf("/web/users/%s/delete", user.ID)) } style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
-										<button type="submit" class="btn-icon" title="Delete User">🗑️</button>
-									</form>
+									<button
+										type="button"
+										class="btn-icon"
+										title="Delete User"
+										onclick={ templ.ComponentScript{Call: fmt.Sprintf("showDeleteModal('%s', '%s')", user.ID, user.Username)} }
+									>
+										🗑️
+									</button>
 								}
 							</td>
 						</tr>
@@ -1637,6 +1980,57 @@ templ UsersList(users []*models.User, currentUser *models.User) {
 				</tbody>
 			</table>
 		</div>
+
+		<!-- Delete User Confirmation Modal -->
+		<div id="deleteModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3>⚠️ Confirm Deletion</h3>
+				</div>
+				<div class="modal-body">
+					<p>Are you sure you want to delete user <strong id="deleteUsername"></strong>?</p>
+					<p class="text-muted">This action cannot be undone.</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+					<form id="deleteForm" method="POST" style="display: inline;">
+						<button type="submit" class="btn btn-danger">Delete User</button>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			function showDeleteModal(userId, username) {
+				const modal = document.getElementById('deleteModal');
+				const usernameEl = document.getElementById('deleteUsername');
+				const form = document.getElementById('deleteForm');
+
+				usernameEl.textContent = username;
+				form.action = '/web/users/' + userId + '/delete';
+				modal.style.display = 'flex';
+			}
+
+			function closeDeleteModal() {
+				const modal = document.getElementById('deleteModal');
+				modal.style.display = 'none';
+			}
+
+			// Close modal when clicking outside of it
+			window.onclick = function(event) {
+				const modal = document.getElementById('deleteModal');
+				if (event.target == modal) {
+					closeDeleteModal();
+				}
+			}
+
+			// Close modal on Escape key
+			document.addEventListener('keydown', function(event) {
+				if (event.key === 'Escape') {
+					closeDeleteModal();
+				}
+			});
+		</script>
 	}
 }
 

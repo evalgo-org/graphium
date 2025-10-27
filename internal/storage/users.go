@@ -20,8 +20,15 @@ func (s *Storage) SaveUser(user *models.User) error {
 		user.Type = "Person"
 	}
 
-	_, err := s.service.SaveGenericDocument(user)
-	return err
+	resp, err := s.service.SaveGenericDocument(user)
+	if err != nil {
+		return err
+	}
+
+	// Update the user struct with the ID and Rev from CouchDB
+	user.ID = resp.ID
+	user.Rev = resp.Rev
+	return nil
 }
 
 // GetUser retrieves a user by ID

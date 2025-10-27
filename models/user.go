@@ -28,7 +28,7 @@ type User struct {
 	Type string `json:"@type,omitempty"`
 
 	// ID is the unique user identifier (maps to CouchDB _id)
-	ID string `json:"@id" json:"_id,omitempty"`
+	ID string `json:"_id,omitempty"`
 
 	// Rev is the CouchDB document revision
 	Rev string `json:"_rev,omitempty"`
@@ -101,7 +101,7 @@ type RefreshToken struct {
 	Type string `json:"@type,omitempty"`
 
 	// ID is the unique token identifier (maps to CouchDB _id)
-	ID string `json:"@id" json:"_id,omitempty"`
+	ID string `json:"_id,omitempty"`
 
 	// Rev is the CouchDB document revision
 	Rev string `json:"_rev,omitempty"`
@@ -139,7 +139,7 @@ type AuditLog struct {
 	Type string `json:"@type,omitempty"`
 
 	// ID is the unique log entry identifier (maps to CouchDB _id)
-	ID string `json:"@id" json:"_id,omitempty"`
+	ID string `json:"_id,omitempty"`
 
 	// Rev is the CouchDB document revision
 	Rev string `json:"_rev,omitempty"`

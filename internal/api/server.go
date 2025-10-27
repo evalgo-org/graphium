@@ -132,8 +132,7 @@ func (s *Server) setupRoutes() {
 	containers.Use(ValidateQueryParams) // Validate query parameters for list operations
 	containers.GET("", s.listContainers, s.authMiddle.RequireRead)
 	containers.GET("/:id", s.getContainer, ValidateIDFormat, s.authMiddle.RequireRead)
-	containers.GET("/:id/logs", s.getContainerLogs, ValidateIDFormat, s.authMiddle.RequireRead)
-	containers.GET("/:id/logs/download", s.downloadContainerLogs, ValidateIDFormat, s.authMiddle.RequireRead)
+	// Note: logs endpoints moved after webHandler creation (see below)
 	containers.POST("", s.createContainer, s.authMiddle.RequireAgentOrWrite)
 	containers.PUT("/:id", s.updateContainer, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
 	containers.DELETE("/:id", s.deleteContainer, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
@@ -194,6 +193,10 @@ func (s *Server) setupRoutes() {
 
 	// Web UI routes
 	webHandler := web.NewHandler(s.storage, s.config)
+
+	// Container logs routes (support web session auth for web UI compatibility)
+	v1.GET("/containers/:id/logs", s.getContainerLogs, ValidateIDFormat, webHandler.WebAuthMiddleware)
+	v1.GET("/containers/:id/logs/download", s.downloadContainerLogs, ValidateIDFormat, webHandler.WebAuthMiddleware)
 
 	// Graph visualization routes (support both JWT and session auth for web UI compatibility)
 	graph := v1.Group("/graph")
