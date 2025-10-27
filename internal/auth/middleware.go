@@ -7,10 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	"evalgo.org/graphium/internal/config"
-	"evalgo.org/graphium/models"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+
+	"evalgo.org/graphium/internal/config"
+	"evalgo.org/graphium/models"
 )
 
 const (

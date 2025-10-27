@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"evalgo.org/graphium/models"
 	"eve.evalgo.org/db"
+
+	"evalgo.org/graphium/models"
 )
 
 // ChangeType represents the type of change that occurred.

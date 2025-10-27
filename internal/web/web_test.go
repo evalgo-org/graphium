@@ -5,11 +5,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
+
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/models"
-	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/assert"
 )
 
 // TestTemplateCompilation verifies that all templates compile correctly

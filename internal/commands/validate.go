@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"os"
 
-	"evalgo.org/graphium/internal/validation"
 	"github.com/spf13/cobra"
+
+	"evalgo.org/graphium/internal/validation"
 )
 
 var (
@@ -25,8 +26,8 @@ Examples:
   graphium validate container my-container.json
   graphium validate host my-host.json --local
   graphium validate container web-app.json`,
-	Args:  cobra.ExactArgs(2),
-	RunE:  runValidate,
+	Args: cobra.ExactArgs(2),
+	RunE: runValidate,
 }
 
 func init() {

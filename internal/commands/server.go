@@ -8,9 +8,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"evalgo.org/graphium/internal/api"
 	"evalgo.org/graphium/internal/storage"
-	"github.com/spf13/cobra"
 )
 
 var serverCmd = &cobra.Command{

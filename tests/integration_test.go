@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package tests
@@ -17,10 +18,10 @@ import (
 )
 
 const (
-	testAPIURL    = "http://localhost:8080"
-	testCouchDB   = "http://localhost:5984"
-	testDatabase  = "graphium_test"
-	testTimeout   = 30 * time.Second
+	testAPIURL   = "http://localhost:8080"
+	testCouchDB  = "http://localhost:5984"
+	testDatabase = "graphium_test"
+	testTimeout  = 30 * time.Second
 )
 
 // TestIntegration_FullWorkflow tests the complete workflow from container creation to querying

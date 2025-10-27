@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/labstack/echo/v4"
+
 	"evalgo.org/graphium/internal/auth"
 	"evalgo.org/graphium/models"
-	"github.com/labstack/echo/v4"
 )
 
 // UpdateUserRequest represents a user update request

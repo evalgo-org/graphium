@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+
 	_ "evalgo.org/graphium/internal/storage" // imported for Server.storage field
 	"evalgo.org/graphium/models"
-	"github.com/labstack/echo/v4"
 )
 
 // listContainers handles GET /api/v1/containers

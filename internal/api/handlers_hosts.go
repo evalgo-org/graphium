@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"evalgo.org/graphium/models"
 	"github.com/labstack/echo/v4"
+
+	"evalgo.org/graphium/models"
 )
 
 // listHosts handles GET /api/v1/hosts

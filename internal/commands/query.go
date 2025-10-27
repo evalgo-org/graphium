@@ -7,9 +7,10 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"evalgo.org/graphium/internal/storage"
 	"eve.evalgo.org/db"
 	"github.com/spf13/cobra"
+
+	"evalgo.org/graphium/internal/storage"
 )
 
 var (

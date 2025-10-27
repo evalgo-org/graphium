@@ -3,9 +3,10 @@ package web
 import (
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/internal/storage"
-	"github.com/labstack/echo/v4"
 )
 
 // Handler handles web UI requests.

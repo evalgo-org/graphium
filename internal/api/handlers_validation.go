@@ -4,8 +4,9 @@ import (
 	"io"
 	"net/http"
 
-	"evalgo.org/graphium/internal/validation"
 	"github.com/labstack/echo/v4"
+
+	"evalgo.org/graphium/internal/validation"
 )
 
 // validateContainer validates a container JSON-LD document
@@ -25,7 +26,7 @@ func (s *Server) validateContainer(c echo.Context) error {
 	result, err := validator.ValidateContainer(body)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error: "Validation error",
+			Error:   "Validation error",
 			Details: err.Error(),
 		})
 	}
@@ -55,7 +56,7 @@ func (s *Server) validateHost(c echo.Context) error {
 	result, err := validator.ValidateHost(body)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error: "Validation error",
+			Error:   "Validation error",
 			Details: err.Error(),
 		})
 	}
@@ -92,14 +93,14 @@ func (s *Server) validateGeneric(c echo.Context) error {
 		result, err = validator.ValidateHost(body)
 	default:
 		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: "Invalid entity type",
+			Error:   "Invalid entity type",
 			Details: "Type must be 'container' or 'host'",
 		})
 	}
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error: "Validation error",
+			Error:   "Validation error",
 			Details: err.Error(),
 		})
 	}

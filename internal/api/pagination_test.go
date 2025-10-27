@@ -4,8 +4,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"evalgo.org/graphium/models"
 	"github.com/labstack/echo/v4"
+
+	"evalgo.org/graphium/models"
 )
 
 func TestParsePagination(t *testing.T) {

@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"evalgo.org/graphium/models"
 	"eve.evalgo.org/db"
+
+	"evalgo.org/graphium/models"
 )
 
 // SaveUser saves a user to the database

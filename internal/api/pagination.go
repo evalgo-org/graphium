@@ -3,8 +3,9 @@ package api
 import (
 	"strconv"
 
-	"evalgo.org/graphium/models"
 	"github.com/labstack/echo/v4"
+
+	"evalgo.org/graphium/models"
 )
 
 // parsePagination parses limit and offset from query parameters.

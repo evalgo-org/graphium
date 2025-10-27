@@ -3,8 +3,9 @@ package api
 import (
 	"net/http"
 
-	"evalgo.org/graphium/models"
 	"github.com/labstack/echo/v4"
+
+	"evalgo.org/graphium/models"
 )
 
 // GraphNode represents a node in the visualization graph

@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"evalgo.org/graphium/models"
 	"eve.evalgo.org/db"
+
+	"evalgo.org/graphium/models"
 )
 
 // TraverseContainers traverses the container dependency graph starting from a given container.

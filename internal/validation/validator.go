@@ -33,9 +33,10 @@ import (
 	"fmt"
 	"strings"
 
-	"evalgo.org/graphium/models"
 	"github.com/go-playground/validator/v10"
 	"github.com/piprate/json-gold/ld"
+
+	"evalgo.org/graphium/models"
 )
 
 // Validator handles JSON-LD document validation for Graphium models.
@@ -227,7 +228,7 @@ func (v *Validator) validateContainerFields(container *models.Container) []Valid
 
 	// Validate @type
 	if container.Type != "" && container.Type != "SoftwareApplication" &&
-	   container.Type != "Container" {
+		container.Type != "Container" {
 		errors = append(errors, ValidationError{
 			Field:   "@type",
 			Message: "Type must be 'SoftwareApplication' or 'Container'",
@@ -237,20 +238,20 @@ func (v *Validator) validateContainerFields(container *models.Container) []Valid
 
 	// Validate status
 	validStatuses := map[string]bool{
-		"running":   true,
-		"stopped":   true,
-		"paused":    true,
+		"running":    true,
+		"stopped":    true,
+		"paused":     true,
 		"restarting": true,
-		"exited":    true,
-		"created":   true,
+		"exited":     true,
+		"created":    true,
 	}
 
 	if container.Status != "" && !validStatuses[container.Status] {
 		errors = append(errors, ValidationError{
-			Field:   "status",
+			Field: "status",
 			Message: fmt.Sprintf("Invalid status: must be one of: %s",
 				strings.Join([]string{"running", "stopped", "paused", "restarting", "exited", "created"}, ", ")),
-			Value:   container.Status,
+			Value: container.Status,
 		})
 	}
 
@@ -306,7 +307,7 @@ func (v *Validator) validateHostFields(host *models.Host) []ValidationError {
 
 	// Validate @type
 	if host.Type != "" && host.Type != "ComputerSystem" &&
-	   host.Type != "Server" && host.Type != "Host" {
+		host.Type != "Server" && host.Type != "Host" {
 		errors = append(errors, ValidationError{
 			Field:   "@type",
 			Message: "Type must be 'ComputerSystem', 'Server', or 'Host'",
@@ -316,18 +317,18 @@ func (v *Validator) validateHostFields(host *models.Host) []ValidationError {
 
 	// Validate status
 	validStatuses := map[string]bool{
-		"active":       true,
-		"inactive":     true,
-		"maintenance":  true,
-		"unreachable":  true,
+		"active":      true,
+		"inactive":    true,
+		"maintenance": true,
+		"unreachable": true,
 	}
 
 	if host.Status != "" && !validStatuses[host.Status] {
 		errors = append(errors, ValidationError{
-			Field:   "status",
+			Field: "status",
 			Message: fmt.Sprintf("Invalid status: must be one of: %s",
 				strings.Join([]string{"active", "inactive", "maintenance", "unreachable"}, ", ")),
-			Value:   host.Status,
+			Value: host.Status,
 		})
 	}
 

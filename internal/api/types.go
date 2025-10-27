@@ -1,8 +1,9 @@
 package api
 
 import (
-	"evalgo.org/graphium/models"
 	"eve.evalgo.org/db"
+
+	"evalgo.org/graphium/models"
 )
 
 // ErrorResponse represents an error response.
@@ -31,10 +32,10 @@ type HostsResponse struct {
 
 // PaginatedContainersResponse represents a paginated list of containers.
 type PaginatedContainersResponse struct {
-	Count      int                 `json:"count"`      // Number of items in current page
-	Total      int                 `json:"total"`      // Total number of items
-	Limit      int                 `json:"limit"`      // Items per page
-	Offset     int                 `json:"offset"`     // Current offset
+	Count      int                 `json:"count"`  // Number of items in current page
+	Total      int                 `json:"total"`  // Total number of items
+	Limit      int                 `json:"limit"`  // Items per page
+	Offset     int                 `json:"offset"` // Current offset
 	Containers []*models.Container `json:"containers"`
 }
 

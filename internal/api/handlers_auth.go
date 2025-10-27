@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"time"
 
-	"evalgo.org/graphium/internal/auth"
-	"evalgo.org/graphium/models"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+
+	"evalgo.org/graphium/internal/auth"
+	"evalgo.org/graphium/models"
 )
 
 // LoginRequest represents a login request
@@ -33,11 +34,11 @@ type RefreshRequest struct {
 
 // LoginResponse represents a successful login response
 type LoginResponse struct {
-	User         *UserResponse    `json:"user"`
-	AccessToken  string           `json:"access_token"`
-	RefreshToken string           `json:"refresh_token"`
-	ExpiresAt    time.Time        `json:"expires_at"`
-	TokenType    string           `json:"token_type"`
+	User         *UserResponse `json:"user"`
+	AccessToken  string        `json:"access_token"`
+	RefreshToken string        `json:"refresh_token"`
+	ExpiresAt    time.Time     `json:"expires_at"`
+	TokenType    string        `json:"token_type"`
 }
 
 // UserResponse represents user data returned to client (without sensitive fields)

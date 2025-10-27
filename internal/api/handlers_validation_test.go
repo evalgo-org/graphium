@@ -7,12 +7,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"evalgo.org/graphium/internal/config"
-	_ "evalgo.org/graphium/internal/storage"
-	"evalgo.org/graphium/internal/validation"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"evalgo.org/graphium/internal/config"
+	_ "evalgo.org/graphium/internal/storage"
+	"evalgo.org/graphium/internal/validation"
 )
 
 func setupTestServer(t *testing.T) (*Server, *echo.Echo) {

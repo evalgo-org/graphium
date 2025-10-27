@@ -7,9 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"eve.evalgo.org/db"
+
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/models"
-	"eve.evalgo.org/db"
 )
 
 // Storage provides the main storage interface for Graphium.

@@ -9,15 +9,16 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
+	"golang.org/x/time/rate"
+
 	_ "evalgo.org/graphium/docs" // Import generated docs
 	"evalgo.org/graphium/internal/auth"
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/internal/web"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	echoSwagger "github.com/swaggo/echo-swagger"
-	"golang.org/x/time/rate"
 )
 
 // Server represents the Graphium API server.
@@ -191,7 +192,7 @@ func (s *Server) setupRoutes() {
 
 	// WebSocket routes
 	ws := v1.Group("/ws")
-	ws.GET("/graph", s.HandleWebSocket)  // WebSocket connection for graph updates
+	ws.GET("/graph", s.HandleWebSocket)   // WebSocket connection for graph updates
 	ws.GET("/stats", s.GetWebSocketStats) // WebSocket stats
 
 	// Graph visualization routes

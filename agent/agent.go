@@ -12,12 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"evalgo.org/graphium/models"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+
+	"evalgo.org/graphium/models"
 )
 
 // Agent manages Docker container discovery and synchronization with the API server.

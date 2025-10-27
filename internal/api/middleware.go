@@ -45,8 +45,8 @@ func ValidateAcceptHeader(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// Check if Accept includes application/json or */*
 		if !strings.Contains(accept, "application/json") &&
-		   !strings.Contains(accept, "*/*") &&
-		   !strings.Contains(accept, "application/*") {
+			!strings.Contains(accept, "*/*") &&
+			!strings.Contains(accept, "application/*") {
 			return BadRequestError(
 				"Invalid Accept header",
 				"API only returns JSON. Accept header must include 'application/json' or '*/*'. Got: "+accept,

@@ -9,10 +9,11 @@ import (
 	"fmt"
 	"time"
 
-	"evalgo.org/graphium/internal/config"
-	"evalgo.org/graphium/models"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+
+	"evalgo.org/graphium/internal/config"
+	"evalgo.org/graphium/models"
 )
 
 var (
