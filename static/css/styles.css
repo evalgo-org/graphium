@@ -1,19 +1,37 @@
 /* Graphium Web UI Styles */
 
+/* Dark Zen Theme (Default) */
 :root {
-  --primary-color: #6366f1;
-  --secondary-color: #8b5cf6;
-  --success-color: #10b981;
-  --warning-color: #f59e0b;
-  --danger-color: #ef4444;
-  --info-color: #3b82f6;
-  --bg-color: #0f172a;
-  --surface-color: #1e293b;
-  --surface-light: #334155;
-  --text-color: #f1f5f9;
-  --text-muted: #94a3b8;
-  --border-color: #334155;
-  --hover-color: #475569;
+  --primary-color: #5F9EA0;        /* Muted Teal - flow and connectivity */
+  --secondary-color: #B19CD9;      /* Soft Lavender - gentle, modern touch */
+  --success-color: #9CAF88;        /* Soft Sage - harmony between systems */
+  --warning-color: #D4A574;        /* Warm Earth Tone */
+  --danger-color: #C78283;         /* Muted Coral */
+  --info-color: #5F9EA0;           /* Muted Teal */
+  --bg-color: #2F4F4F;             /* Deep Forest Green - growth, stability */
+  --surface-color: #36454F;        /* Charcoal Gray - technical sophistication */
+  --surface-light: #4A5A5F;        /* Lighter Charcoal */
+  --text-color: #F7F3E9;           /* Warm Cream - clean, spacious */
+  --text-muted: #B8B5A8;           /* Muted Cream */
+  --border-color: #4A5A5F;         /* Lighter Charcoal */
+  --hover-color: #556B70;          /* Hover state */
+}
+
+/* Light Zen Theme */
+[data-theme="light"] {
+  --primary-color: #4A8A8C;        /* Deeper Teal for better contrast */
+  --secondary-color: #9F7FC9;      /* Deeper Lavender */
+  --success-color: #7A9B6E;        /* Deeper Sage */
+  --warning-color: #C49560;        /* Deeper Earth Tone */
+  --danger-color: #B86B6C;         /* Deeper Coral */
+  --info-color: #4A8A8C;           /* Deeper Teal */
+  --bg-color: #F7F3E9;             /* Warm Cream - main background */
+  --surface-color: #FFFFFF;        /* Pure white surfaces */
+  --surface-light: #E8E4D8;        /* Light warm gray */
+  --text-color: #2F4F4F;           /* Deep Forest Green - main text */
+  --text-muted: #6B7B7B;           /* Muted gray-green */
+  --border-color: #D4CFC0;         /* Warm border */
+  --hover-color: #E0DCD0;          /* Light hover */
 }
 
 * {
@@ -222,7 +240,7 @@ body {
 }
 
 .btn-primary:hover {
-  background-color: #4f46e5;
+  background-color: #4A8A8C;
 }
 
 .btn-secondary {
@@ -240,7 +258,7 @@ body {
 }
 
 .btn-info:hover {
-  background-color: #2563eb;
+  background-color: #4A8A8C;
 }
 
 .btn-icon {
@@ -777,5 +795,512 @@ body {
 
   .detail-section {
     padding: 1rem;
+  }
+}
+
+/* Login Page */
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a2e 100%);
+  padding: 1rem;
+}
+
+.login-box {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: var(--primary-color);
+}
+
+.login-header p {
+  margin: 0.5rem 0 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"] {
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  color: var(--text-color);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 149, 255, 0.1);
+}
+
+.form-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* Alert Messages */
+.alert {
+  padding: 0.875rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.alert-error {
+  background-color: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  color: #fca5a5;
+}
+
+.alert-success {
+  background-color: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #86efac;
+}
+
+/* Navigation User Section */
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  padding: 0.5rem 0.75rem;
+  background-color: var(--surface-color);
+  border-radius: 0.375rem;
+}
+
+/* User Management Pages */
+.roles-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.badge {
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-danger {
+  background-color: rgba(220, 38, 38, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.badge-success {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge-info {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-secondary {
+  background-color: rgba(107, 114, 128, 0.2);
+  color: #d1d5db;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* Form Sections */
+.form-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.form-section {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-section h3 {
+  margin: 0 0 1.25rem 0;
+  font-size: 1.125rem;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.75rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.checkbox-label:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.checkbox-label input[type="checkbox"] {
+  margin-top: 0.125rem;
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.checkbox-label span {
+  flex: 1;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* API Keys */
+.api-keys-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.api-key-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+}
+
+.api-key-item code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  color: var(--primary-color);
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.btn-danger {
+  background-color: rgba(220, 38, 38, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.btn-danger:hover {
+  background-color: rgba(220, 38, 38, 0.3);
+}
+
+/* Text Utilities */
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* Password Form */
+.password-form {
+  max-width: 500px;
+}
+
+/* Responsive Updates */
+@media (max-width: 768px) {
+  .login-box {
+    padding: 2rem;
+  }
+
+  .nav-user {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+
+  .user-name {
+    display: none;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+  }
+}
+
+/* Topology View */
+.topology-view {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.datacenter-section {
+  background-color: var(--surface-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.datacenter-title {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.topology-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.host-card {
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.25rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.host-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(95, 158, 160, 0.3);
+  border-color: var(--primary-color);
+}
+
+.host-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.host-header h4 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.host-header h4 a {
+  color: var(--text-color);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.host-header h4 a:hover {
+  color: var(--primary-color);
+}
+
+.host-details {
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.host-details p {
+  margin: 0.5rem 0;
+  color: var(--text-muted);
+}
+
+.host-details strong {
+  color: var(--text-color);
+  margin-right: 0.5rem;
+}
+
+.containers-section {
+  margin-top: 1rem;
+}
+
+.containers-section h5 {
+  font-size: 0.95rem;
+  color: var(--info-color);
+  margin-bottom: 0.75rem;
+}
+
+.container-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.container-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  margin: 0.25rem 0;
+  background-color: var(--surface-light);
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.container-item:hover {
+  background-color: var(--hover-color);
+}
+
+.container-item a {
+  color: var(--text-color);
+  text-decoration: none;
+  flex: 1;
+  transition: color 0.2s;
+}
+
+.container-item a:hover {
+  color: var(--primary-color);
+}
+
+.container-name {
+  font-size: 0.85rem;
+  font-family: 'Courier New', monospace;
+}
+
+.badge-sm {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+}
+
+.no-data {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.85rem;
+  margin: 0.5rem 0;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .topology-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--surface-color);
+  border: 2px solid var(--primary-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1) rotate(15deg);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  background-color: var(--primary-color);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Icon states */
+.theme-toggle .sun-icon {
+  display: none;
+}
+
+.theme-toggle .moon-icon {
+  display: block;
+}
+
+[data-theme="light"] .theme-toggle .sun-icon {
+  display: block;
+}
+
+[data-theme="light"] .theme-toggle .moon-icon {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .theme-toggle {
+    bottom: 1rem;
+    right: 1rem;
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
   }
 }

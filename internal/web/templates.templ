@@ -7,8 +7,13 @@ import (
 	"evalgo.org/graphium/internal/config"
 )
 
-// Base layout template
+// Base layout template (for backward compatibility - no user param)
 templ Layout(title string) {
+	@LayoutWithUser(title, nil)
+}
+
+// Base layout template with optional user parameter
+templ LayoutWithUser(title string, user *models.User) {
 	<!DOCTYPE html>
 	<html lang="en">
 	<head>
@@ -32,6 +37,18 @@ templ Layout(title string) {
 				<li><a href="/web/graph" class="nav-link">Graph</a></li>
 				<li><a href="/web/topology" class="nav-link">Topology</a></li>
 			</ul>
+			<div class="nav-user">
+				if user != nil {
+					<span class="user-name">👤 { user.Username }</span>
+					if user.IsAdmin() {
+						<a href="/web/users" class="nav-link">Users</a>
+					}
+					<a href="/web/profile" class="nav-link">Profile</a>
+					<a href="/web/auth/logout" class="nav-link">Logout</a>
+				} else {
+					<a href="/web/auth/login" class="nav-link">Login</a>
+				}
+			</div>
 		</nav>
 		<main class="container">
 			{ children... }
@@ -39,13 +56,43 @@ templ Layout(title string) {
 		<footer class="footer">
 			<p>Graphium - Semantic Container Orchestration</p>
 		</footer>
+		<!-- Theme Toggle Button -->
+		<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+			<span class="sun-icon">☀️</span>
+			<span class="moon-icon">🌙</span>
+		</button>
+		<script>
+			// Theme toggle functionality
+			(function() {
+				const themeToggle = document.getElementById('themeToggle');
+				const htmlElement = document.documentElement;
+
+				// Check for saved theme preference or default to 'dark'
+				const currentTheme = localStorage.getItem('theme') || 'dark';
+				if (currentTheme === 'light') {
+					htmlElement.setAttribute('data-theme', 'light');
+				}
+
+				// Toggle theme on button click
+				themeToggle.addEventListener('click', function() {
+					const theme = htmlElement.getAttribute('data-theme');
+					if (theme === 'light') {
+						htmlElement.removeAttribute('data-theme');
+						localStorage.setItem('theme', 'dark');
+					} else {
+						htmlElement.setAttribute('data-theme', 'light');
+						localStorage.setItem('theme', 'light');
+					}
+				});
+			})();
+		</script>
 	</body>
 	</html>
 }
 
-// Dashboard template
-templ Dashboard(stats *storage.Statistics) {
-	@Layout("Dashboard") {
+// Dashboard template (with user)
+templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
+	@LayoutWithUser("Dashboard", user) {
 		<div class="dashboard">
 			<h2>Infrastructure Overview</h2>
 
@@ -112,9 +159,9 @@ templ Dashboard(stats *storage.Statistics) {
 	}
 }
 
-// Containers list template
-templ ContainersList(containers []*models.Container) {
-	@Layout("Containers") {
+// Containers list template (with user)
+templ ContainersListWithUser(containers []*models.Container, user *models.User) {
+	@LayoutWithUser("Containers", user) {
 		<div class="page-header">
 			<h2>Containers</h2>
 			<div class="filters" hx-get="/web/containers/table" hx-target="#containers-table" hx-trigger="change">
@@ -172,7 +219,7 @@ templ ContainersTable(containers []*models.Container) {
 						<td>
 							<div class="action-buttons">
 								<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)) } class="btn-icon" title="View Details">👁️</a>
-								<button class="btn-icon" title="View Logs" disabled style="opacity: 0.5; cursor: not-allowed;">📄</button>
+								<a href={ templ.URL(fmt.Sprintf("/web/containers/%s/logs", container.ID)) } class="btn-icon" title="View Logs">📄</a>
 							</div>
 						</td>
 					</tr>
@@ -185,9 +232,9 @@ templ ContainersTable(containers []*models.Container) {
 	</div>
 }
 
-// Hosts list template
-templ HostsList(hosts []*models.Host) {
-	@Layout("Hosts") {
+// Hosts list template (with user)
+templ HostsListWithUser(hosts []*models.Host, user *models.User) {
+	@LayoutWithUser("Hosts", user) {
 		<div class="page-header">
 			<h2>Hosts</h2>
 			<div class="filters">
@@ -259,74 +306,112 @@ templ HostsTable(hosts []*models.Host) {
 	</div>
 }
 
-// Topology view template
-templ TopologyView(topology *storage.DatacenterTopology, datacenter string) {
-	@Layout("Topology") {
+// Topology view template (with user)
+templ TopologyViewWithUser(topology *storage.DatacenterTopology, topologies map[string]*storage.DatacenterTopology, datacenters map[string]bool, datacenter string, user *models.User) {
+	@LayoutWithUser("Topology", user) {
 		<div class="page-header">
 			<h2>Infrastructure Topology</h2>
 			<div class="filters">
-				<select name="datacenter" hx-get="/web/topology" hx-target="main .container">
-					<option value="all">All Datacenters</option>
-					<option value="us-east">US East</option>
-					<option value="us-west">US West</option>
-					<option value="eu-west">EU West</option>
+				<select name="datacenter" hx-get="/web/topology" hx-target="main .container" hx-include="[name='datacenter']">
+					<option value="all" selected?={ datacenter == "all" }>All Datacenters</option>
+					for dc := range datacenters {
+						<option value={ dc } selected?={ datacenter == dc }>{ dc }</option>
+					}
 				</select>
 			</div>
 		</div>
 
 		if topology != nil {
+			<!-- Single Datacenter View -->
 			<div class="topology-view">
-				<div class="datacenter-info">
-					<h3>Datacenter: { topology.Datacenter }</h3>
-				</div>
-
-				<div class="topology-grid">
-					for hostID, hostTopo := range topology.Hosts {
-						<div class="host-card">
-							<div class="host-header">
-								<h4>🖥️ { hostTopo.Host.Name }</h4>
-								<span class={ fmt.Sprintf("badge badge-%s", hostTopo.Host.Status) }>
-									{ hostTopo.Host.Status }
-								</span>
-							</div>
-							<div class="host-details">
-								<p><strong>ID:</strong> { hostID }</p>
-								<p><strong>IP:</strong> { hostTopo.Host.IPAddress }</p>
-								<p><strong>CPU:</strong> { fmt.Sprintf("%d cores", hostTopo.Host.CPU) }</p>
-								<p><strong>Memory:</strong> { fmt.Sprintf("%.1f GB", float64(hostTopo.Host.Memory) / 1024 / 1024 / 1024) }</p>
-							</div>
-							<div class="containers-section">
-								<h5>Containers ({ fmt.Sprintf("%d", len(hostTopo.Containers)) })</h5>
-								if len(hostTopo.Containers) > 0 {
-									<ul class="container-list">
-										for _, container := range hostTopo.Containers {
-											<li class="container-item">
-												<span class="container-name">{ container.Name }</span>
-												<span class={ fmt.Sprintf("badge badge-%s badge-sm", container.Status) }>
-													{ container.Status }
-												</span>
-											</li>
+				<div class="datacenter-section">
+					<h3 class="datacenter-title">📍 { topology.Datacenter }</h3>
+					<div class="topology-grid">
+						for hostID, hostTopo := range topology.Hosts {
+							<div class="host-card">
+								<div class="host-header">
+									<h4>
+										<a href={ templ.URL(fmt.Sprintf("/web/hosts/%s", hostID)) }>🖥️ { hostTopo.Host.Name }</a>
+									</h4>
+									<span class={ fmt.Sprintf("badge badge-%s", hostTopo.Host.Status) }>
+										{ hostTopo.Host.Status }
+									</span>
+								</div>
+								<div class="host-details">
+									<p><strong>IP:</strong> { hostTopo.Host.IPAddress }</p>
+									<p><strong>CPU:</strong> { fmt.Sprintf("%d cores", hostTopo.Host.CPU) }</p>
+									<p><strong>Memory:</strong> { fmt.Sprintf("%.1f GB", float64(hostTopo.Host.Memory) / 1024 / 1024 / 1024) }</p>
+								</div>
+								<div class="containers-section">
+									<h5>
+										Containers:
+										if hostTopo.ContainerCount > 0 {
+											<a href={ templ.URL(fmt.Sprintf("/web/containers?host=%s", hostID)) }>
+												{ fmt.Sprintf("%d", hostTopo.ContainerCount) }
+											</a>
+										} else {
+											<span>0</span>
 										}
-									</ul>
-								} else {
-									<p class="no-data">No containers</p>
-								}
+									</h5>
+								</div>
 							</div>
-						</div>
-					}
+						}
+					</div>
 				</div>
+			</div>
+		} else if topologies != nil && len(topologies) > 0 {
+			<!-- All Datacenters View -->
+			<div class="topology-view">
+				for dcName, dcTopo := range topologies {
+					<div class="datacenter-section">
+						<h3 class="datacenter-title">📍 { dcName }</h3>
+						<div class="topology-grid">
+							for hostID, hostTopo := range dcTopo.Hosts {
+								<div class="host-card">
+									<div class="host-header">
+										<h4>
+											<a href={ templ.URL(fmt.Sprintf("/web/hosts/%s", hostID)) }>🖥️ { hostTopo.Host.Name }</a>
+										</h4>
+										<span class={ fmt.Sprintf("badge badge-%s", hostTopo.Host.Status) }>
+											{ hostTopo.Host.Status }
+										</span>
+									</div>
+									<div class="host-details">
+										<p><strong>IP:</strong> { hostTopo.Host.IPAddress }</p>
+										<p><strong>CPU:</strong> { fmt.Sprintf("%d cores", hostTopo.Host.CPU) }</p>
+										<p><strong>Memory:</strong> { fmt.Sprintf("%.1f GB", float64(hostTopo.Host.Memory) / 1024 / 1024 / 1024) }</p>
+									</div>
+									<div class="containers-section">
+										<h5>
+											Containers:
+											if hostTopo.ContainerCount > 0 {
+												<a href={ templ.URL(fmt.Sprintf("/web/containers?host=%s", hostID)) }>
+													{ fmt.Sprintf("%d", hostTopo.ContainerCount) }
+												</a>
+											} else {
+												<span>0</span>
+											}
+										</h5>
+									</div>
+								</div>
+							}
+						</div>
+					</div>
+				}
 			</div>
 		} else {
 			<div class="empty-state">
-				<p>Select a datacenter to view topology</p>
+				<div class="empty-icon">📊</div>
+				<h3>No Infrastructure Data</h3>
+				<p>No hosts or containers found. Start the agent to begin monitoring your infrastructure.</p>
 			</div>
 		}
 	}
 }
 
-// Graph visualization template
-templ GraphView(cfg *config.Config) {
-	@Layout("Graph Visualization") {
+// Graph visualization template (with user)
+templ GraphViewWithUser(cfg *config.Config, user *models.User) {
+	@LayoutWithUser("Graph Visualization", user) {
 		<div class="page-header">
 			<h2>Infrastructure Graph</h2>
 			<div class="filters">
@@ -1178,9 +1263,9 @@ templ GraphView(cfg *config.Config) {
 	}
 }
 
-// Container detail view template
-templ ContainerDetail(container *models.Container, host *models.Host) {
-	@Layout("Container Details") {
+// Container detail view template (with user)
+templ ContainerDetailWithUser(container *models.Container, host *models.Host, user *models.User) {
+	@LayoutWithUser("Container Details", user) {
 		<div class="page-header">
 			<div>
 				<a href="/web/containers" class="btn btn-secondary">← Back to Containers</a>
@@ -1318,9 +1403,9 @@ templ ContainerDetail(container *models.Container, host *models.Host) {
 	}
 }
 
-// Host detail view template
-templ HostDetail(host *models.Host, containers []*models.Container) {
-	@Layout("Host Details") {
+// Host detail view template (with user)
+templ HostDetailWithUser(host *models.Host, containers []*models.Container, user *models.User) {
+	@LayoutWithUser("Host Details", user) {
 		<div class="page-header">
 			<div>
 				<a href="/web/hosts" class="btn btn-secondary">← Back to Hosts</a>
@@ -1429,5 +1514,558 @@ templ HostDetail(host *models.Host, containers []*models.Container) {
 				</div>
 			</div>
 		</div>
+	}
+}
+
+// Login page template
+templ LoginPage(errorMsg string) {
+	<!DOCTYPE html>
+	<html lang="en">
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<title>Login - Graphium</title>
+		<link rel="stylesheet" href="/static/css/styles.css"/>
+	</head>
+	<body>
+		<div class="login-container">
+			<div class="login-box">
+				<div class="login-header">
+					<h1>🧬 Graphium</h1>
+					<p>Container Intelligence Platform</p>
+				</div>
+
+				if errorMsg != "" {
+					<div class="alert alert-error">
+						{ errorMsg }
+					</div>
+				}
+
+				<form method="POST" action="/web/auth/login" class="login-form">
+					<div class="form-group">
+						<label for="username">Username</label>
+						<input type="text" id="username" name="username" required autocomplete="username"/>
+					</div>
+
+					<div class="form-group">
+						<label for="password">Password</label>
+						<input type="password" id="password" name="password" required autocomplete="current-password"/>
+					</div>
+
+					<button type="submit" class="btn btn-primary btn-block">Login</button>
+				</form>
+			</div>
+		</div>
+	</body>
+	</html>
+}
+
+// User list page template for admin
+templ UsersList(users []*models.User, currentUser *models.User) {
+	@LayoutWithUser("User Management", currentUser) {
+		<div class="page-header">
+			<h2>User Management</h2>
+			<div class="header-actions">
+				<a href="/web/users/new" class="btn btn-primary">➕ Add User</a>
+			</div>
+		</div>
+
+		<div class="table-container">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Username</th>
+						<th>Email</th>
+						<th>Name</th>
+						<th>Roles</th>
+						<th>Status</th>
+						<th>Last Login</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					if len(users) == 0 {
+						<tr>
+							<td colspan="7" class="text-center text-muted">No users found</td>
+						</tr>
+					}
+					for _, user := range users {
+						<tr>
+							<td><strong>{ user.Username }</strong></td>
+							<td>{ user.Email }</td>
+							<td>{ user.Name }</td>
+							<td>
+								<div class="roles-list">
+									for _, role := range user.Roles {
+										if role == models.RoleAdmin {
+											<span class="badge badge-danger">{ string(role) }</span>
+										} else if role == models.RoleUser {
+											<span class="badge badge-success">{ string(role) }</span>
+										} else if role == models.RoleViewer {
+											<span class="badge badge-info">{ string(role) }</span>
+										} else {
+											<span class="badge badge-secondary">{ string(role) }</span>
+										}
+									}
+								</div>
+							</td>
+							<td>
+								if user.Enabled {
+									<span class="status-badge status-running">Active</span>
+								} else {
+									<span class="status-badge status-stopped">Disabled</span>
+								}
+							</td>
+							<td>
+								if user.LastLoginAt != nil {
+									<small>{ user.LastLoginAt.Format("2006-01-02 15:04") }</small>
+								} else {
+									<span class="text-muted">Never</span>
+								}
+							</td>
+							<td class="actions">
+								<a href={ templ.URL(fmt.Sprintf("/web/users/%s", user.ID)) } class="btn-icon" title="View Details">👁️</a>
+								if user.ID != currentUser.ID {
+									<a href={ templ.URL(fmt.Sprintf("/web/users/%s/edit", user.ID)) } class="btn-icon" title="Edit User">✏️</a>
+									<form method="POST" action={ templ.URL(fmt.Sprintf("/web/users/%s/delete", user.ID)) } style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
+										<button type="submit" class="btn-icon" title="Delete User">🗑️</button>
+									</form>
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+}
+
+// User detail page template
+templ UserDetail(user *models.User, currentUser *models.User, isAdmin bool) {
+	@LayoutWithUser("User Details", currentUser) {
+		<div class="page-header">
+			<div>
+				<a href="/web/users" class="btn btn-secondary">← Back to Users</a>
+				<h2>User Details</h2>
+			</div>
+			<div class="header-actions">
+				if user.ID == currentUser.ID || isAdmin {
+					<a href={ templ.URL(fmt.Sprintf("/web/users/%s/edit", user.ID)) } class="btn btn-primary">✏️ Edit</a>
+				}
+			</div>
+		</div>
+
+		<div class="detail-container">
+			<div class="detail-section">
+				<h3>Account Information</h3>
+				<div class="detail-grid">
+					<div class="detail-item">
+						<span class="detail-label">Username:</span>
+						<span class="detail-value"><strong>{ user.Username }</strong></span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Email:</span>
+						<span class="detail-value">{ user.Email }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Name:</span>
+						<span class="detail-value">{ user.Name }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Status:</span>
+						if user.Enabled {
+							<span class="status-badge status-running">Active</span>
+						} else {
+							<span class="status-badge status-stopped">Disabled</span>
+						}
+					</div>
+				</div>
+			</div>
+
+			<div class="detail-section">
+				<h3>Roles & Permissions</h3>
+				<div class="roles-list">
+					for _, role := range user.Roles {
+						if role == models.RoleAdmin {
+							<span class="badge badge-danger">{ string(role) }</span>
+						} else if role == models.RoleUser {
+							<span class="badge badge-success">{ string(role) }</span>
+						} else if role == models.RoleViewer {
+							<span class="badge badge-info">{ string(role) }</span>
+						} else {
+							<span class="badge badge-secondary">{ string(role) }</span>
+						}
+					}
+				</div>
+			</div>
+
+			<div class="detail-section">
+				<h3>Activity</h3>
+				<div class="detail-grid">
+					<div class="detail-item">
+						<span class="detail-label">Created:</span>
+						<span class="detail-value">{ user.CreatedAt.Format("2006-01-02 15:04:05") }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Last Updated:</span>
+						<span class="detail-value">{ user.UpdatedAt.Format("2006-01-02 15:04:05") }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Last Login:</span>
+						if user.LastLoginAt != nil {
+							<span class="detail-value">{ user.LastLoginAt.Format("2006-01-02 15:04:05") }</span>
+						} else {
+							<span class="detail-value text-muted">Never</span>
+						}
+					</div>
+				</div>
+			</div>
+
+			if user.ID == currentUser.ID {
+				<div class="detail-section">
+					<h3>API Keys</h3>
+					if len(user.APIKeys) > 0 {
+						<div class="api-keys-list">
+							for i, key := range user.APIKeys {
+								<div class="api-key-item">
+									<code>{ key[:8] }...{ key[len(key)-8:] }</code>
+									<form method="POST" action={ templ.URL(fmt.Sprintf("/web/users/%s/api-keys/%d/revoke", user.ID, i)) } style="display: inline;" onsubmit="return confirm('Are you sure you want to revoke this API key?');">
+										<button type="submit" class="btn btn-sm btn-danger">Revoke</button>
+									</form>
+								</div>
+							}
+						</div>
+					} else {
+						<p class="text-muted">No API keys generated</p>
+					}
+					<form method="POST" action={ templ.URL(fmt.Sprintf("/web/users/%s/api-keys/generate", user.ID)) }>
+						<button type="submit" class="btn btn-primary">🔑 Generate New API Key</button>
+					</form>
+				</div>
+			}
+
+			<div class="detail-section">
+				<h3>JSON-LD Metadata</h3>
+				<div class="detail-grid">
+					<div class="detail-item">
+						<span class="detail-label">Context:</span>
+						<span class="detail-value"><small>{ user.Context }</small></span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Type:</span>
+						<span class="detail-value">{ user.Type }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">ID:</span>
+						<span class="detail-value"><small>{ user.ID }</small></span>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// User create form template
+templ UserFormCreate(user *models.User, currentUser *models.User, errorMsg string) {
+	@LayoutWithUser("Create User", currentUser) {
+		@userFormContent(user, true, errorMsg)
+	}
+}
+
+// User edit form template
+templ UserFormEdit(user *models.User, currentUser *models.User, errorMsg string) {
+	@LayoutWithUser("Edit User", currentUser) {
+		@userFormContent(user, false, errorMsg)
+	}
+}
+
+// User form content (shared between create and edit)
+templ userFormContent(user *models.User, isNew bool, errorMsg string) {
+		<div class="page-header">
+			<div>
+				<a href="/web/users" class="btn btn-secondary">← Back to Users</a>
+				<h2>
+					if isNew {
+						Create New User
+					} else {
+						Edit User
+					}
+				</h2>
+			</div>
+		</div>
+
+		if errorMsg != "" {
+			<div class="alert alert-error">
+				{ errorMsg }
+			</div>
+		}
+
+		<div class="form-container">
+			if isNew {
+				<form method="POST" action="/web/users/create" class="user-form">
+					@userFormFields(user, isNew)
+				</form>
+			} else {
+				<form method="POST" action={ templ.URL(fmt.Sprintf("/web/users/%s/update", user.ID)) } class="user-form">
+					@userFormFields(user, isNew)
+				</form>
+			}
+		</div>
+}
+
+// User form fields (shared between create and edit forms)
+templ userFormFields(user *models.User, isNew bool) {
+				<div class="form-section">
+					<h3>Account Information</h3>
+
+					<div class="form-group">
+						<label for="username">Username *</label>
+						<input type="text" id="username" name="username" value={ user.Username } required disabled={ !isNew }/>
+						if !isNew {
+							<small class="form-text">Username cannot be changed</small>
+						}
+					</div>
+
+					<div class="form-group">
+						<label for="email">Email</label>
+						<input type="email" id="email" name="email" value={ user.Email }/>
+					</div>
+
+					<div class="form-group">
+						<label for="name">Full Name</label>
+						<input type="text" id="name" name="name" value={ user.Name }/>
+					</div>
+
+					if isNew {
+						<div class="form-group">
+							<label for="password">Password *</label>
+							<input type="password" id="password" name="password" required minlength="8"/>
+							<small class="form-text">Minimum 8 characters</small>
+						</div>
+					}
+				</div>
+
+				<div class="form-section">
+					<h3>Roles & Permissions</h3>
+
+					<div class="form-group">
+						<label class="checkbox-label">
+							<input type="checkbox" name="roles" value="admin" checked?={ user.HasRole(models.RoleAdmin) }/>
+							<span>Administrator - Full system access</span>
+						</label>
+					</div>
+
+					<div class="form-group">
+						<label class="checkbox-label">
+							<input type="checkbox" name="roles" value="user" checked?={ user.HasRole(models.RoleUser) }/>
+							<span>User - Read/write access to containers and hosts</span>
+						</label>
+					</div>
+
+					<div class="form-group">
+						<label class="checkbox-label">
+							<input type="checkbox" name="roles" value="viewer" checked?={ user.HasRole(models.RoleViewer) }/>
+							<span>Viewer - Read-only access</span>
+						</label>
+					</div>
+				</div>
+
+				<div class="form-section">
+					<h3>Status</h3>
+
+					<div class="form-group">
+						<label class="checkbox-label">
+							<input type="checkbox" name="enabled" checked?={ user.Enabled }/>
+							<span>Account Enabled</span>
+						</label>
+					</div>
+				</div>
+
+				<div class="form-actions">
+					<button type="submit" class="btn btn-primary">
+						if isNew {
+							Create User
+						} else {
+							Update User
+						}
+					</button>
+					<a href="/web/users" class="btn btn-secondary">Cancel</a>
+				</div>
+}
+
+// Profile/Settings page for current user
+templ ProfilePage(user *models.User, errorMsg string, success string) {
+	@LayoutWithUser("My Profile", user) {
+		<div class="page-header">
+			<h2>My Profile</h2>
+		</div>
+
+		if errorMsg != "" {
+			<div class="alert alert-error">
+				{ errorMsg }
+			</div>
+		}
+
+		if success != "" {
+			<div class="alert alert-success">
+				{ success }
+			</div>
+		}
+
+		<div class="detail-container">
+			<div class="detail-section">
+				<h3>Account Information</h3>
+				<div class="detail-grid">
+					<div class="detail-item">
+						<span class="detail-label">Username:</span>
+						<span class="detail-value"><strong>{ user.Username }</strong></span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Email:</span>
+						<span class="detail-value">{ user.Email }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Name:</span>
+						<span class="detail-value">{ user.Name }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Roles:</span>
+						<span class="detail-value">
+							<div class="roles-list">
+								for _, role := range user.Roles {
+									if role == models.RoleAdmin {
+										<span class="badge badge-danger">{ string(role) }</span>
+									} else if role == models.RoleUser {
+										<span class="badge badge-success">{ string(role) }</span>
+									} else if role == models.RoleViewer {
+										<span class="badge badge-info">{ string(role) }</span>
+									} else {
+										<span class="badge badge-secondary">{ string(role) }</span>
+									}
+								}
+							</div>
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="detail-section">
+				<h3>Change Password</h3>
+				<form method="POST" action="/web/profile/password" class="password-form">
+					<div class="form-group">
+						<label for="current_password">Current Password</label>
+						<input type="password" id="current_password" name="current_password" required/>
+					</div>
+
+					<div class="form-group">
+						<label for="new_password">New Password</label>
+						<input type="password" id="new_password" name="new_password" required minlength="8"/>
+						<small class="form-text">Minimum 8 characters</small>
+					</div>
+
+					<div class="form-group">
+						<label for="confirm_password">Confirm New Password</label>
+						<input type="password" id="confirm_password" name="confirm_password" required minlength="8"/>
+					</div>
+
+					<button type="submit" class="btn btn-primary">Change Password</button>
+				</form>
+			</div>
+		</div>
+	}
+}
+
+// Container Logs view template
+templ ContainerLogsView(container *models.Container, host *models.Host, user *models.User) {
+	@LayoutWithUser("Container Logs", user) {
+		<div class="page-header">
+			<div>
+				<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)) } class="btn btn-secondary">← Back to Container</a>
+				<h2>Container Logs: { container.Name }</h2>
+			</div>
+		</div>
+
+		<div class="detail-container">
+			<div class="detail-section">
+				<div class="detail-grid" style="margin-bottom: 1rem;">
+					<div class="detail-item">
+						<span class="detail-label">Container:</span>
+						<span class="detail-value"><strong>{ container.Name }</strong></span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Status:</span>
+						<span class={ fmt.Sprintf("badge badge-%s", container.Status) }>
+							{ container.Status }
+						</span>
+					</div>
+					if host != nil {
+						<div class="detail-item">
+							<span class="detail-label">Host:</span>
+							<span class="detail-value">
+								<a href={ templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)) }>{ host.Name }</a>
+							</span>
+						</div>
+					}
+				</div>
+
+				<div style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">
+					<label style="display: flex; align-items: center; gap: 0.5rem;">
+						<input type="checkbox" id="auto-refresh" checked/>
+						<span>Auto-refresh (5s)</span>
+					</label>
+					<label style="display: flex; align-items: center; gap: 0.5rem;">
+						<span>Lines:</span>
+						<select id="lines-select" style="padding: 0.25rem;">
+							<option value="100">100</option>
+							<option value="500">500</option>
+							<option value="1000" selected>1000</option>
+							<option value="5000">5000</option>
+						</select>
+					</label>
+					<a href={ templ.URL(fmt.Sprintf("/api/v1/containers/%s/logs/download?lines=1000", container.ID)) } class="btn btn-secondary" download>
+						📥 Download Logs
+					</a>
+				</div>
+
+				<div id="logs-container" style="background: #1a1a1a; color: #00ff00; padding: 1rem; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 600px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;">
+					<div hx-get={ fmt.Sprintf("/api/v1/containers/%s/logs?tail=1000", container.ID) } hx-trigger="load, every 5s" hx-swap="innerHTML">
+						Loading logs...
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			// Auto-refresh toggle
+			document.getElementById('auto-refresh').addEventListener('change', function(e) {
+				const logsDiv = document.querySelector('#logs-container > div');
+				if (e.target.checked) {
+					logsDiv.setAttribute('hx-trigger', 'load, every 5s');
+				} else {
+					logsDiv.setAttribute('hx-trigger', 'load');
+				}
+				htmx.process(logsDiv);
+			});
+
+			// Lines selector
+			document.getElementById('lines-select').addEventListener('change', function(e) {
+				const lines = e.target.value;
+				const logsDiv = document.querySelector('#logs-container > div');
+				const containerID = '{ container.ID }';
+				logsDiv.setAttribute('hx-get', `/api/v1/containers/${containerID}/logs?tail=${lines}`);
+				htmx.trigger(logsDiv, 'load');
+
+				// Update download link
+				const downloadLink = document.querySelector('a[download]');
+				downloadLink.href = `/api/v1/containers/${containerID}/logs/download?lines=${lines}`;
+			});
+
+			// Auto-scroll to bottom on new content
+			const logsContainer = document.getElementById('logs-container');
+			const observer = new MutationObserver(() => {
+				logsContainer.scrollTop = logsContainer.scrollHeight;
+			});
+			observer.observe(logsContainer, { childList: true, subtree: true });
+		</script>
 	}
 }

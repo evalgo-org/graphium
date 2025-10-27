@@ -112,17 +112,26 @@ func (s *Storage) GetDatacenterTopology(datacenterName string) (*DatacenterTopol
 		Hosts:      make(map[string]*HostTopology),
 	}
 
-	// For each host, get its containers
+	// Get container counts for all hosts in a single query
+	hostContainerCounts, err := s.GetHostContainerCount()
+	if err != nil {
+		// If we can't get counts, just use 0
+		hostContainerCounts = make(map[string]int)
+	}
+
+	// Build topology with container counts
 	for _, host := range hosts {
-		containers, err := s.GetContainersByHost(host.ID)
-		if err != nil {
-			// Skip hosts we can't get containers for
-			continue
-		}
+		// Create empty container list - we only need the count now
+		// The UI will link to the filtered containers page
+		containers := make([]*models.Container, 0)
+
+		// Get count from the map, defaults to 0 if not found
+		containerCount := hostContainerCounts[host.ID]
 
 		topology.Hosts[host.ID] = &HostTopology{
-			Host:       host,
-			Containers: containers,
+			Host:           host,
+			Containers:     containers,
+			ContainerCount: containerCount,
 		}
 	}
 
@@ -137,8 +146,9 @@ type DatacenterTopology struct {
 
 // HostTopology represents a host and all its containers.
 type HostTopology struct {
-	Host       *models.Host
-	Containers []*models.Container
+	Host           *models.Host
+	Containers     []*models.Container
+	ContainerCount int // Number of containers on this host
 }
 
 // GetContainersByFilter performs a complex query with multiple conditions.
