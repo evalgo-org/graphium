@@ -192,14 +192,14 @@ func (s *Server) setupRoutes() {
 	users.POST("/api-keys", s.generateAPIKey, s.authMiddle.RequireAuth)
 	users.DELETE("/api-keys/:index", s.revokeAPIKey, s.authMiddle.RequireAuth)
 
-	// Graph visualization routes
-	graph := v1.Group("/graph")
-	graph.GET("", s.GetGraphData, s.authMiddle.RequireRead)
-	graph.GET("/stats", s.GetGraphStats, s.authMiddle.RequireRead)
-	graph.GET("/layout", s.GetGraphLayout, s.authMiddle.RequireRead)
-
 	// Web UI routes
 	webHandler := web.NewHandler(s.storage, s.config)
+
+	// Graph visualization routes (support both JWT and session auth for web UI compatibility)
+	graph := v1.Group("/graph")
+	graph.GET("", s.GetGraphData, webHandler.WebAuthMiddleware)
+	graph.GET("/stats", s.GetGraphStats, webHandler.WebAuthMiddleware)
+	graph.GET("/layout", s.GetGraphLayout, webHandler.WebAuthMiddleware)
 
 	// WebSocket routes (use web auth middleware for session cookie support)
 	ws := v1.Group("/ws")
