@@ -60,7 +60,7 @@ func TestDashboardTemplate(t *testing.T) {
 	}
 
 	// Verify the Dashboard template function is callable
-	component := Dashboard(stats)
+	component := DashboardWithUser(stats, nil)
 	assert.NotNil(t, component)
 }
 
@@ -77,7 +77,15 @@ func TestContainersListTemplate(t *testing.T) {
 		},
 	}
 
-	component := ContainersList(containers)
+	pagination := PaginationInfo{
+		Page:       1,
+		PageSize:   10,
+		TotalItems: len(containers),
+		TotalPages: 1,
+		HasPrev:    false,
+		HasNext:    false,
+	}
+	component := ContainersListWithUser(containers, pagination, nil)
 	assert.NotNil(t, component)
 }
 
@@ -95,7 +103,15 @@ func TestHostsListTemplate(t *testing.T) {
 		},
 	}
 
-	component := HostsList(hosts)
+	pagination := PaginationInfo{
+		Page:       1,
+		PageSize:   10,
+		TotalItems: len(hosts),
+		TotalPages: 1,
+		HasPrev:    false,
+		HasNext:    false,
+	}
+	component := HostsListWithUser(hosts, pagination, nil)
 	assert.NotNil(t, component)
 }
 
@@ -127,7 +143,11 @@ func TestTopologyViewTemplate(t *testing.T) {
 		},
 	}
 
-	component := TopologyView(topology, "us-east")
+	topologies := make(map[string]*storage.DatacenterTopology)
+	topologies["us-east"] = topology
+	datacenters := make(map[string]bool)
+	datacenters["us-east"] = true
+	component := TopologyViewWithUser(topology, topologies, datacenters, "us-east", nil)
 	assert.NotNil(t, component)
 }
 
@@ -144,7 +164,7 @@ func TestRenderHelper(t *testing.T) {
 		TotalHosts:        0,
 	}
 
-	component := Dashboard(stats)
+	component := DashboardWithUser(stats, nil)
 	assert.NotNil(t, component)
 
 	// Test Render function with proper request/response
