@@ -8,7 +8,7 @@ on:
 
 env:
   GO_VERSION: '1.21'
-  REGISTRY: ghcr.io/evalgo
+  REGISTRY: ghcr.io/evalgo-org
   IMAGE_NAME: graphium
 
 jobs:
