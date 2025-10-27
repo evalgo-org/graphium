@@ -121,7 +121,7 @@ func (s *Server) setupRoutes() {
 	s.echo.GET("/health", s.healthCheck)
 	s.echo.GET("/", s.healthCheck)
 
-	// Swagger UI documentation
+	// Swagger UI documentation (public - but API endpoints are still protected)
 	s.echo.GET("/docs/*", echoSwagger.WrapHandler)
 
 	// API v1 group
