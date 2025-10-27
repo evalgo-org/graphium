@@ -130,10 +130,10 @@ func (s *Server) setupRoutes() {
 	// Container routes
 	containers := v1.Group("/containers")
 	containers.Use(ValidateQueryParams) // Validate query parameters for list operations
-	containers.GET("", s.listContainers)
-	containers.GET("/:id", s.getContainer, ValidateIDFormat)
-	containers.GET("/:id/logs", s.getContainerLogs, ValidateIDFormat)
-	containers.GET("/:id/logs/download", s.downloadContainerLogs, ValidateIDFormat)
+	containers.GET("", s.listContainers, s.authMiddle.RequireRead)
+	containers.GET("/:id", s.getContainer, ValidateIDFormat, s.authMiddle.RequireRead)
+	containers.GET("/:id/logs", s.getContainerLogs, ValidateIDFormat, s.authMiddle.RequireRead)
+	containers.GET("/:id/logs/download", s.downloadContainerLogs, ValidateIDFormat, s.authMiddle.RequireRead)
 	containers.POST("", s.createContainer, s.authMiddle.RequireAgentOrWrite)
 	containers.PUT("/:id", s.updateContainer, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
 	containers.DELETE("/:id", s.deleteContainer, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
@@ -142,8 +142,8 @@ func (s *Server) setupRoutes() {
 	// Host routes
 	hosts := v1.Group("/hosts")
 	hosts.Use(ValidateQueryParams) // Validate query parameters for list operations
-	hosts.GET("", s.listHosts)
-	hosts.GET("/:id", s.getHost, ValidateIDFormat)
+	hosts.GET("", s.listHosts, s.authMiddle.RequireRead)
+	hosts.GET("/:id", s.getHost, ValidateIDFormat, s.authMiddle.RequireRead)
 	hosts.POST("", s.createHost, s.authMiddle.RequireAgentOrWrite)
 	hosts.PUT("/:id", s.updateHost, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
 	hosts.DELETE("/:id", s.deleteHost, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
@@ -151,28 +151,28 @@ func (s *Server) setupRoutes() {
 
 	// Query routes
 	query := v1.Group("/query")
-	query.GET("/containers/by-host/:hostId", s.getContainersByHost, ValidateIDFormat)
-	query.GET("/containers/by-status/:status", s.getContainersByStatus)
-	query.GET("/hosts/by-datacenter/:datacenter", s.getHostsByDatacenter)
-	query.GET("/traverse/:id", s.traverseGraph, ValidateIDFormat)
-	query.GET("/dependents/:id", s.getDependents, ValidateIDFormat)
-	query.GET("/topology/:datacenter", s.getDatacenterTopology)
+	query.GET("/containers/by-host/:hostId", s.getContainersByHost, ValidateIDFormat, s.authMiddle.RequireRead)
+	query.GET("/containers/by-status/:status", s.getContainersByStatus, s.authMiddle.RequireRead)
+	query.GET("/hosts/by-datacenter/:datacenter", s.getHostsByDatacenter, s.authMiddle.RequireRead)
+	query.GET("/traverse/:id", s.traverseGraph, ValidateIDFormat, s.authMiddle.RequireRead)
+	query.GET("/dependents/:id", s.getDependents, ValidateIDFormat, s.authMiddle.RequireRead)
+	query.GET("/topology/:datacenter", s.getDatacenterTopology, s.authMiddle.RequireRead)
 
 	// Statistics routes
 	stats := v1.Group("/stats")
-	stats.GET("", s.getStatistics)
-	stats.GET("/containers/count", s.getContainerCount)
-	stats.GET("/hosts/count", s.getHostCount)
-	stats.GET("/distribution", s.getHostContainerDistribution)
+	stats.GET("", s.getStatistics, s.authMiddle.RequireRead)
+	stats.GET("/containers/count", s.getContainerCount, s.authMiddle.RequireRead)
+	stats.GET("/hosts/count", s.getHostCount, s.authMiddle.RequireRead)
+	stats.GET("/distribution", s.getHostContainerDistribution, s.authMiddle.RequireRead)
 
 	// Validation routes
 	validate := v1.Group("/validate")
-	validate.POST("/container", s.validateContainer)
-	validate.POST("/host", s.validateHost)
-	validate.POST("/:type", s.validateGeneric)
+	validate.POST("/container", s.validateContainer, s.authMiddle.RequireRead)
+	validate.POST("/host", s.validateHost, s.authMiddle.RequireRead)
+	validate.POST("/:type", s.validateGeneric, s.authMiddle.RequireRead)
 
 	// Database info
-	v1.GET("/info", s.getDatabaseInfo)
+	v1.GET("/info", s.getDatabaseInfo, s.authMiddle.RequireRead)
 
 	// Authentication routes
 	authRoutes := v1.Group("/auth")
@@ -194,14 +194,14 @@ func (s *Server) setupRoutes() {
 
 	// WebSocket routes
 	ws := v1.Group("/ws")
-	ws.GET("/graph", s.HandleWebSocket)   // WebSocket connection for graph updates
-	ws.GET("/stats", s.GetWebSocketStats) // WebSocket stats
+	ws.GET("/graph", s.HandleWebSocket, s.authMiddle.RequireRead)   // WebSocket connection for graph updates
+	ws.GET("/stats", s.GetWebSocketStats, s.authMiddle.RequireRead) // WebSocket stats
 
 	// Graph visualization routes
 	graph := v1.Group("/graph")
-	graph.GET("", s.GetGraphData)
-	graph.GET("/stats", s.GetGraphStats)
-	graph.GET("/layout", s.GetGraphLayout)
+	graph.GET("", s.GetGraphData, s.authMiddle.RequireRead)
+	graph.GET("/stats", s.GetGraphStats, s.authMiddle.RequireRead)
+	graph.GET("/layout", s.GetGraphLayout, s.authMiddle.RequireRead)
 
 	// Web UI routes
 	webHandler := web.NewHandler(s.storage, s.config)
