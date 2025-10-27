@@ -140,6 +140,12 @@ func (s *Server) setupRoutes() {
 	// WebSocket route for real-time updates
 	v1.GET("/ws", s.handleWebSocket)
 
+	// Graph visualization routes
+	graph := v1.Group("/graph")
+	graph.GET("", s.GetGraphData)
+	graph.GET("/stats", s.GetGraphStats)
+	graph.GET("/layout", s.GetGraphLayout)
+
 	// Web UI routes
 	webHandler := web.NewHandler(s.storage, s.config)
 	s.echo.Static("/static", "static")
