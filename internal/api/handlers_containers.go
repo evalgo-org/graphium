@@ -196,6 +196,17 @@ func (s *Server) updateContainer(c echo.Context) error {
 }
 
 // deleteContainer handles DELETE /api/v1/containers/:id
+// @Summary Delete a container
+// @Description Delete an existing container by its ID
+// @Tags Containers
+// @Accept json
+// @Produce json
+// @Param id path string true "Container ID"
+// @Success 200 {object} MessageResponse "Successfully deleted container"
+// @Failure 400 {object} APIError "Bad request - Container ID is required"
+// @Failure 404 {object} APIError "Container not found"
+// @Failure 500 {object} APIError "Internal server error"
+// @Router /containers/{id} [delete]
 func (s *Server) deleteContainer(c echo.Context) error {
 	id := c.Param("id")
 
@@ -224,6 +235,16 @@ func (s *Server) deleteContainer(c echo.Context) error {
 }
 
 // bulkCreateContainers handles POST /api/v1/containers/bulk
+// @Summary Bulk create containers
+// @Description Create multiple containers in a single request
+// @Tags Containers
+// @Accept json
+// @Produce json
+// @Param containers body []models.Container true "Array of container objects (JSON-LD format)"
+// @Success 200 {object} BulkResponse "Successfully created containers"
+// @Failure 400 {object} APIError "Bad request - Invalid request body or validation errors"
+// @Failure 500 {object} APIError "Internal server error"
+// @Router /containers/bulk [post]
 func (s *Server) bulkCreateContainers(c echo.Context) error {
 	var containers []*models.Container
 

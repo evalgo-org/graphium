@@ -53,12 +53,17 @@ Graphium is a **semantic container orchestration platform** that uses knowledge 
 - Task commands for dev workflow
 - CouchDB Docker container management
 
+### ✅ Phase 11: OpenAPI Documentation (Complete)
+- Full API documentation with Swagger/OpenAPI 3.0
+- Interactive Swagger UI at `/docs`
+- 19+ documented endpoints with request/response schemas
+- **Access**: http://localhost:8095/docs
+
 ### 🚧 Pending
 - Agent enhancement (real-time sync)
 - Code generation tool
 - Web UI (Templ + HTMX)
 - Comprehensive testing suite
-- OpenAPI documentation
 
 ## Quick Start
 
@@ -132,46 +137,54 @@ graphium validate host my-host.json
 graphium validate container tests/fixtures/valid-container.json
 ```
 
-## API Endpoints
+## API Documentation
 
-### Containers
-- `GET /api/v1/containers` - List containers with filters
-- `GET /api/v1/containers/:id` - Get container by ID
-- `POST /api/v1/containers` - Create container
-- `PUT /api/v1/containers/:id` - Update container
-- `DELETE /api/v1/containers/:id` - Delete container
-- `POST /api/v1/containers/bulk` - Bulk create
+**🎯 Interactive API Documentation**: [http://localhost:8095/docs](http://localhost:8095/docs)
 
-### Hosts
-- `GET /api/v1/hosts` - List hosts with filters
-- `GET /api/v1/hosts/:id` - Get host by ID
-- `POST /api/v1/hosts` - Create host
-- `PUT /api/v1/hosts/:id` - Update host
-- `DELETE /api/v1/hosts/:id` - Delete host
-- `POST /api/v1/hosts/bulk` - Bulk create
+The API is fully documented using OpenAPI 3.0 (Swagger). Once the server is running, visit the `/docs` endpoint for an interactive interface where you can:
+- Browse all available endpoints
+- View request/response schemas
+- Test API calls directly from the browser
+- Download the OpenAPI specification (JSON/YAML)
 
-### Query & Topology
-- `GET /api/v1/query/containers/by-host/:hostId` - Containers on host
-- `GET /api/v1/query/containers/by-status/:status` - Containers by status
-- `GET /api/v1/query/hosts/by-datacenter/:datacenter` - Hosts in datacenter
-- `GET /api/v1/query/traverse/:id` - Traverse dependency graph
-- `GET /api/v1/query/dependents/:id` - Find dependents
-- `GET /api/v1/query/topology/:datacenter` - Datacenter topology
+### API Endpoints Overview
 
-### Statistics
-- `GET /api/v1/stats` - Infrastructure statistics
-- `GET /api/v1/stats/containers/count` - Container count
-- `GET /api/v1/stats/hosts/count` - Host count
-- `GET /api/v1/stats/distribution` - Container distribution
+**Containers** (6 endpoints)
+- List, get, create, update, delete containers
+- Bulk operations support
+- Status and host filtering
 
-### Validation
-- `POST /api/v1/validate/container` - Validate container document
-- `POST /api/v1/validate/host` - Validate host document
+**Hosts** (6 endpoints)
+- List, get, create, update, delete hosts
+- Bulk operations support
+- Status and datacenter filtering
 
-### System
-- `GET /health` - Health check
-- `GET /api/v1/info` - Database info
-- `GET /api/v1/ws` - WebSocket connection
+**Graph & Topology** (3 endpoints)
+- Graph visualization data
+- Graph statistics
+- Multiple layout algorithms
+
+**Query** (6 endpoints)
+- Container/host lookups by various criteria
+- Dependency graph traversal
+- Datacenter topology views
+
+**Statistics** (4 endpoints)
+- Infrastructure statistics
+- Container/host counts with filters
+- Distribution metrics
+
+**Validation** (2 endpoints)
+- JSON-LD schema validation
+- Container and host document validation
+
+**WebSocket** (2 endpoints)
+- Real-time graph updates
+- WebSocket connection statistics
+
+**System** (2 endpoints)
+- Health check
+- Database information
 
 ## Example: Container JSON-LD
 

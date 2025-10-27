@@ -6,6 +6,14 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// @Summary Get overall statistics
+// @Description Get overall system statistics including container and host counts
+// @Tags Statistics
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Statistics with container and host information"
+// @Failure 500 {object} ErrorResponse
+// @Router /api/v1/stats [get]
 // getStatistics handles GET /api/v1/stats
 func (s *Server) getStatistics(c echo.Context) error {
 	stats, err := s.storage.GetStatistics()
@@ -25,6 +33,16 @@ func (s *Server) getStatistics(c echo.Context) error {
 	})
 }
 
+// @Summary Get container count
+// @Description Get the count of containers with optional filters
+// @Tags Statistics
+// @Accept json
+// @Produce json
+// @Param status query string false "Filter by container status"
+// @Param host query string false "Filter by host"
+// @Success 200 {object} map[string]interface{} "Container count with applied filters"
+// @Failure 500 {object} ErrorResponse
+// @Router /api/v1/stats/containers/count [get]
 // getContainerCount handles GET /api/v1/stats/containers/count
 func (s *Server) getContainerCount(c echo.Context) error {
 	// Parse filters from query params
@@ -51,6 +69,16 @@ func (s *Server) getContainerCount(c echo.Context) error {
 	})
 }
 
+// @Summary Get host count
+// @Description Get the count of hosts with optional filters
+// @Tags Statistics
+// @Accept json
+// @Produce json
+// @Param status query string false "Filter by host status"
+// @Param datacenter query string false "Filter by datacenter location"
+// @Success 200 {object} map[string]interface{} "Host count with applied filters"
+// @Failure 500 {object} ErrorResponse
+// @Router /api/v1/stats/hosts/count [get]
 // getHostCount handles GET /api/v1/stats/hosts/count
 func (s *Server) getHostCount(c echo.Context) error {
 	// Parse filters from query params
@@ -77,6 +105,14 @@ func (s *Server) getHostCount(c echo.Context) error {
 	})
 }
 
+// @Summary Get host container distribution
+// @Description Get the distribution of containers across hosts with statistics
+// @Tags Statistics
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Container distribution with min, max, and average containers per host"
+// @Failure 500 {object} ErrorResponse
+// @Router /api/v1/stats/distribution [get]
 // getHostContainerDistribution handles GET /api/v1/stats/distribution
 func (s *Server) getHostContainerDistribution(c echo.Context) error {
 	distribution, err := s.storage.GetHostContainerCount()

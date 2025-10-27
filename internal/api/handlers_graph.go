@@ -47,9 +47,10 @@ type GraphData struct {
 }
 
 // GetGraphData returns the graph visualization data
-// @Summary Get graph visualization data
-// @Description Returns nodes and edges for graph visualization
-// @Tags graph
+// @Summary Get graph data
+// @Description Get graph visualization data with nodes and edges
+// @Tags Graph
+// @Accept json
 // @Produce json
 // @Success 200 {object} GraphData
 // @Failure 500 {object} ErrorResponse
@@ -140,9 +141,10 @@ func (s *Server) GetGraphData(c echo.Context) error {
 }
 
 // GetGraphStats returns statistics about the graph
-// @Summary Get graph statistics
-// @Description Returns statistics about nodes and edges
-// @Tags graph
+// @Summary Get graph stats
+// @Description Get statistics about graph nodes and edges
+// @Tags Graph
+// @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} ErrorResponse
@@ -205,11 +207,12 @@ func (s *Server) GetGraphStats(c echo.Context) error {
 }
 
 // GetGraphLayout returns the graph with a specific layout applied
-// @Summary Get graph with layout
-// @Description Returns graph data with layout coordinates
-// @Tags graph
-// @Param layout query string false "Layout algorithm" Enums(force, hierarchical, circle, grid)
+// @Summary Get graph layout
+// @Description Get graph visualization data with specified layout algorithm applied
+// @Tags Graph
+// @Accept json
 // @Produce json
+// @Param layout query string false "Layout algorithm" Enums(force, hierarchical, circle, grid)
 // @Success 200 {object} GraphData
 // @Failure 500 {object} ErrorResponse
 // @Router /graph/layout [get]

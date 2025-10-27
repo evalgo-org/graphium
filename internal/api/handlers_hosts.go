@@ -9,6 +9,18 @@ import (
 )
 
 // listHosts handles GET /api/v1/hosts
+// @Summary List hosts
+// @Description Get a paginated list of hosts with optional filtering by status and datacenter
+// @Tags Hosts
+// @Accept json
+// @Produce json
+// @Param limit query int false "Maximum number of items to return" default(10)
+// @Param offset query int false "Number of items to skip" default(0)
+// @Param status query string false "Filter by host status"
+// @Param datacenter query string false "Filter by datacenter location"
+// @Success 200 {object} PaginatedHostsResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/v1/hosts [get]
 func (s *Server) listHosts(c echo.Context) error {
 	// Parse query parameters
 	filters := make(map[string]interface{})
@@ -44,6 +56,16 @@ func (s *Server) listHosts(c echo.Context) error {
 }
 
 // getHost handles GET /api/v1/hosts/:id
+// @Summary Get a host by ID
+// @Description Retrieve detailed information about a specific host
+// @Tags Hosts
+// @Accept json
+// @Produce json
+// @Param id path string true "Host ID"
+// @Success 200 {object} models.Host
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /api/v1/hosts/{id} [get]
 func (s *Server) getHost(c echo.Context) error {
 	id := c.Param("id")
 
@@ -60,6 +82,16 @@ func (s *Server) getHost(c echo.Context) error {
 }
 
 // createHost handles POST /api/v1/hosts
+// @Summary Create a new host
+// @Description Create a new host with the provided information. ID will be auto-generated if not provided.
+// @Tags Hosts
+// @Accept json
+// @Produce json
+// @Param host body models.Host true "Host object to create"
+// @Success 201 {object} models.Host
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/v1/hosts [post]
 func (s *Server) createHost(c echo.Context) error {
 	var host models.Host
 
@@ -96,6 +128,18 @@ func (s *Server) createHost(c echo.Context) error {
 }
 
 // updateHost handles PUT /api/v1/hosts/:id
+// @Summary Update a host
+// @Description Update an existing host with new information. ID and revision are preserved.
+// @Tags Hosts
+// @Accept json
+// @Produce json
+// @Param id path string true "Host ID"
+// @Param host body models.Host true "Updated host object"
+// @Success 200 {object} models.Host
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/v1/hosts/{id} [put]
 func (s *Server) updateHost(c echo.Context) error {
 	id := c.Param("id")
 
@@ -142,6 +186,17 @@ func (s *Server) updateHost(c echo.Context) error {
 }
 
 // deleteHost handles DELETE /api/v1/hosts/:id
+// @Summary Delete a host
+// @Description Delete a host by its ID. This operation broadcasts a WebSocket event.
+// @Tags Hosts
+// @Accept json
+// @Produce json
+// @Param id path string true "Host ID"
+// @Success 200 {object} MessageResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/v1/hosts/{id} [delete]
 func (s *Server) deleteHost(c echo.Context) error {
 	id := c.Param("id")
 
@@ -170,6 +225,16 @@ func (s *Server) deleteHost(c echo.Context) error {
 }
 
 // bulkCreateHosts handles POST /api/v1/hosts/bulk
+// @Summary Bulk create hosts
+// @Description Create multiple hosts in a single request. Returns success/failure counts and detailed results.
+// @Tags Hosts
+// @Accept json
+// @Produce json
+// @Param hosts body []models.Host true "Array of host objects to create"
+// @Success 200 {object} BulkResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/v1/hosts/bulk [post]
 func (s *Server) bulkCreateHosts(c echo.Context) error {
 	var hosts []*models.Host
 
