@@ -37,7 +37,7 @@ type ContainerLogsRequest struct {
 // @Failure 400 {object} HTTPError
 // @Failure 404 {object} HTTPError
 // @Failure 500 {object} HTTPError
-// @Router /api/v1/containers/{id}/logs [get]
+// @Router /containers/{id}/logs [get]
 func (s *Server) getContainerLogs(c echo.Context) error {
 	containerID := c.Param("id")
 	if containerID == "" {

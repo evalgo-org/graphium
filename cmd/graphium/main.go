@@ -20,7 +20,8 @@ import (
 // @description - WebSocket support for live updates
 // @description
 // @description ## Authentication
-// @description Currently, the API does not require authentication. Authentication will be added in Phase 12.
+// @description All API endpoints require JWT token authentication. Use the /api/v1/auth/login endpoint to obtain a token.
+// @description Include the token in the Authorization header: `Authorization: Bearer <token>`
 
 // @contact.name Graphium API Support
 // @contact.url https://github.com/[org]/graphium

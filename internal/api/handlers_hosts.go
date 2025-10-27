@@ -21,7 +21,7 @@ import (
 // @Param datacenter query string false "Filter by datacenter location"
 // @Success 200 {object} PaginatedHostsResponse
 // @Failure 500 {object} ErrorResponse
-// @Router /api/v1/hosts [get]
+// @Router /hosts [get]
 func (s *Server) listHosts(c echo.Context) error {
 	// Parse query parameters
 	filters := make(map[string]interface{})
@@ -66,7 +66,7 @@ func (s *Server) listHosts(c echo.Context) error {
 // @Success 200 {object} models.Host
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
-// @Router /api/v1/hosts/{id} [get]
+// @Router /hosts/{id} [get]
 func (s *Server) getHost(c echo.Context) error {
 	id := c.Param("id")
 
@@ -92,7 +92,7 @@ func (s *Server) getHost(c echo.Context) error {
 // @Success 201 {object} models.Host
 // @Failure 400 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
-// @Router /api/v1/hosts [post]
+// @Router /hosts [post]
 func (s *Server) createHost(c echo.Context) error {
 	var host models.Host
 
@@ -140,7 +140,7 @@ func (s *Server) createHost(c echo.Context) error {
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
-// @Router /api/v1/hosts/{id} [put]
+// @Router /hosts/{id} [put]
 func (s *Server) updateHost(c echo.Context) error {
 	id := c.Param("id")
 
@@ -197,7 +197,7 @@ func (s *Server) updateHost(c echo.Context) error {
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
-// @Router /api/v1/hosts/{id} [delete]
+// @Router /hosts/{id} [delete]
 func (s *Server) deleteHost(c echo.Context) error {
 	id := c.Param("id")
 
@@ -235,7 +235,7 @@ func (s *Server) deleteHost(c echo.Context) error {
 // @Success 200 {object} BulkResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
-// @Router /api/v1/hosts/bulk [post]
+// @Router /hosts/bulk [post]
 func (s *Server) bulkCreateHosts(c echo.Context) error {
 	var hosts []*models.Host
 

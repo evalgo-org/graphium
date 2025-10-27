@@ -13,7 +13,7 @@ import (
 // @Produce json
 // @Success 200 {object} map[string]interface{} "Statistics with container and host information"
 // @Failure 500 {object} ErrorResponse
-// @Router /api/v1/stats [get]
+// @Router /stats [get]
 // getStatistics handles GET /api/v1/stats
 func (s *Server) getStatistics(c echo.Context) error {
 	stats, err := s.storage.GetStatistics()
@@ -42,7 +42,7 @@ func (s *Server) getStatistics(c echo.Context) error {
 // @Param host query string false "Filter by host"
 // @Success 200 {object} map[string]interface{} "Container count with applied filters"
 // @Failure 500 {object} ErrorResponse
-// @Router /api/v1/stats/containers/count [get]
+// @Router /stats/containers/count [get]
 // getContainerCount handles GET /api/v1/stats/containers/count
 func (s *Server) getContainerCount(c echo.Context) error {
 	// Parse filters from query params
@@ -78,7 +78,7 @@ func (s *Server) getContainerCount(c echo.Context) error {
 // @Param datacenter query string false "Filter by datacenter location"
 // @Success 200 {object} map[string]interface{} "Host count with applied filters"
 // @Failure 500 {object} ErrorResponse
-// @Router /api/v1/stats/hosts/count [get]
+// @Router /stats/hosts/count [get]
 // getHostCount handles GET /api/v1/stats/hosts/count
 func (s *Server) getHostCount(c echo.Context) error {
 	// Parse filters from query params
@@ -112,7 +112,7 @@ func (s *Server) getHostCount(c echo.Context) error {
 // @Produce json
 // @Success 200 {object} map[string]interface{} "Container distribution with min, max, and average containers per host"
 // @Failure 500 {object} ErrorResponse
-// @Router /api/v1/stats/distribution [get]
+// @Router /stats/distribution [get]
 // getHostContainerDistribution handles GET /api/v1/stats/distribution
 func (s *Server) getHostContainerDistribution(c echo.Context) error {
 	distribution, err := s.storage.GetHostContainerCount()

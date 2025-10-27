@@ -23,7 +23,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/hosts": {
+        "/hosts": {
             "get": {
                 "description": "Get a paginated list of hosts with optional filtering by status and datacenter",
                 "consumes": [
@@ -124,7 +124,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/hosts/bulk": {
+        "/hosts/bulk": {
             "post": {
                 "description": "Create multiple hosts in a single request. Returns success/failure counts and detailed results.",
                 "consumes": [
@@ -173,7 +173,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/hosts/{id}": {
+        "/hosts/{id}": {
             "get": {
                 "description": "Retrieve detailed information about a specific host",
                 "consumes": [
@@ -322,7 +322,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/stats": {
+        "/stats": {
             "get": {
                 "description": "Get overall system statistics including container and host counts",
                 "consumes": [
@@ -352,7 +352,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/stats/containers/count": {
+        "/stats/containers/count": {
             "get": {
                 "description": "Get the count of containers with optional filters",
                 "consumes": [
@@ -396,7 +396,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/stats/distribution": {
+        "/stats/distribution": {
             "get": {
                 "description": "Get the distribution of containers across hosts with statistics",
                 "consumes": [
@@ -426,7 +426,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/stats/hosts/count": {
+        "/stats/hosts/count": {
             "get": {
                 "description": "Get the count of hosts with optional filters",
                 "consumes": [
