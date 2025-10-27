@@ -222,9 +222,110 @@ func (s *Server) refresh(c echo.Context) error {
 		return BadRequestError("Invalid request body", err.Error())
 	}
 
-	// TODO: Implement refresh token validation
-	// For now, return not implemented
-	return echo.NewHTTPError(http.StatusNotImplemented, "refresh token endpoint not yet implemented")
+	// Create JWT service
+	jwtService := auth.NewJWTService(s.config)
+
+	// Find all refresh tokens and check if any match
+	// Note: In a production system, you might want to store a mapping of token hash to token ID
+	// For now, we'll search through all tokens (this could be optimized)
+
+	// We need to extract the user from the refresh token somehow
+	// Since refresh tokens are just random strings, we need to find them by comparing hashes
+	// This is a limitation - in production, consider storing token metadata or using JWT refresh tokens
+
+	// For now, we'll implement a simple approach: find all non-revoked, non-expired refresh tokens
+	// and compare the provided token with each hash
+
+	// This is inefficient but functional. A better approach would be:
+	// 1. Use JWT for refresh tokens with user ID in claims
+	// 2. Store a mapping of token ID to user ID
+	// 3. Use a faster lookup mechanism
+
+	// Get all users and check their refresh tokens
+	users, err := s.storage.ListUsers()
+	if err != nil {
+		return InternalError("Failed to validate refresh token", err.Error())
+	}
+
+	var matchedUser *models.User
+	var matchedToken *models.RefreshToken
+
+	// Find the matching refresh token
+	for _, user := range users {
+		tokens, err := s.storage.GetRefreshTokensByUserID(user.ID)
+		if err != nil {
+			continue
+		}
+
+		for _, token := range tokens {
+			// Skip revoked or expired tokens
+			if token.Revoked || time.Now().After(token.ExpiresAt) {
+				continue
+			}
+
+			// Check if the provided token matches this hash
+			if err := jwtService.CompareRefreshToken(req.RefreshToken, token.Token); err == nil {
+				matchedUser = user
+				matchedToken = token
+				break
+			}
+		}
+
+		if matchedUser != nil {
+			break
+		}
+	}
+
+	if matchedUser == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid or expired refresh token")
+	}
+
+	// Check if user is still enabled
+	if !matchedUser.Enabled {
+		return echo.NewHTTPError(http.StatusUnauthorized, "user account is disabled")
+	}
+
+	// Generate new token pair
+	tokenPair, newRefreshToken, err := jwtService.GenerateTokenPair(matchedUser)
+	if err != nil {
+		return InternalError("Failed to generate tokens", err.Error())
+	}
+
+	// Hash and save new refresh token
+	hashedRefreshToken, err := jwtService.HashRefreshToken(newRefreshToken)
+	if err != nil {
+		return InternalError("Failed to hash refresh token", err.Error())
+	}
+
+	newRefreshTokenModel := &models.RefreshToken{
+		ID:        fmt.Sprintf("refresh-%s", uuid.New().String()),
+		UserID:    matchedUser.ID,
+		Token:     hashedRefreshToken,
+		ExpiresAt: time.Now().Add(s.config.Security.RefreshTokenExpiration),
+		CreatedAt: time.Now(),
+		Revoked:   false,
+	}
+
+	if err := s.storage.SaveRefreshToken(newRefreshTokenModel); err != nil {
+		return InternalError("Failed to save refresh token", err.Error())
+	}
+
+	// Revoke the old refresh token
+	if err := s.storage.RevokeRefreshToken(matchedToken.ID); err != nil {
+		// Log warning but don't fail the request
+		fmt.Printf("Warning: failed to revoke old refresh token: %v\n", err)
+	}
+
+	// Log successful token refresh
+	s.logAuditEvent(c, matchedUser.ID, matchedUser.Username, "token_refresh", "", true, "")
+
+	return c.JSON(http.StatusOK, LoginResponse{
+		User:         toUserResponse(matchedUser),
+		AccessToken:  tokenPair.AccessToken,
+		RefreshToken: tokenPair.RefreshToken,
+		ExpiresAt:    tokenPair.ExpiresAt,
+		TokenType:    tokenPair.TokenType,
+	})
 }
 
 // logout handles POST /api/v1/auth/logout

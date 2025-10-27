@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	_ "evalgo.org/graphium/docs" // Import generated docs
+	"evalgo.org/graphium/internal/auth"
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/internal/web"
@@ -21,10 +22,11 @@ import (
 
 // Server represents the Graphium API server.
 type Server struct {
-	echo    *echo.Echo
-	storage *storage.Storage
-	config  *config.Config
-	wsHub   *Hub // WebSocket hub for real-time updates
+	echo       *echo.Echo
+	storage    *storage.Storage
+	config     *config.Config
+	wsHub      *Hub // WebSocket hub for real-time updates
+	authMiddle *auth.Middleware
 }
 
 // New creates a new API server instance.
@@ -41,12 +43,16 @@ func New(cfg *config.Config, store *storage.Storage) *Server {
 	// Create WebSocket hub
 	hub := NewHub()
 
+	// Create auth middleware
+	authMiddle := auth.NewMiddleware(cfg)
+
 	// Create server instance
 	server := &Server{
-		echo:    e,
-		storage: store,
-		config:  cfg,
-		wsHub:   hub,
+		echo:       e,
+		storage:    store,
+		config:     cfg,
+		wsHub:      hub,
+		authMiddle: authMiddle,
 	}
 
 	// Start WebSocket hub in background
@@ -125,20 +131,20 @@ func (s *Server) setupRoutes() {
 	containers.Use(ValidateQueryParams) // Validate query parameters for list operations
 	containers.GET("", s.listContainers)
 	containers.GET("/:id", s.getContainer, ValidateIDFormat)
-	containers.POST("", s.createContainer)
-	containers.PUT("/:id", s.updateContainer, ValidateIDFormat)
-	containers.DELETE("/:id", s.deleteContainer, ValidateIDFormat)
-	containers.POST("/bulk", s.bulkCreateContainers)
+	containers.POST("", s.createContainer, s.authMiddle.RequireWrite)
+	containers.PUT("/:id", s.updateContainer, ValidateIDFormat, s.authMiddle.RequireWrite)
+	containers.DELETE("/:id", s.deleteContainer, ValidateIDFormat, s.authMiddle.RequireWrite)
+	containers.POST("/bulk", s.bulkCreateContainers, s.authMiddle.RequireWrite)
 
 	// Host routes
 	hosts := v1.Group("/hosts")
 	hosts.Use(ValidateQueryParams) // Validate query parameters for list operations
 	hosts.GET("", s.listHosts)
 	hosts.GET("/:id", s.getHost, ValidateIDFormat)
-	hosts.POST("", s.createHost)
-	hosts.PUT("/:id", s.updateHost, ValidateIDFormat)
-	hosts.DELETE("/:id", s.deleteHost, ValidateIDFormat)
-	hosts.POST("/bulk", s.bulkCreateHosts)
+	hosts.POST("", s.createHost, s.authMiddle.RequireWrite)
+	hosts.PUT("/:id", s.updateHost, ValidateIDFormat, s.authMiddle.RequireWrite)
+	hosts.DELETE("/:id", s.deleteHost, ValidateIDFormat, s.authMiddle.RequireWrite)
+	hosts.POST("/bulk", s.bulkCreateHosts, s.authMiddle.RequireWrite)
 
 	// Query routes
 	query := v1.Group("/query")
@@ -168,10 +174,20 @@ func (s *Server) setupRoutes() {
 	// Authentication routes
 	authRoutes := v1.Group("/auth")
 	authRoutes.POST("/login", s.login)
-	authRoutes.POST("/register", s.register) // TODO: Add admin-only middleware
+	authRoutes.POST("/register", s.register, s.authMiddle.RequireAdmin)
 	authRoutes.POST("/refresh", s.refresh)
-	authRoutes.POST("/logout", s.logout)     // Requires auth
-	authRoutes.GET("/me", s.me)              // Requires auth
+	authRoutes.POST("/logout", s.logout, s.authMiddle.RequireAuth)
+	authRoutes.GET("/me", s.me, s.authMiddle.RequireAuth)
+
+	// User management routes
+	users := v1.Group("/users")
+	users.GET("", s.listUsers, s.authMiddle.RequireAdmin)
+	users.GET("/:id", s.getUser, s.authMiddle.RequireAdmin)
+	users.PUT("/:id", s.updateUser, s.authMiddle.RequireAdmin)
+	users.DELETE("/:id", s.deleteUser, s.authMiddle.RequireAdmin)
+	users.POST("/password", s.changePassword, s.authMiddle.RequireAuth)
+	users.POST("/api-keys", s.generateAPIKey, s.authMiddle.RequireAuth)
+	users.DELETE("/api-keys/:index", s.revokeAPIKey, s.authMiddle.RequireAuth)
 
 	// WebSocket routes
 	ws := v1.Group("/ws")

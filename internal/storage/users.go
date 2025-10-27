@@ -134,6 +134,28 @@ func (s *Storage) RevokeRefreshToken(id string) error {
 	return s.SaveRefreshToken(token)
 }
 
+// GetRefreshTokensByUserID retrieves all refresh tokens for a user
+func (s *Storage) GetRefreshTokensByUserID(userID string) ([]*models.RefreshToken, error) {
+	query := db.NewQueryBuilder().
+		Where("@type", "$eq", "RefreshToken").
+		And().
+		Where("user_id", "$eq", userID).
+		Build()
+
+	tokens, err := db.FindTyped[models.RefreshToken](s.service, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find refresh tokens: %w", err)
+	}
+
+	// Convert to pointer slice
+	result := make([]*models.RefreshToken, len(tokens))
+	for i := range tokens {
+		result[i] = &tokens[i]
+	}
+
+	return result, nil
+}
+
 // SaveAuditLog saves an audit log entry
 func (s *Storage) SaveAuditLog(log *models.AuditLog) error {
 	if log.ID == "" {
