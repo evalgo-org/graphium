@@ -403,20 +403,18 @@ func (s *Storage) GetContainerDependents(containerID string) ([]*models.Containe
 
 // GetHostContainerCount returns the number of containers on each host.
 func (s *Storage) GetHostContainerCount() (map[string]int, error) {
-	result, err := s.service.QueryView("graphium", "container_count_by_host", db.ViewOptions{
-		Reduce: true,
-		Group:  true,
-	})
-
+	// Get all active containers using Find query (only returns non-deleted documents)
+	containers, err := s.ListContainers(nil)
 	if err != nil {
 		return nil, err
 	}
 
+	// Count containers per host
 	counts := make(map[string]int)
-	for _, row := range result.Rows {
-		hostID := fmt.Sprintf("%v", row.Key)
-		count := int(row.Value.(float64))
-		counts[hostID] = count
+	for _, container := range containers {
+		if container.HostedOn != "" {
+			counts[container.HostedOn]++
+		}
 	}
 
 	return counts, nil
