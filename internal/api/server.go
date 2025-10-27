@@ -259,3 +259,8 @@ func (s *Server) BroadcastGraphEvent(eventType GraphEventType, data interface{})
 		log.Printf("Failed to broadcast event: %v", err)
 	}
 }
+
+// ServeHTTP allows Server to implement http.Handler for testing
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.echo.ServeHTTP(w, r)
+}
