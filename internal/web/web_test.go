@@ -1,6 +1,8 @@
 package web
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"evalgo.org/graphium/internal/config"
@@ -131,10 +133,10 @@ func TestTopologyViewTemplate(t *testing.T) {
 // TestRenderHelper verifies the Render helper function exists
 func TestRenderHelper(t *testing.T) {
 	e := echo.New()
-	c := e.NewContext(nil, nil)
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
 
-	// We can't fully test Render without a proper request/response
-	// but we can verify the function signature is correct
 	stats := &storage.Statistics{
 		TotalContainers:   0,
 		RunningContainers: 0,
@@ -144,9 +146,8 @@ func TestRenderHelper(t *testing.T) {
 	component := Dashboard(stats)
 	assert.NotNil(t, component)
 
-	// Verify Render function exists (it will fail without proper context, but that's expected)
+	// Test Render function with proper request/response
 	err := Render(c, component)
-	// We expect an error here because we don't have a proper response writer
-	// but the function should exist and be callable
-	assert.Error(t, err)
+	assert.NoError(t, err)
+	assert.Contains(t, rec.Body.String(), "Dashboard")
 }
