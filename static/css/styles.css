@@ -563,3 +563,126 @@ body {
 .data-table tbody tr {
   animation: fadeIn 0.3s ease-out;
 }
+
+/* Graph Visualization */
+.graph-container {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.graph-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.graph-control-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.graph-control-group label {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+#cy {
+  width: 100%;
+  height: 600px;
+  background-color: var(--bg-color);
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.graph-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.graph-stat-item {
+  background-color: var(--surface-light);
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  text-align: center;
+}
+
+.graph-stat-item .label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.graph-stat-item .value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--text-color);
+}
+
+.graph-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.legend-color.host {
+  background-color: var(--primary-color);
+}
+
+.legend-color.container-running {
+  background-color: var(--success-color);
+}
+
+.legend-color.container-stopped {
+  background-color: var(--text-muted);
+}
+
+.graph-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 600px;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 1rem;
+}

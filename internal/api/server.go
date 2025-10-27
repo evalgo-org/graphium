@@ -156,6 +156,7 @@ func (s *Server) setupRoutes() {
 	webGroup.GET("/hosts", webHandler.HostsList)
 	webGroup.GET("/hosts/table", webHandler.HostsTable)
 	webGroup.GET("/topology", webHandler.TopologyView)
+	webGroup.GET("/graph", webHandler.GraphView)
 }
 
 // Start starts the HTTP server.

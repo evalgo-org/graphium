@@ -133,3 +133,8 @@ func (h *Handler) TopologyView(c echo.Context) error {
 
 	return Render(c, TopologyView(topology, datacenter))
 }
+
+// GraphView renders the interactive graph visualization.
+func (h *Handler) GraphView(c echo.Context) error {
+	return Render(c, GraphView(h.config))
+}

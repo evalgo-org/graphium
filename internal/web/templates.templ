@@ -27,9 +27,10 @@ templ Layout(title string) {
 			</div>
 			<ul class="nav-links">
 				<li><a href="/" class="nav-link">Dashboard</a></li>
-				<li><a href="/containers" class="nav-link">Containers</a></li>
-				<li><a href="/hosts" class="nav-link">Hosts</a></li>
-				<li><a href="/topology" class="nav-link">Topology</a></li>
+				<li><a href="/web/containers" class="nav-link">Containers</a></li>
+				<li><a href="/web/hosts" class="nav-link">Hosts</a></li>
+				<li><a href="/web/graph" class="nav-link">Graph</a></li>
+				<li><a href="/web/topology" class="nav-link">Topology</a></li>
 			</ul>
 		</nav>
 		<main class="container">
@@ -320,5 +321,241 @@ templ TopologyView(topology *storage.DatacenterTopology, datacenter string) {
 				<p>Select a datacenter to view topology</p>
 			</div>
 		}
+	}
+}
+
+// Graph visualization template
+templ GraphView(cfg *config.Config) {
+	@Layout("Graph Visualization") {
+		<div class="page-header">
+			<h2>Infrastructure Graph</h2>
+			<div class="filters">
+				<div class="graph-control-group">
+					<label for="layout-select">Layout:</label>
+					<select id="layout-select" name="layout">
+						<option value="cose">Force Directed (COSE)</option>
+						<option value="grid">Grid</option>
+						<option value="circle">Circle</option>
+						<option value="breadthfirst">Hierarchical</option>
+						<option value="concentric">Concentric</option>
+					</select>
+				</div>
+			</div>
+		</div>
+
+		<div class="graph-container">
+			<div class="graph-legend">
+				<div class="legend-item">
+					<div class="legend-color host"></div>
+					<span>Hosts</span>
+				</div>
+				<div class="legend-item">
+					<div class="legend-color container-running"></div>
+					<span>Running Containers</span>
+				</div>
+				<div class="legend-item">
+					<div class="legend-color container-stopped"></div>
+					<span>Stopped Containers</span>
+				</div>
+			</div>
+
+			<div id="graph-stats" class="graph-stats">
+				<div class="graph-stat-item">
+					<div class="label">Total Nodes</div>
+					<div class="value" id="stat-nodes">-</div>
+				</div>
+				<div class="graph-stat-item">
+					<div class="label">Hosts</div>
+					<div class="value" id="stat-hosts">-</div>
+				</div>
+				<div class="graph-stat-item">
+					<div class="label">Containers</div>
+					<div class="value" id="stat-containers">-</div>
+				</div>
+				<div class="graph-stat-item">
+					<div class="label">Relationships</div>
+					<div class="value" id="stat-edges">-</div>
+				</div>
+			</div>
+
+			<div class="graph-controls">
+				<div class="action-buttons">
+					<button class="btn btn-primary" id="btn-fit">Fit to Screen</button>
+					<button class="btn btn-secondary" id="btn-center">Center</button>
+					<button class="btn btn-secondary" id="btn-refresh">Refresh Data</button>
+				</div>
+			</div>
+
+			<div id="cy"></div>
+		</div>
+
+		<script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+		<script>
+		(function() {
+			let cy;
+
+			// Initialize Cytoscape
+			function initGraph(layout = 'cose') {
+				fetch('/api/v1/graph')
+					.then(response => response.json())
+					.then(data => {
+						// Transform data to Cytoscape format
+						const elements = {
+							nodes: data.nodes || [],
+							edges: data.edges || []
+						};
+
+						// Update stats
+						const stats = {
+							nodes: elements.nodes.length,
+							hosts: elements.nodes.filter(n => n.data.type === 'host').length,
+							containers: elements.nodes.filter(n => n.data.type === 'container').length,
+							edges: elements.edges.length
+						};
+
+						document.getElementById('stat-nodes').textContent = stats.nodes;
+						document.getElementById('stat-hosts').textContent = stats.hosts;
+						document.getElementById('stat-containers').textContent = stats.containers;
+						document.getElementById('stat-edges').textContent = stats.edges;
+
+						// Initialize or update graph
+						if (cy) {
+							cy.destroy();
+						}
+
+						cy = cytoscape({
+							container: document.getElementById('cy'),
+							elements: elements,
+							style: [
+								{
+									selector: 'node',
+									style: {
+										'background-color': '#6366f1',
+										'label': 'data(label)',
+										'color': '#f1f5f9',
+										'text-valign': 'center',
+										'text-halign': 'center',
+										'font-size': '12px',
+										'width': 60,
+										'height': 60,
+										'border-width': 2,
+										'border-color': '#8b5cf6'
+									}
+								},
+								{
+									selector: 'node[type="host"]',
+									style: {
+										'background-color': '#6366f1',
+										'shape': 'rectangle',
+										'width': 80,
+										'height': 60,
+										'border-color': '#4f46e5'
+									}
+								},
+								{
+									selector: 'node[type="container"]',
+									style: {
+										'background-color': '#10b981',
+										'shape': 'ellipse',
+										'width': 60,
+										'height': 60
+									}
+								},
+								{
+									selector: 'node[status="stopped"]',
+									style: {
+										'background-color': '#94a3b8',
+										'opacity': 0.7
+									}
+								},
+								{
+									selector: 'node[status="running"]',
+									style: {
+										'background-color': '#10b981'
+									}
+								},
+								{
+									selector: 'edge',
+									style: {
+										'width': 2,
+										'line-color': '#475569',
+										'target-arrow-color': '#475569',
+										'target-arrow-shape': 'triangle',
+										'curve-style': 'bezier',
+										'arrow-scale': 1.5
+									}
+								},
+								{
+									selector: 'node:selected',
+									style: {
+										'border-width': 4,
+										'border-color': '#f59e0b'
+									}
+								}
+							],
+							layout: {
+								name: layout,
+								animate: true,
+								animationDuration: 500,
+								fit: true,
+								padding: 50,
+								randomize: false,
+								componentSpacing: 100,
+								nodeRepulsion: 400000,
+								idealEdgeLength: 100,
+								edgeElasticity: 100
+							}
+						});
+
+						// Add tooltips on hover
+						cy.on('tap', 'node', function(evt) {
+							const node = evt.target;
+							const data = node.data();
+							let info = `Type: ${data.type}\\nID: ${data.id}\\nStatus: ${data.status || 'N/A'}`;
+							if (data.type === 'host') {
+								info += `\\nIP: ${data.ip || 'N/A'}\\nCPU: ${data.cpu || 'N/A'}\\nMemory: ${data.memory ? (data.memory / 1024 / 1024 / 1024).toFixed(1) + ' GB' : 'N/A'}`;
+							} else if (data.type === 'container') {
+								info += `\\nImage: ${data.image || 'N/A'}`;
+							}
+							alert(info);
+						});
+					})
+					.catch(error => {
+						console.error('Failed to load graph data:', error);
+						document.getElementById('cy').innerHTML = '<div class="graph-loading">Failed to load graph data</div>';
+					});
+			}
+
+			// Layout selector
+			document.getElementById('layout-select').addEventListener('change', function(e) {
+				if (cy) {
+					cy.layout({
+						name: e.target.value,
+						animate: true,
+						animationDuration: 500,
+						fit: true,
+						padding: 50
+					}).run();
+				}
+			});
+
+			// Control buttons
+			document.getElementById('btn-fit').addEventListener('click', function() {
+				if (cy) cy.fit();
+			});
+
+			document.getElementById('btn-center').addEventListener('click', function() {
+				if (cy) cy.center();
+			});
+
+			document.getElementById('btn-refresh').addEventListener('click', function() {
+				const layout = document.getElementById('layout-select').value;
+				initGraph(layout);
+			});
+
+			// Initialize graph on page load
+			initGraph();
+		})();
+		</script>
 	}
 }
