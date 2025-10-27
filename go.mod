@@ -3,7 +3,7 @@ module evalgo.org/graphium
 go 1.24.7
 
 require (
-	eve.evalgo.org v0.0.8-0.20251027161652-62a4ff5e39a1
+	eve.evalgo.org v0.0.8-0.20251027162240-9abf17395055
 	github.com/a-h/templ v0.3.960
 	github.com/docker/docker v28.5.1+incompatible
 	github.com/go-playground/validator/v10 v10.23.0
@@ -175,7 +175,7 @@ require (
 	nhooyr.io/websocket v1.8.17 // indirect
 )
 
-replace eve.evalgo.org => github.com/evalgo-org/eve v0.0.7
+replace eve.evalgo.org => github.com/evalgo-org/eve v0.0.8
 
 // Exclude conflicting older versions of google.golang.org/genproto
 // to resolve ambiguous import errors in CI

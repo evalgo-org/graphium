@@ -59,6 +59,33 @@ func NewJWTService(cfg *config.Config) *JWTService {
 	}
 }
 
+// GenerateAgentToken generates a JWT token for agent authentication
+// This token uses the agent secret and includes the agent role
+func GenerateAgentToken(agentSecret string, hostID string, expiration time.Duration) (string, error) {
+	if agentSecret == "" {
+		return "", fmt.Errorf("agent secret is required")
+	}
+
+	now := time.Now()
+	expiresAt := now.Add(expiration)
+
+	claims := Claims{
+		UserID:   "agent:" + hostID,
+		Username: "agent-" + hostID,
+		Roles:    []models.Role{models.RoleAgent},
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			Issuer:    "graphium-agent",
+			Subject:   hostID,
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(agentSecret))
+}
+
 // GenerateToken generates a new JWT access token for a user
 func (s *JWTService) GenerateToken(user *models.User) (string, error) {
 	if !user.Enabled {

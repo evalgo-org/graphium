@@ -9,6 +9,12 @@ import (
 // ValidateContentType middleware ensures that requests with a body have the correct Content-Type
 func ValidateContentType(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// Skip validation for web UI routes (they use form submissions)
+		path := c.Request().URL.Path
+		if strings.HasPrefix(path, "/web/") || path == "/" {
+			return next(c)
+		}
+
 		method := c.Request().Method
 
 		// Only check POST, PUT, PATCH requests
@@ -36,6 +42,12 @@ func ValidateContentType(next echo.HandlerFunc) echo.HandlerFunc {
 // ValidateAcceptHeader middleware ensures that clients can accept JSON responses
 func ValidateAcceptHeader(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// Skip validation for web UI routes (they accept HTML)
+		path := c.Request().URL.Path
+		if strings.HasPrefix(path, "/web/") || path == "/" || strings.HasPrefix(path, "/static/") {
+			return next(c)
+		}
+
 		accept := c.Request().Header.Get("Accept")
 
 		// If no Accept header, assume */*

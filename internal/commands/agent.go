@@ -6,11 +6,13 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"evalgo.org/graphium/agent"
+	"evalgo.org/graphium/internal/auth"
 )
 
 var agentCmd = &cobra.Command{
@@ -41,11 +43,27 @@ func runAgent(cmd *cobra.Command, args []string) error {
 	fmt.Printf("   API URL: %s\n", cfg.Agent.APIURL)
 	fmt.Println()
 
+	// Generate agent authentication token if agent secret is configured
+	var agentToken string
+	if cfg.Security.AgentTokenSecret != "" && cfg.Security.AuthEnabled {
+		// Generate a long-lived token (7 days)
+		token, err := auth.GenerateAgentToken(
+			cfg.Security.AgentTokenSecret,
+			cfg.Agent.HostID,
+			7*24*time.Hour,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to generate agent token: %w", err)
+		}
+		agentToken = token
+	}
+
 	a, err := agent.NewAgent(
 		cfg.Agent.APIURL,
 		cfg.Agent.HostID,
 		cfg.Agent.Datacenter,
 		cfg.Agent.DockerSocket,
+		agentToken,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create agent: %w", err)

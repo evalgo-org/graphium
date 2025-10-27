@@ -28,7 +28,7 @@ agent:
 
 security:
   # Authentication settings
-  auth_enabled: false  # Set to true to enable JWT authentication
+  auth_enabled: true  # Set to true to enable JWT authentication
   jwt_secret: change-me-in-production-use-a-secure-random-string
   jwt_expiration: 24h
   refresh_token_expiration: 168h  # 7 days

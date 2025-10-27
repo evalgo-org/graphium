@@ -110,7 +110,7 @@ func (s *Storage) createViews() error {
 			// View: hosts_by_datacenter - Find all hosts in a datacenter
 			"hosts_by_datacenter": {
 				Map: `function(doc) {
-					if (doc['@type'] === 'ComputerServer' && doc.location) {
+					if (doc['@type'] === 'ComputerSystem' && doc.location) {
 						emit(doc.location, doc);
 					}
 				}`,
@@ -208,10 +208,18 @@ func (s *Storage) ListContainers(filters map[string]interface{}) ([]*models.Cont
 		return nil, err
 	}
 
-	// Convert to pointer slice
-	result := make([]*models.Container, len(containers))
+	// Deduplicate containers by @id (Docker container ID)
+	// CouchDB may have multiple documents for the same container due to sync issues
+	containerMap := make(map[string]*models.Container)
 	for i := range containers {
-		result[i] = &containers[i]
+		// Keep the latest version (last one wins)
+		containerMap[containers[i].ID] = &containers[i]
+	}
+
+	// Convert map to slice
+	result := make([]*models.Container, 0, len(containerMap))
+	for _, container := range containerMap {
+		result = append(result, container)
 	}
 
 	return result, nil
@@ -228,13 +236,22 @@ func (s *Storage) GetContainersByHost(hostID string) ([]*models.Container, error
 		return nil, err
 	}
 
-	containers := make([]*models.Container, 0, len(result.Rows))
+	// Deduplicate containers by @id (Docker container ID)
+	// CouchDB may have multiple documents for the same container due to sync issues
+	containerMap := make(map[string]*models.Container)
 	for _, row := range result.Rows {
 		var container models.Container
 		if err := json.Unmarshal(row.Doc, &container); err != nil {
 			continue // Skip invalid documents
 		}
-		containers = append(containers, &container)
+		// Keep the latest version (last one wins)
+		containerMap[container.ID] = &container
+	}
+
+	// Convert map to slice
+	containers := make([]*models.Container, 0, len(containerMap))
+	for _, container := range containerMap {
+		containers = append(containers, container)
 	}
 
 	return containers, nil

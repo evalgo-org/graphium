@@ -31,10 +31,11 @@ type Agent struct {
 	httpClient   *http.Client
 	syncInterval time.Duration
 	hostInfo     *models.Host
+	authToken    string
 }
 
 // NewAgent creates a new agent instance.
-func NewAgent(apiURL, hostID, datacenter, dockerSocket string) (*Agent, error) {
+func NewAgent(apiURL, hostID, datacenter, dockerSocket, agentToken string) (*Agent, error) {
 	if apiURL == "" {
 		return nil, fmt.Errorf("api URL is required")
 	}
@@ -75,6 +76,7 @@ func NewAgent(apiURL, hostID, datacenter, dockerSocket string) (*Agent, error) {
 			Timeout: 30 * time.Second,
 		},
 		syncInterval: 30 * time.Second,
+		authToken:    agentToken,
 	}, nil
 }
 
@@ -137,7 +139,16 @@ func (a *Agent) registerHost(ctx context.Context) error {
 		return fmt.Errorf("failed to marshal host: %w", err)
 	}
 
-	resp, err := a.httpClient.Post(url, "application/json", bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if a.authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+a.authToken)
+	}
+
+	resp, err := a.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to register host: %w", err)
 	}
@@ -185,7 +196,15 @@ func (a *Agent) syncContainer(ctx context.Context, containerID string) error {
 
 	// Check if container already exists
 	url := fmt.Sprintf("%s/api/v1/containers/%s", a.apiURL, container.ID)
-	resp, err := a.httpClient.Get(url)
+	checkReq, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create check request: %w", err)
+	}
+	if a.authToken != "" {
+		checkReq.Header.Set("Authorization", "Bearer "+a.authToken)
+	}
+
+	resp, err := a.httpClient.Do(checkReq)
 	if err != nil {
 		return fmt.Errorf("failed to check container: %w", err)
 	}
@@ -215,6 +234,9 @@ func (a *Agent) syncContainer(ctx context.Context, containerID string) error {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if a.authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+a.authToken)
+	}
 
 	resp, err = a.httpClient.Do(req)
 	if err != nil {
@@ -290,6 +312,9 @@ func (a *Agent) handleContainerEvent(ctx context.Context, event events.Message) 
 		if err != nil {
 			log.Printf("Failed to create delete request: %v", err)
 			return
+		}
+		if a.authToken != "" {
+			req.Header.Set("Authorization", "Bearer "+a.authToken)
 		}
 
 		resp, err := a.httpClient.Do(req)

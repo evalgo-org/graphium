@@ -270,3 +270,83 @@ func (m *Middleware) RequireAgentAuth(next echo.HandlerFunc) echo.HandlerFunc {
 		return next(c)
 	}
 }
+
+// RequireAgentOrWrite is middleware that requires either agent auth OR user write permissions
+// This allows both agents and authenticated users with write permissions to access the endpoint
+func (m *Middleware) RequireAgentOrWrite(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// Skip if auth is disabled
+		if !m.config.Security.AuthEnabled {
+			return next(c)
+		}
+
+		// Extract token from Authorization header
+		authHeader := c.Request().Header.Get("Authorization")
+		if authHeader == "" {
+			return echo.NewHTTPError(http.StatusUnauthorized, "missing authorization header")
+		}
+
+		// Parse Bearer token
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid authorization header format")
+		}
+
+		tokenString := parts[1]
+
+		// First try to validate as agent token
+		if m.config.Security.AgentTokenSecret != "" {
+			token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+				}
+				return []byte(m.config.Security.AgentTokenSecret), nil
+			})
+
+			if err == nil && token.Valid {
+				claims, ok := token.Claims.(*Claims)
+				if ok {
+					// Check if it's an agent token
+					isAgent := false
+					for _, role := range claims.Roles {
+						if role == models.RoleAgent {
+							isAgent = true
+							break
+						}
+					}
+					if isAgent {
+						c.Set(ContextKeyClaims, claims)
+						return next(c)
+					}
+				}
+			}
+		}
+
+		// If not an agent token, try to validate as user JWT token
+		claims, err := m.jwtService.ValidateToken(tokenString)
+		if err != nil {
+			if err == ErrExpiredToken {
+				return echo.NewHTTPError(http.StatusUnauthorized, "token has expired")
+			}
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
+		}
+
+		// Check if user has write permissions (admin or user role)
+		hasWrite := false
+		for _, role := range claims.Roles {
+			if role == models.RoleAdmin || role == models.RoleUser {
+				hasWrite = true
+				break
+			}
+		}
+
+		if !hasWrite {
+			return echo.NewHTTPError(http.StatusForbidden, "insufficient permissions - requires admin or user role")
+		}
+
+		// Store claims in context
+		c.Set(ContextKeyClaims, claims)
+
+		return next(c)
+	}
+}

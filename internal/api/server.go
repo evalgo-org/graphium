@@ -132,20 +132,22 @@ func (s *Server) setupRoutes() {
 	containers.Use(ValidateQueryParams) // Validate query parameters for list operations
 	containers.GET("", s.listContainers)
 	containers.GET("/:id", s.getContainer, ValidateIDFormat)
-	containers.POST("", s.createContainer, s.authMiddle.RequireWrite)
-	containers.PUT("/:id", s.updateContainer, ValidateIDFormat, s.authMiddle.RequireWrite)
-	containers.DELETE("/:id", s.deleteContainer, ValidateIDFormat, s.authMiddle.RequireWrite)
-	containers.POST("/bulk", s.bulkCreateContainers, s.authMiddle.RequireWrite)
+	containers.GET("/:id/logs", s.getContainerLogs, ValidateIDFormat)
+	containers.GET("/:id/logs/download", s.downloadContainerLogs, ValidateIDFormat)
+	containers.POST("", s.createContainer, s.authMiddle.RequireAgentOrWrite)
+	containers.PUT("/:id", s.updateContainer, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
+	containers.DELETE("/:id", s.deleteContainer, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
+	containers.POST("/bulk", s.bulkCreateContainers, s.authMiddle.RequireAgentOrWrite)
 
 	// Host routes
 	hosts := v1.Group("/hosts")
 	hosts.Use(ValidateQueryParams) // Validate query parameters for list operations
 	hosts.GET("", s.listHosts)
 	hosts.GET("/:id", s.getHost, ValidateIDFormat)
-	hosts.POST("", s.createHost, s.authMiddle.RequireWrite)
-	hosts.PUT("/:id", s.updateHost, ValidateIDFormat, s.authMiddle.RequireWrite)
-	hosts.DELETE("/:id", s.deleteHost, ValidateIDFormat, s.authMiddle.RequireWrite)
-	hosts.POST("/bulk", s.bulkCreateHosts, s.authMiddle.RequireWrite)
+	hosts.POST("", s.createHost, s.authMiddle.RequireAgentOrWrite)
+	hosts.PUT("/:id", s.updateHost, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
+	hosts.DELETE("/:id", s.deleteHost, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
+	hosts.POST("/bulk", s.bulkCreateHosts, s.authMiddle.RequireAgentOrWrite)
 
 	// Query routes
 	query := v1.Group("/query")
@@ -204,11 +206,40 @@ func (s *Server) setupRoutes() {
 	// Web UI routes
 	webHandler := web.NewHandler(s.storage, s.config)
 	s.echo.Static("/static", "static")
-	s.echo.GET("/", webHandler.Dashboard)
+
+	// Public routes (no auth required)
+	s.echo.GET("/", webHandler.Dashboard, webHandler.WebOptionalAuthMiddleware)
+
+	// Authentication routes (no auth required for login, required for logout)
+	webAuth := s.echo.Group("/web/auth")
+	webAuth.GET("/login", webHandler.LoginPage)
+	webAuth.POST("/login", webHandler.Login)
+	webAuth.GET("/logout", webHandler.Logout, webHandler.WebAuthMiddleware)
+
+	// Profile routes (auth required)
+	s.echo.GET("/web/profile", webHandler.Profile, webHandler.WebAuthMiddleware)
+	s.echo.POST("/web/profile/password", webHandler.ChangePassword, webHandler.WebAuthMiddleware)
+
+	// User management routes (auth required, admin for list/create/delete)
+	webUsers := s.echo.Group("/web/users")
+	webUsers.Use(webHandler.WebAuthMiddleware)
+	webUsers.GET("", webHandler.ListUsers, webHandler.WebAdminMiddleware)
+	webUsers.GET("/new", webHandler.NewUserForm, webHandler.WebAdminMiddleware)
+	webUsers.POST("/create", webHandler.CreateUser, webHandler.WebAdminMiddleware)
+	webUsers.GET("/:id", webHandler.ViewUser)
+	webUsers.GET("/:id/edit", webHandler.EditUserForm)
+	webUsers.POST("/:id/update", webHandler.UpdateUser)
+	webUsers.POST("/:id/delete", webHandler.DeleteUser, webHandler.WebAdminMiddleware)
+	webUsers.POST("/:id/api-keys/generate", webHandler.GenerateAPIKey)
+	webUsers.POST("/:id/api-keys/:index/revoke", webHandler.RevokeAPIKey)
+
+	// Container and host routes (with optional auth for better UX)
 	webGroup := s.echo.Group("/web")
+	webGroup.Use(webHandler.WebOptionalAuthMiddleware)
 	webGroup.GET("/containers", webHandler.ContainersList)
 	webGroup.GET("/containers/table", webHandler.ContainersTable)
 	webGroup.GET("/containers/:id", webHandler.ContainerDetail)
+	webGroup.GET("/containers/:id/logs", webHandler.ContainerLogs)
 	webGroup.GET("/hosts", webHandler.HostsList)
 	webGroup.GET("/hosts/table", webHandler.HostsTable)
 	webGroup.GET("/hosts/:id", webHandler.HostDetail)
