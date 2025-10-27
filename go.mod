@@ -176,3 +176,7 @@ require (
 )
 
 replace eve.evalgo.org => github.com/evalgo-org/eve v0.0.7
+
+// Exclude conflicting older versions of google.golang.org/genproto
+// to resolve ambiguous import errors in CI
+exclude google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
