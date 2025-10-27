@@ -1,7 +1,8 @@
 # Graphium Project Roadmap
 
-**Last Updated:** 2025-10-27
+**Last Updated:** 2025-10-27 (Evening)
 **Current Phase:** Phase 10 - Graph Visualization (Complete ✅)
+**Next Phase:** Phase 11 (OpenAPI Documentation) - Prioritized
 
 ---
 
@@ -106,7 +107,7 @@ Graphium is a semantic container orchestration platform that uses knowledge grap
 ### Features
 - [x] Interactive node graph (containers, hosts) ✅
 - [x] Zoom and pan controls ✅
-- [ ] Node filtering (by type, status, datacenter) (Phase 10.3 - Remaining)
+- [x] Node filtering (by type, status, datacenter) ✅ (Completed Phase 10.3)
 - [x] Edge visualization (container-host) ✅
 - [x] Real-time updates (WebSocket) ✅ (Completed in Option B)
 - [x] Export graph (PNG, SVG, JSON) ✅ (Completed in Option B)
@@ -125,93 +126,77 @@ Graphium is a semantic container orchestration platform that uses knowledge grap
 
 ---
 
-## Phase 11: Container Runtime Abstraction
+## Phase 11: OpenAPI Documentation
 
-**Status:** Planned (User Requested)
+**Status:** Next (Prioritized)
 **Priority:** High
-**Dependencies:** Phase 9 complete ✅
+**Dependencies:** Phase 10 complete ✅
 
 ### Goals
-Add support for containerd in addition to Docker, enabling Kubernetes and other container runtime integration.
-
-### Background
-- Docker uses containerd under the hood
-- Kubernetes uses containerd directly
-- Many cloud platforms moving to containerd
-- Provides broader compatibility
-
-### Technical Approach
-1. **Runtime Abstraction Layer**
-   - Create `runtime` interface package
-   - Abstract Docker-specific code
-   - Support pluggable runtimes
-
-2. **Containerd Client**
-   - Integrate `github.com/containerd/containerd/client`
-   - Map containerd containers to Graphium models
-   - Handle containerd events
-   - Support namespaces (k8s.io, moby, etc.)
-
-3. **Configuration**
-   ```yaml
-   agent:
-     runtime: docker # or containerd
-     containerd:
-       socket: /run/containerd/containerd.sock
-       namespace: k8s.io
-     docker:
-       socket: /var/run/docker.sock
-   ```
+Generate comprehensive OpenAPI 3.0 documentation from API endpoints for better developer experience and API discoverability.
 
 ### Features
-- [ ] Runtime abstraction interface
-- [ ] Containerd client implementation
-- [ ] Containerd event monitoring
-- [ ] Namespace support
-- [ ] Container image metadata
-- [ ] Runtime detection (auto-select)
-- [ ] Migration guide (Docker → containerd)
+- [ ] OpenAPI 3.0 spec generation
+- [ ] Swagger UI integration at `/docs`
+- [ ] Interactive API testing interface
+- [ ] Request/response examples
+- [ ] Schema definitions for all models
+- [ ] Authentication documentation
+- [ ] Code generation support (clients)
+- [ ] API versioning strategy
+
+### Technical Approach
+- Use `swaggo/swag` or `ogen-go/ogen` for spec generation
+- Annotate handlers with OpenAPI comments
+- Generate spec automatically from code
+- Serve Swagger UI at dedicated endpoint
+- Include JSON-LD context in schemas
+- Document all error responses
+
+### Implementation Steps
+1. Add OpenAPI annotations to handlers
+2. Generate specification file
+3. Integrate Swagger UI
+4. Add examples and descriptions
+5. Test with real API calls
+6. Add to CI/CD pipeline
 
 ### Benefits
-- ✅ Kubernetes compatibility
-- ✅ Broader platform support
-- ✅ Future-proof architecture
-- ✅ Multi-runtime environments
+- 📚 Auto-generated, always up-to-date documentation
+- 🧪 Interactive API testing without external tools
+- 🔧 Client code generation for multiple languages
+- 🎯 Better developer onboarding
+- ✅ API contract validation
 
-### Deliverables
-- Runtime abstraction layer
-- Containerd agent implementation
-- Configuration options
-- Testing with real containerd
-- Documentation
-
-**Estimated Duration:** 2-3 weeks
+**Estimated Duration:** 1 week
 
 ---
 
-## Phase 12: OpenAPI Documentation
+## Phase 12: Security & Authentication
 
-**Status:** Planned
-**Priority:** Medium
+**Status:** Planned (Prioritized)
+**Priority:** High (for production)
 **Dependencies:** Phase 9 complete ✅
 
 ### Goals
-Generate comprehensive OpenAPI 3.0 documentation from API endpoints
+Production-grade security features
 
 ### Features
-- [ ] OpenAPI spec generation
-- [ ] Swagger UI integration
-- [ ] Interactive API testing
-- [ ] Code generation (clients)
-- [ ] API versioning
+- [ ] JWT authentication
+- [ ] Role-based access control (RBAC)
+- [ ] API key management
+- [ ] TLS/HTTPS support
+- [ ] Agent authentication
+- [ ] Audit logging
+- [ ] Rate limiting (enhanced)
 
 ### Technical Approach
-- Use Echo's OpenAPI middleware
-- Annotate handlers with OpenAPI tags
-- Generate spec automatically
-- Host Swagger UI at `/docs`
+- Integrate with OAuth2/OIDC
+- Implement middleware
+- Add user management
+- Secure agent-server communication
 
-**Estimated Duration:** 1 week
+**Estimated Duration:** 2-3 weeks
 
 ---
 
@@ -242,35 +227,7 @@ Advanced query capabilities beyond basic filtering
 
 ---
 
-## Phase 14: Security & Authentication
-
-**Status:** Planned
-**Priority:** High (for production)
-**Dependencies:** Phase 9 complete ✅
-
-### Goals
-Production-grade security features
-
-### Features
-- [ ] JWT authentication
-- [ ] Role-based access control (RBAC)
-- [ ] API key management
-- [ ] TLS/HTTPS support
-- [ ] Agent authentication
-- [ ] Audit logging
-- [ ] Rate limiting (enhanced)
-
-### Technical Approach
-- Integrate with OAuth2/OIDC
-- Implement middleware
-- Add user management
-- Secure agent-server communication
-
-**Estimated Duration:** 2-3 weeks
-
----
-
-## Phase 15: Monitoring & Observability
+## Phase 14: Monitoring & Observability
 
 **Status:** Planned
 **Priority:** Medium
@@ -298,11 +255,11 @@ Production monitoring and observability
 
 ---
 
-## Phase 16: Multi-host Management
+## Phase 15: Multi-host Management
 
 **Status:** Planned
 **Priority:** High
-**Dependencies:** Phase 9, 11 complete
+**Dependencies:** Phase 9 complete ✅
 
 ### Goals
 Manage containers across multiple Docker/containerd hosts
@@ -325,11 +282,11 @@ Manage containers across multiple Docker/containerd hosts
 
 ---
 
-## Phase 17: Container Orchestration Features
+## Phase 16: Container Orchestration Features
 
 **Status:** Planned
 **Priority:** Low (future)
-**Dependencies:** Phase 16 complete
+**Dependencies:** Phase 15 complete
 
 ### Goals
 Basic orchestration capabilities (not competing with K8s/Swarm, but complementary)
@@ -350,11 +307,11 @@ Basic orchestration capabilities (not competing with K8s/Swarm, but complementar
 
 ---
 
-## Phase 18: Kubernetes Integration
+## Phase 17: Kubernetes Integration
 
 **Status:** Planned
 **Priority:** High
-**Dependencies:** Phase 11 (containerd) complete
+**Dependencies:** Phase 21 (Container Runtime Abstraction) complete
 
 ### Goals
 Native Kubernetes cluster integration
@@ -377,7 +334,7 @@ Native Kubernetes cluster integration
 
 ---
 
-## Phase 19: Data Export & Integration
+## Phase 18: Data Export & Integration
 
 **Status:** Planned
 **Priority:** Low
@@ -397,11 +354,11 @@ Export and integrate Graphium data with other systems
 
 ---
 
-## Phase 20: Advanced UI Features
+## Phase 19: Advanced UI Features
 
 **Status:** Planned
 **Priority:** Medium
-**Dependencies:** Phase 10 complete
+**Dependencies:** Phase 10 complete ✅
 
 ### Goals
 Enhanced web UI capabilities
@@ -415,6 +372,72 @@ Enhanced web UI capabilities
 - [ ] Resource metrics charts
 - [ ] Dark/light theme toggle
 - [ ] Mobile app (progressive web app)
+
+**Estimated Duration:** 3-4 weeks
+
+---
+
+## Phase 20: Performance Optimization
+
+**Status:** Planned
+**Priority:** Medium
+**Dependencies:** Phase 9 complete ✅
+
+### Goals
+Optimize system performance for large-scale deployments
+
+### Features
+- [ ] Query performance optimization
+- [ ] Caching layer (Redis/Memcached)
+- [ ] Database index optimization
+- [ ] API response compression
+- [ ] Connection pooling improvements
+- [ ] Memory profiling and optimization
+- [ ] CPU profiling and optimization
+- [ ] Load testing and benchmarking
+
+### Technical Approach
+- Profile critical code paths
+- Implement caching strategies
+- Optimize database queries and indexes
+- Use pprof for profiling
+- Benchmark with realistic workloads
+
+**Estimated Duration:** 2 weeks
+
+---
+
+## Phase 21: Container Runtime Abstraction
+
+**Status:** Planned
+**Priority:** Medium
+**Dependencies:** Phase 9 complete ✅
+
+### Goals
+Abstract container runtime layer to support Docker, containerd, and Podman
+
+### Features
+- [ ] Runtime abstraction interface
+- [ ] Containerd client implementation
+- [ ] Podman client implementation
+- [ ] Runtime auto-detection
+- [ ] Runtime-specific optimizations
+- [ ] Runtime feature parity
+- [ ] Multi-runtime testing
+
+### Technical Approach
+- Define common runtime interface
+- Implement adapters for each runtime
+- Use containerd Go client library
+- Support CRI (Container Runtime Interface)
+- Handle runtime-specific differences gracefully
+
+### Benefits
+- 🎯 Support multiple container runtimes
+- 🔧 Better Kubernetes integration
+- 📦 Podman support for rootless containers
+- 🚀 Containerd for production workloads
+- ✅ Runtime flexibility for users
 
 **Estimated Duration:** 3-4 weeks
 
@@ -475,18 +498,19 @@ Enhanced web UI capabilities
 
 ### v0.2.0 - Q1 2026 (Target)
 - ✅ Phase 9 complete (Web UI)
-- [ ] Phase 10 (Graph Visualization)
-- [ ] Phase 11 (Containerd support) 🆕
-- [ ] Phase 12 (OpenAPI docs)
+- ✅ Phase 10 complete (Graph Visualization)
+- [ ] Phase 11 (OpenAPI Documentation) 🆕 Prioritized
+- [ ] Phase 12 (Security & Authentication) 🆕 Prioritized
 
 ### v0.3.0 - Q2 2026
 - [ ] Phase 13 (Enhanced Querying)
-- [ ] Phase 14 (Security & Auth)
-- [ ] Phase 15 (Monitoring)
+- [ ] Phase 14 (Monitoring & Observability)
+- [ ] Phase 15 (Multi-host Management)
 
 ### v0.4.0 - Q3 2026
-- [ ] Phase 16 (Multi-host)
-- [ ] Phase 18 (Kubernetes)
+- [ ] Phase 16 (Container Orchestration)
+- [ ] Phase 17 (Kubernetes Integration)
+- [ ] Phase 18 (Data Export & Integration)
 
 ### v1.0.0 - Q4 2026 (Production Ready)
 - [ ] All core features complete
@@ -520,11 +544,11 @@ Enhanced web UI capabilities
 ## Contributing
 
 We welcome contributions! Priority areas:
-1. **Containerd support** (Phase 11) 🆕
-2. Graph visualization (Phase 10)
-3. OpenAPI documentation (Phase 12)
-4. Test coverage improvements
-5. Documentation
+1. **OpenAPI Documentation** (Phase 11) 🆕 High Priority
+2. **Security & Authentication** (Phase 12) 🆕 High Priority
+3. Enhanced Querying (Phase 13)
+4. Performance improvements
+5. Container Runtime Abstraction (Phase 21)
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
@@ -547,6 +571,16 @@ Have suggestions for the roadmap? Open an issue or discussion:
 ---
 
 ## Changelog
+
+### 2025-10-27 (Evening)
+- 📝 **Reorganized Roadmap Phases** per user request
+  - Moved Phase 11 (Containerd) → Phase 21 (Container Runtime Abstraction)
+  - Prioritized Phase 11 (OpenAPI Documentation) - Next phase
+  - Prioritized Phase 12 (Security & Authentication) - Critical for production
+  - Renumbered all subsequent phases (13-21)
+  - Added Phase 20 (Performance Optimization)
+  - Updated release schedule and contributing priorities
+- 🎯 New focus: OpenAPI docs and Security before Runtime abstraction
 
 ### 2025-10-27 (Afternoon)
 - ✅ **Completed Option B: Polish & Technical Debt** (All 9 tasks)
