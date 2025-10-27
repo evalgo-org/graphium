@@ -165,6 +165,14 @@ func (s *Server) setupRoutes() {
 	// Database info
 	v1.GET("/info", s.getDatabaseInfo)
 
+	// Authentication routes
+	authRoutes := v1.Group("/auth")
+	authRoutes.POST("/login", s.login)
+	authRoutes.POST("/register", s.register) // TODO: Add admin-only middleware
+	authRoutes.POST("/refresh", s.refresh)
+	authRoutes.POST("/logout", s.logout)     // Requires auth
+	authRoutes.GET("/me", s.me)              // Requires auth
+
 	// WebSocket routes
 	ws := v1.Group("/ws")
 	ws.GET("/graph", s.HandleWebSocket)  // WebSocket connection for graph updates

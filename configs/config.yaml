@@ -16,6 +16,21 @@ agent:
   docker_socket: /var/run/docker.sock
   sync_interval: 30s
 
+security:
+  # Authentication settings
+  auth_enabled: false  # Set to true to enable JWT authentication
+  jwt_secret: change-me-in-production-use-a-secure-random-string
+  jwt_expiration: 24h
+  refresh_token_expiration: 168h  # 7 days
+
+  # Rate limiting (requests per second, 0 = disabled)
+  rate_limit: 100
+
+  # CORS settings (empty = disabled)
+  allowed_origins:
+    - http://localhost:3000
+    - http://localhost:8095
+
 logging:
   level: info
   format: json
