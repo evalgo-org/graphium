@@ -1,0 +1,192 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+env:
+  GO_VERSION: '1.21'
+  REGISTRY: ghcr.io/evalgo
+  IMAGE_NAME: graphium
+
+jobs:
+  # ============================================================================
+  # Create GitHub Release
+  # ============================================================================
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "# Changelog" > CHANGELOG.md
+          git log --pretty=format:"- %s (%h)" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> CHANGELOG.md || echo "- Initial release" >> CHANGELOG.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================================
+  # Build and Upload Release Binaries
+  # ============================================================================
+  build-release:
+    name: Build Release Binaries
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
+        exclude:
+          - goos: windows
+            goarch: arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Install dependencies
+        run: task install
+
+      - name: Generate code
+        run: task generate
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          BINARY_NAME=graphium-${{ steps.version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            BINARY_NAME="${BINARY_NAME}.exe"
+          fi
+          
+          go build \
+            -ldflags "-X main.Version=${{ steps.version.outputs.version }} -X main.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ) -X main.GitCommit=$(git rev-parse --short HEAD) -w -s" \
+            -o dist/$BINARY_NAME \
+            evalgo.org/graphium/cmd/graphium
+          
+          cd dist
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            zip ${BINARY_NAME}.zip $BINARY_NAME
+            sha256sum ${BINARY_NAME}.zip > ${BINARY_NAME}.zip.sha256
+          else
+            tar czf ${BINARY_NAME}.tar.gz $BINARY_NAME
+            sha256sum ${BINARY_NAME}.tar.gz > ${BINARY_NAME}.tar.gz.sha256
+          fi
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================================
+  # Build and Push Release Docker Image
+  # ============================================================================
+  docker-release:
+    name: Build Release Docker Image
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Nixpacks
+        run: curl -sSL https://nixpacks.com/install.sh | bash
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+
+      - name: Install dependencies and generate
+        run: |
+          task install
+          task generate
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        run: |
+          nixpacks build . \
+            --name ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }} \
+            --config nixpacks.toml \
+            --env VERSION=${{ steps.version.outputs.version }} \
+            --env GIT_COMMIT=$(git rev-parse --short HEAD)
+          
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest

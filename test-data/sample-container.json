@@ -1,0 +1,30 @@
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "@id": "container-001",
+  "name": "nginx-web",
+  "description": "Nginx web server container",
+  "identifier": "container-001",
+  "executableName": "nginx:latest",
+  "image": "nginx:latest",
+  "status": "running",
+  "hostedOn": "host-001",
+  "ports": [
+    {
+      "hostPort": 80,
+      "containerPort": 80,
+      "protocol": "tcp"
+    },
+    {
+      "hostPort": 443,
+      "containerPort": 443,
+      "protocol": "tcp"
+    }
+  ],
+  "environment": {
+    "NGINX_HOST": "example.com",
+    "NGINX_PORT": "80"
+  },
+  "created": "2025-10-27T10:05:00Z",
+  "updated": "2025-10-27T10:05:00Z"
+}

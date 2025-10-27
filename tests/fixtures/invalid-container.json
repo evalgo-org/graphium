@@ -1,0 +1,14 @@
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "@id": "bad-container",
+  "status": "invalid-status",
+  "hostedOn": "",
+  "ports": [
+    {
+      "hostPort": 99999,
+      "containerPort": -1,
+      "protocol": "invalid"
+    }
+  ]
+}

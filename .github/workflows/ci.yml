@@ -1,0 +1,401 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  GO_VERSION: '1.21'
+  REGISTRY: ghcr.io/evalgo
+  IMAGE_NAME: graphium
+
+jobs:
+  # ============================================================================
+  # Code Quality Checks
+  # ============================================================================
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Install dependencies
+        run: task install
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+          args: --timeout 5m
+
+      - name: Check code formatting
+        run: |
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "Code is not formatted. Run 'task fmt'"
+            gofmt -s -l .
+            exit 1
+          fi
+
+  # ============================================================================
+  # Unit Tests
+  # ============================================================================
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Install dependencies
+        run: task install
+
+      - name: Generate code
+        run: task generate
+
+      - name: Run unit tests
+        run: |
+          go test -v -race -coverprofile=coverage.unit.out -short ./...
+
+      - name: Upload unit test coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit
+          path: coverage.unit.out
+          retention-days: 1
+
+  # ============================================================================
+  # Integration Tests
+  # ============================================================================
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      couchdb:
+        image: couchdb:3.3
+        env:
+          COUCHDB_USER: admin
+          COUCHDB_PASSWORD: password
+        ports:
+          - 5984:5984
+        options: >-
+          --health-cmd "curl -f http://localhost:5984/"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Install dependencies
+        run: task install
+
+      - name: Generate code
+        run: task generate
+
+      - name: Wait for CouchDB
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:5984/; then
+              echo "CouchDB is ready"
+              break
+            fi
+            echo "Waiting for CouchDB... ($i/30)"
+            sleep 2
+          done
+
+      - name: Run integration tests
+        env:
+          CG_COUCHDB_URL: http://admin:password@localhost:5984
+          CG_COUCHDB_DATABASE: graphium_test
+          CG_COUCHDB_USERNAME: admin
+          CG_COUCHDB_PASSWORD: password
+        run: |
+          go test -v -race -coverprofile=coverage.integration.out -run Integration ./...
+
+      - name: Upload integration test coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-integration
+          path: coverage.integration.out
+          retention-days: 1
+
+  # ============================================================================
+  # Code Coverage
+  # ============================================================================
+  coverage:
+    name: Code Coverage
+    needs: [test-unit, test-integration]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download unit coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-unit
+
+      - name: Download integration coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-integration
+
+      - name: Merge coverage reports
+        run: |
+          echo "mode: set" > coverage.out
+          grep -h -v "mode: set" coverage.*.out >> coverage.out || true
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.out
+          flags: unittests,integration
+          name: codecov-graphium
+          fail_ci_if_error: false
+
+      - name: Generate coverage report
+        run: |
+          go install github.com/axw/gocov/gocov@latest
+          go install github.com/AlekSi/gocov-xml@latest
+          gocov convert coverage.out | gocov-xml > coverage.xml
+
+      - name: Upload coverage HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  # ============================================================================
+  # Build Binary
+  # ============================================================================
+  build:
+    name: Build Binary
+    needs: [lint, test-unit]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
+        exclude:
+          - goos: windows
+            goarch: arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Install dependencies
+        run: task install
+
+      - name: Generate code
+        run: task generate
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          BINARY_NAME=graphium-${{ matrix.goos }}-${{ matrix.goarch }}
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            BINARY_NAME="${BINARY_NAME}.exe"
+          fi
+          
+          go build \
+            -ldflags "-X main.Version=${{ steps.version.outputs.version }} -X main.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ) -X main.GitCommit=$(git rev-parse --short HEAD) -w -s" \
+            -o dist/$BINARY_NAME \
+            evalgo.org/graphium/cmd/graphium
+          
+          cd dist
+          sha256sum $BINARY_NAME > $BINARY_NAME.sha256
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            dist/graphium-*
+            dist/*.sha256
+
+  # ============================================================================
+  # Build Docker Image with Nixpacks
+  # ============================================================================
+  docker:
+    name: Build Docker Image
+    needs: [lint, test-unit]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Install dependencies
+        run: task install
+
+      - name: Generate code
+        run: task generate
+
+      - name: Install Nixpacks
+        run: curl -sSL https://nixpacks.com/install.sh | bash
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build with Nixpacks
+        run: |
+          nixpacks build . \
+            --name ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }} \
+            --config nixpacks.toml \
+            --env VERSION=${{ steps.version.outputs.version }} \
+            --env BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
+            --env GIT_COMMIT=$(git rev-parse --short HEAD)
+
+      - name: Tag and push
+        if: github.event_name != 'pull_request'
+        run: |
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+  # ============================================================================
+  # Security Scanning
+  # ============================================================================
+  security:
+    name: Security Scan
+    needs: [docker]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: '-fmt sarif -out gosec-results.sarif ./...'
+
+      - name: Upload Gosec results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'gosec-results.sarif'

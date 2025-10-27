@@ -1,0 +1,323 @@
+package web
+
+import (
+	"fmt"
+	"evalgo.org/graphium/models"
+	"evalgo.org/graphium/internal/storage"
+)
+
+// Base layout template
+templ Layout(title string) {
+	<!DOCTYPE html>
+	<html lang="en">
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<title>{ title } - Graphium</title>
+		<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+		<script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
+		<link rel="stylesheet" href="/static/css/styles.css"/>
+	</head>
+	<body>
+		<nav class="navbar">
+			<div class="nav-brand">
+				<h1>🧬 Graphium</h1>
+				<p class="tagline">Container Intelligence Platform</p>
+			</div>
+			<ul class="nav-links">
+				<li><a href="/" class="nav-link">Dashboard</a></li>
+				<li><a href="/containers" class="nav-link">Containers</a></li>
+				<li><a href="/hosts" class="nav-link">Hosts</a></li>
+				<li><a href="/topology" class="nav-link">Topology</a></li>
+			</ul>
+		</nav>
+		<main class="container">
+			{ children... }
+		</main>
+		<footer class="footer">
+			<p>Graphium - Semantic Container Orchestration</p>
+		</footer>
+	</body>
+	</html>
+}
+
+// Dashboard template
+templ Dashboard(stats *storage.Statistics) {
+	@Layout("Dashboard") {
+		<div class="dashboard">
+			<h2>Infrastructure Overview</h2>
+
+			<div class="stats-grid">
+				<div class="stat-card">
+					<div class="stat-icon">📦</div>
+					<div class="stat-content">
+						<h3>Total Containers</h3>
+						<p class="stat-value">{ fmt.Sprintf("%d", stats.TotalContainers) }</p>
+					</div>
+				</div>
+
+				<div class="stat-card stat-success">
+					<div class="stat-icon">▶️</div>
+					<div class="stat-content">
+						<h3>Running</h3>
+						<p class="stat-value">{ fmt.Sprintf("%d", stats.RunningContainers) }</p>
+					</div>
+				</div>
+
+				<div class="stat-card">
+					<div class="stat-icon">🖥️</div>
+					<div class="stat-content">
+						<h3>Total Hosts</h3>
+						<p class="stat-value">{ fmt.Sprintf("%d", stats.TotalHosts) }</p>
+					</div>
+				</div>
+
+				<div class="stat-card stat-info">
+					<div class="stat-icon">📊</div>
+					<div class="stat-content">
+						<h3>Hosts with Containers</h3>
+						<p class="stat-value">{ fmt.Sprintf("%d", len(stats.HostContainerCounts)) }</p>
+					</div>
+				</div>
+			</div>
+
+			if len(stats.HostContainerCounts) > 0 {
+				<div class="section">
+					<h3>Container Distribution</h3>
+					<div class="distribution-grid">
+						for hostID, count := range stats.HostContainerCounts {
+							<div class="distribution-item">
+								<span class="host-id">{ hostID }</span>
+								<div class="distribution-bar">
+									<div class="distribution-fill" style={ fmt.Sprintf("width: %d%%", (count * 100) / stats.TotalContainers) }></div>
+								</div>
+								<span class="container-count">{ fmt.Sprintf("%d", count) }</span>
+							</div>
+						}
+					</div>
+				</div>
+			}
+
+			<div class="quick-actions">
+				<h3>Quick Actions</h3>
+				<div class="action-buttons">
+					<a href="/containers" class="btn btn-primary">View All Containers</a>
+					<a href="/hosts" class="btn btn-secondary">View All Hosts</a>
+					<a href="/topology" class="btn btn-info">View Topology</a>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// Containers list template
+templ ContainersList(containers []*models.Container) {
+	@Layout("Containers") {
+		<div class="page-header">
+			<h2>Containers</h2>
+			<div class="filters" hx-get="/web/containers/table" hx-target="#containers-table" hx-trigger="change">
+				<select name="status" hx-get="/web/containers/table" hx-target="#containers-table">
+					<option value="">All Statuses</option>
+					<option value="running">Running</option>
+					<option value="stopped">Stopped</option>
+					<option value="paused">Paused</option>
+					<option value="exited">Exited</option>
+				</select>
+			</div>
+		</div>
+
+		<div id="containers-table">
+			@ContainersTable(containers)
+		</div>
+	}
+}
+
+// Containers table component (for HTMX updates)
+templ ContainersTable(containers []*models.Container) {
+	<div class="table-container">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Image</th>
+					<th>Status</th>
+					<th>Host</th>
+					<th>Created</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				if len(containers) == 0 {
+					<tr>
+						<td colspan="6" class="no-data">No containers found</td>
+					</tr>
+				}
+				for _, container := range containers {
+					<tr>
+						<td>
+							<strong>{ container.Name }</strong>
+							<br/>
+							<small class="text-muted">{ container.ID[:12] }</small>
+						</td>
+						<td>{ container.Image }</td>
+						<td>
+							<span class={ fmt.Sprintf("badge badge-%s", container.Status) }>
+								{ container.Status }
+							</span>
+						</td>
+						<td>{ container.HostedOn }</td>
+						<td>{ container.Created }</td>
+						<td>
+							<div class="action-buttons">
+								<button class="btn-icon" title="View Details">👁️</button>
+								<button class="btn-icon" title="View Logs">📄</button>
+							</div>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+		<div class="table-footer">
+			<p>Total: { fmt.Sprintf("%d", len(containers)) } containers</p>
+		</div>
+	</div>
+}
+
+// Hosts list template
+templ HostsList(hosts []*models.Host) {
+	@Layout("Hosts") {
+		<div class="page-header">
+			<h2>Hosts</h2>
+			<div class="filters">
+				<select name="status" hx-get="/web/hosts/table" hx-target="#hosts-table">
+					<option value="">All Statuses</option>
+					<option value="active">Active</option>
+					<option value="inactive">Inactive</option>
+					<option value="maintenance">Maintenance</option>
+				</select>
+			</div>
+		</div>
+
+		<div id="hosts-table">
+			@HostsTable(hosts)
+		</div>
+	}
+}
+
+// Hosts table component (for HTMX updates)
+templ HostsTable(hosts []*models.Host) {
+	<div class="table-container">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>IP Address</th>
+					<th>CPU</th>
+					<th>Memory</th>
+					<th>Status</th>
+					<th>Datacenter</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				if len(hosts) == 0 {
+					<tr>
+						<td colspan="7" class="no-data">No hosts found</td>
+					</tr>
+				}
+				for _, host := range hosts {
+					<tr>
+						<td>
+							<strong>{ host.Name }</strong>
+							<br/>
+							<small class="text-muted">{ host.ID }</small>
+						</td>
+						<td>{ host.IPAddress }</td>
+						<td>{ fmt.Sprintf("%d cores", host.CPU) }</td>
+						<td>{ fmt.Sprintf("%.1f GB", float64(host.Memory) / 1024 / 1024 / 1024) }</td>
+						<td>
+							<span class={ fmt.Sprintf("badge badge-%s", host.Status) }>
+								{ host.Status }
+							</span>
+						</td>
+						<td>{ host.Datacenter }</td>
+						<td>
+							<div class="action-buttons">
+								<button class="btn-icon" title="View Details">👁️</button>
+								<button class="btn-icon" title="View Containers">📦</button>
+							</div>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+		<div class="table-footer">
+			<p>Total: { fmt.Sprintf("%d", len(hosts)) } hosts</p>
+		</div>
+	</div>
+}
+
+// Topology view template
+templ TopologyView(topology *storage.DatacenterTopology, datacenter string) {
+	@Layout("Topology") {
+		<div class="page-header">
+			<h2>Infrastructure Topology</h2>
+			<div class="filters">
+				<select name="datacenter" hx-get="/web/topology" hx-target="main .container">
+					<option value="all">All Datacenters</option>
+					<option value="us-east">US East</option>
+					<option value="us-west">US West</option>
+					<option value="eu-west">EU West</option>
+				</select>
+			</div>
+		</div>
+
+		if topology != nil {
+			<div class="topology-view">
+				<div class="datacenter-info">
+					<h3>Datacenter: { topology.Datacenter }</h3>
+				</div>
+
+				<div class="topology-grid">
+					for hostID, hostTopo := range topology.Hosts {
+						<div class="host-card">
+							<div class="host-header">
+								<h4>🖥️ { hostTopo.Host.Name }</h4>
+								<span class={ fmt.Sprintf("badge badge-%s", hostTopo.Host.Status) }>
+									{ hostTopo.Host.Status }
+								</span>
+							</div>
+							<div class="host-details">
+								<p><strong>ID:</strong> { hostID }</p>
+								<p><strong>IP:</strong> { hostTopo.Host.IPAddress }</p>
+								<p><strong>CPU:</strong> { fmt.Sprintf("%d cores", hostTopo.Host.CPU) }</p>
+								<p><strong>Memory:</strong> { fmt.Sprintf("%.1f GB", float64(hostTopo.Host.Memory) / 1024 / 1024 / 1024) }</p>
+							</div>
+							<div class="containers-section">
+								<h5>Containers ({ fmt.Sprintf("%d", len(hostTopo.Containers)) })</h5>
+								if len(hostTopo.Containers) > 0 {
+									<ul class="container-list">
+										for _, container := range hostTopo.Containers {
+											<li class="container-item">
+												<span class="container-name">{ container.Name }</span>
+												<span class={ fmt.Sprintf("badge badge-%s badge-sm", container.Status) }>
+													{ container.Status }
+												</span>
+											</li>
+										}
+									</ul>
+								} else {
+									<p class="no-data">No containers</p>
+								}
+							</div>
+						</div>
+					}
+				</div>
+			</div>
+		} else {
+			<div class="empty-state">
+				<p>Select a datacenter to view topology</p>
+			</div>
+		}
+	}
+}

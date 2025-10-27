@@ -1,0 +1,17 @@
+{
+  "@context": "https://schema.org",
+  "@type": "ComputerServer",
+  "@id": "host-001",
+  "name": "web-server-01",
+  "description": "Production web server",
+  "identifier": "host-001",
+  "ipAddress": "192.168.1.10",
+  "cpu": 8,
+  "memory": 17179869184,
+  "disk": 536870912000,
+  "status": "active",
+  "location": "us-east",
+  "datacenter": "us-east-1a",
+  "created": "2025-10-27T10:00:00Z",
+  "updated": "2025-10-27T10:00:00Z"
+}

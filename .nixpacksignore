@@ -1,0 +1,14 @@
+.git/
+.github/
+.vscode/
+.idea/
+*_test.go
+coverage*.out
+coverage.html
+docs/
+*.md
+!README.md
+bin/
+dist/
+tmp/
+*.tmp

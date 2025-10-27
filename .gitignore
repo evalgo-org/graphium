@@ -1,0 +1,40 @@
+# Binaries
+bin/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test
+*.test
+*.out
+coverage.html
+coverage.out
+
+# Go
+vendor/
+go.work
+go.work.sum
+
+# Generated
+generated/*_templ.go
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config
+.env
+.env.local
+*.local
+
+# Logs
+*.log

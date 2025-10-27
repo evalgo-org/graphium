@@ -1,0 +1,9 @@
+{
+  "@context": "https://schema.org",
+  "@type": "InvalidType",
+  "@id": "bad-host",
+  "ipAddress": "999.999.999.999",
+  "cpu": -4,
+  "memory": -1000,
+  "status": "broken"
+}

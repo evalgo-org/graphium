@@ -1,0 +1,22 @@
+server:
+  host: 0.0.0.0
+  port: 8095
+  debug: false
+
+couchdb:
+  url: http://localhost:5985
+  database: graphium
+  username: admin
+  password: testpass
+
+agent:
+  api_url: http://localhost:8095
+  host_id: localhost-docker
+  datacenter: local
+  docker_socket: /var/run/docker.sock
+  sync_interval: 30s
+
+logging:
+  level: info
+  format: json
+  output: stdout

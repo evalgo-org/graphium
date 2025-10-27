@@ -1,0 +1,11 @@
+{
+  "@context": "https://schema.org",
+  "@type": "ComputerSystem",
+  "@id": "host-01",
+  "name": "web-server-01",
+  "ipAddress": "192.168.1.10",
+  "cpu": 8,
+  "memory": 16000000000,
+  "status": "active",
+  "location": "us-east"
+}
