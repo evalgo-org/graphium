@@ -7,6 +7,7 @@ import (
 
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/internal/storage"
+	"evalgo.org/graphium/models"
 )
 
 // Handler handles web UI requests.
@@ -138,4 +139,50 @@ func (h *Handler) TopologyView(c echo.Context) error {
 // GraphView renders the interactive graph visualization.
 func (h *Handler) GraphView(c echo.Context) error {
 	return Render(c, GraphView(h.config))
+}
+
+// ContainerDetail renders the container detail page.
+func (h *Handler) ContainerDetail(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.String(http.StatusBadRequest, "Container ID is required")
+	}
+
+	// Get container
+	container, err := h.storage.GetContainer(id)
+	if err != nil {
+		return c.String(http.StatusNotFound, "Container not found")
+	}
+
+	// Get host if hostedOn is set
+	var host *models.Host
+	if container.HostedOn != "" {
+		host, _ = h.storage.GetHost(container.HostedOn)
+		// Ignore error - host might not exist (orphaned reference)
+	}
+
+	return Render(c, ContainerDetail(container, host))
+}
+
+// HostDetail renders the host detail page.
+func (h *Handler) HostDetail(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.String(http.StatusBadRequest, "Host ID is required")
+	}
+
+	// Get host
+	host, err := h.storage.GetHost(id)
+	if err != nil {
+		return c.String(http.StatusNotFound, "Host not found")
+	}
+
+	// Get containers on this host
+	containers, err := h.storage.GetContainersByHost(id)
+	if err != nil {
+		// If error, just use empty list
+		containers = []*models.Container{}
+	}
+
+	return Render(c, HostDetail(host, containers))
 }

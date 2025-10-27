@@ -208,8 +208,10 @@ func (s *Server) setupRoutes() {
 	webGroup := s.echo.Group("/web")
 	webGroup.GET("/containers", webHandler.ContainersList)
 	webGroup.GET("/containers/table", webHandler.ContainersTable)
+	webGroup.GET("/containers/:id", webHandler.ContainerDetail)
 	webGroup.GET("/hosts", webHandler.HostsList)
 	webGroup.GET("/hosts/table", webHandler.HostsTable)
+	webGroup.GET("/hosts/:id", webHandler.HostDetail)
 	webGroup.GET("/topology", webHandler.TopologyView)
 	webGroup.GET("/graph", webHandler.GraphView)
 }

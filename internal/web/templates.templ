@@ -171,8 +171,8 @@ templ ContainersTable(containers []*models.Container) {
 						<td>{ container.Created }</td>
 						<td>
 							<div class="action-buttons">
-								<button class="btn-icon" title="View Details">👁️</button>
-								<button class="btn-icon" title="View Logs">📄</button>
+								<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)) } class="btn-icon" title="View Details">👁️</a>
+								<button class="btn-icon" title="View Logs" disabled style="opacity: 0.5; cursor: not-allowed;">📄</button>
 							</div>
 						</td>
 					</tr>
@@ -245,8 +245,8 @@ templ HostsTable(hosts []*models.Host) {
 						<td>{ host.Datacenter }</td>
 						<td>
 							<div class="action-buttons">
-								<button class="btn-icon" title="View Details">👁️</button>
-								<button class="btn-icon" title="View Containers">📦</button>
+								<a href={ templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)) } class="btn-icon" title="View Details">👁️</a>
+								<a href={ templ.URL(fmt.Sprintf("/web/containers?host=%s", host.ID)) } class="btn-icon" title="View Containers">📦</a>
 							</div>
 						</td>
 					</tr>
@@ -1175,5 +1175,259 @@ templ GraphView(cfg *config.Config) {
 			setTimeout(connectWebSocket, 1000);
 		})();
 		</script>
+	}
+}
+
+// Container detail view template
+templ ContainerDetail(container *models.Container, host *models.Host) {
+	@Layout("Container Details") {
+		<div class="page-header">
+			<div>
+				<a href="/web/containers" class="btn btn-secondary">← Back to Containers</a>
+				<h2>Container Details</h2>
+			</div>
+		</div>
+
+		<div class="detail-container">
+			<div class="detail-section">
+				<h3>Basic Information</h3>
+				<div class="detail-grid">
+					<div class="detail-item">
+						<span class="detail-label">Name:</span>
+						<span class="detail-value"><strong>{ container.Name }</strong></span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">ID:</span>
+						<span class="detail-value">{ container.ID }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Status:</span>
+						<span class={ fmt.Sprintf("badge badge-%s", container.Status) }>
+							{ container.Status }
+						</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Image:</span>
+						<span class="detail-value">{ container.Image }</span>
+					</div>
+				</div>
+			</div>
+
+			if host != nil {
+				<div class="detail-section">
+					<h3>Host Information</h3>
+					<div class="detail-grid">
+						<div class="detail-item">
+							<span class="detail-label">Host Name:</span>
+							<span class="detail-value">
+								<a href={ templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)) }>{ host.Name }</a>
+							</span>
+						</div>
+						<div class="detail-item">
+							<span class="detail-label">Host IP:</span>
+							<span class="detail-value">{ host.IPAddress }</span>
+						</div>
+						<div class="detail-item">
+							<span class="detail-label">Datacenter:</span>
+							<span class="detail-value">{ host.Datacenter }</span>
+						</div>
+					</div>
+				</div>
+			}
+
+			if len(container.Ports) > 0 {
+				<div class="detail-section">
+					<h3>Network Ports</h3>
+					<div class="table-container">
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th>Host Port</th>
+									<th>Container Port</th>
+									<th>Protocol</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, port := range container.Ports {
+									<tr>
+										<td>{ fmt.Sprintf("%d", port.HostPort) }</td>
+										<td>{ fmt.Sprintf("%d", port.ContainerPort) }</td>
+										<td>{ port.Protocol }</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			}
+
+			if len(container.Env) > 0 {
+				<div class="detail-section">
+					<h3>Environment Variables</h3>
+					<div class="table-container">
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th>Variable</th>
+									<th>Value</th>
+								</tr>
+							</thead>
+							<tbody>
+								for key, value := range container.Env {
+									<tr>
+										<td><code>{ key }</code></td>
+										<td><code>{ value }</code></td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			}
+
+			if container.Created != "" {
+				<div class="detail-section">
+					<h3>Timestamps</h3>
+					<div class="detail-grid">
+						<div class="detail-item">
+							<span class="detail-label">Created:</span>
+							<span class="detail-value">{ container.Created }</span>
+						</div>
+					</div>
+				</div>
+			}
+
+			<div class="detail-section">
+				<h3>JSON-LD Metadata</h3>
+				<div class="detail-grid">
+					<div class="detail-item">
+						<span class="detail-label">Context:</span>
+						<span class="detail-value">{ container.Context }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Type:</span>
+						<span class="detail-value">{ container.Type }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">ID:</span>
+						<span class="detail-value"><small>{ container.ID }</small></span>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// Host detail view template
+templ HostDetail(host *models.Host, containers []*models.Container) {
+	@Layout("Host Details") {
+		<div class="page-header">
+			<div>
+				<a href="/web/hosts" class="btn btn-secondary">← Back to Hosts</a>
+				<h2>Host Details</h2>
+			</div>
+		</div>
+
+		<div class="detail-container">
+			<div class="detail-section">
+				<h3>Basic Information</h3>
+				<div class="detail-grid">
+					<div class="detail-item">
+						<span class="detail-label">Name:</span>
+						<span class="detail-value"><strong>{ host.Name }</strong></span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">ID:</span>
+						<span class="detail-value">{ host.ID }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Status:</span>
+						<span class={ fmt.Sprintf("badge badge-%s", host.Status) }>
+							{ host.Status }
+						</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">IP Address:</span>
+						<span class="detail-value">{ host.IPAddress }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Datacenter:</span>
+						<span class="detail-value">{ host.Datacenter }</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="detail-section">
+				<h3>Hardware Resources</h3>
+				<div class="detail-grid">
+					<div class="detail-item">
+						<span class="detail-label">CPU Cores:</span>
+						<span class="detail-value">{ fmt.Sprintf("%d cores", host.CPU) }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Memory:</span>
+						<span class="detail-value">{ fmt.Sprintf("%.2f GB", float64(host.Memory) / 1024 / 1024 / 1024) }</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="detail-section">
+				<h3>Containers ({ fmt.Sprintf("%d", len(containers)) })</h3>
+				if len(containers) > 0 {
+					<div class="table-container">
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th>Name</th>
+									<th>Image</th>
+									<th>Status</th>
+									<th>Actions</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, container := range containers {
+									<tr>
+										<td>
+											<strong>{ container.Name }</strong>
+											<br/>
+											<small class="text-muted">{ container.ID }</small>
+										</td>
+										<td>{ container.Image }</td>
+										<td>
+											<span class={ fmt.Sprintf("badge badge-%s", container.Status) }>
+												{ container.Status }
+											</span>
+										</td>
+										<td>
+											<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)) } class="btn-icon" title="View Details">👁️</a>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				} else {
+					<p class="no-data">No containers running on this host</p>
+				}
+			</div>
+
+			<div class="detail-section">
+				<h3>JSON-LD Metadata</h3>
+				<div class="detail-grid">
+					<div class="detail-item">
+						<span class="detail-label">Context:</span>
+						<span class="detail-value">{ host.Context }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">Type:</span>
+						<span class="detail-value">{ host.Type }</span>
+					</div>
+					<div class="detail-item">
+						<span class="detail-label">ID:</span>
+						<span class="detail-value"><small>{ host.ID }</small></span>
+					</div>
+				</div>
+			</div>
+		</div>
 	}
 }

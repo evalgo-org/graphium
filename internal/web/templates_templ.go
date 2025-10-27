@@ -414,25 +414,38 @@ func ContainersTable(containers []*models.Container) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</td><td><div class=\"action-buttons\"><button class=\"btn-icon\" title=\"View Details\">👁️</button> <button class=\"btn-icon\" title=\"View Logs\">📄</button></div></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</td><td><div class=\"action-buttons\"><a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var23 templ.SafeURL
+			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 174, Col: 76}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" class=\"btn-icon\" title=\"View Details\">👁️</a> <button class=\"btn-icon\" title=\"View Logs\" disabled style=\"opacity: 0.5; cursor: not-allowed;\">📄</button></div></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</tbody></table><div class=\"table-footer\"><p>Total: ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</tbody></table><div class=\"table-footer\"><p>Total: ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var23 string
-		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(containers)))
+		var templ_7745c5c3_Var24 string
+		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(containers)))
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 183, Col: 49}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, " containers</p></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, " containers</p></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -457,12 +470,12 @@ func HostsList(hosts []*models.Host) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var24 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var24 == nil {
-			templ_7745c5c3_Var24 = templ.NopComponent
+		templ_7745c5c3_Var25 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var25 == nil {
+			templ_7745c5c3_Var25 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var25 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var26 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -474,7 +487,7 @@ func HostsList(hosts []*models.Host) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<div class=\"page-header\"><h2>Hosts</h2><div class=\"filters\"><select name=\"status\" hx-get=\"/web/hosts/table\" hx-target=\"#hosts-table\"><option value=\"\">All Statuses</option> <option value=\"active\">Active</option> <option value=\"inactive\">Inactive</option> <option value=\"maintenance\">Maintenance</option></select></div></div><div id=\"hosts-table\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div class=\"page-header\"><h2>Hosts</h2><div class=\"filters\"><select name=\"status\" hx-get=\"/web/hosts/table\" hx-target=\"#hosts-table\"><option value=\"\">All Statuses</option> <option value=\"active\">Active</option> <option value=\"inactive\">Inactive</option> <option value=\"maintenance\">Maintenance</option></select></div></div><div id=\"hosts-table\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -482,13 +495,13 @@ func HostsList(hosts []*models.Host) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = Layout("Hosts").Render(templ.WithChildren(ctx, templ_7745c5c3_Var25), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = Layout("Hosts").Render(templ.WithChildren(ctx, templ_7745c5c3_Var26), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -513,69 +526,56 @@ func HostsTable(hosts []*models.Host) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var26 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var26 == nil {
-			templ_7745c5c3_Var26 = templ.NopComponent
+		templ_7745c5c3_Var27 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var27 == nil {
+			templ_7745c5c3_Var27 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<div class=\"table-container\"><table class=\"data-table\"><thead><tr><th>Name</th><th>IP Address</th><th>CPU</th><th>Memory</th><th>Status</th><th>Datacenter</th><th>Actions</th></tr></thead> <tbody>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<div class=\"table-container\"><table class=\"data-table\"><thead><tr><th>Name</th><th>IP Address</th><th>CPU</th><th>Memory</th><th>Status</th><th>Datacenter</th><th>Actions</th></tr></thead> <tbody>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(hosts) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<tr><td colspan=\"7\" class=\"no-data\">No hosts found</td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<tr><td colspan=\"7\" class=\"no-data\">No hosts found</td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		for _, host := range hosts {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<tr><td><strong>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var27 string
-			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 233, Col: 26}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</strong><br><small class=\"text-muted\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<tr><td><strong>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var28 string
-			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
+			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 235, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 233, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</small></td><td>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</strong><br><small class=\"text-muted\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var29 string
-			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(host.IPAddress)
+			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 237, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 235, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</td><td>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</small></td><td>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var30 string
-			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d cores", host.CPU))
+			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(host.IPAddress)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 238, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 237, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
@@ -586,9 +586,9 @@ func HostsTable(hosts []*models.Host) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var31 string
-			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f GB", float64(host.Memory)/1024/1024/1024))
+			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d cores", host.CPU))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 239, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 238, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 			if templ_7745c5c3_Err != nil {
@@ -598,69 +598,108 @@ func HostsTable(hosts []*models.Host) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var32 = []any{fmt.Sprintf("badge badge-%s", host.Status)}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var32...)
+			var templ_7745c5c3_Var32 string
+			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f GB", float64(host.Memory)/1024/1024/1024))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 239, Col: 77}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<span class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</td><td>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var33 string
-			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var32).String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
+			var templ_7745c5c3_Var33 = []any{fmt.Sprintf("badge badge-%s", host.Status)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var33...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<span class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var34 string
-			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(host.Status)
+			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var33).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 242, Col: 21}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</span></td><td>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var35 string
-			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(host.Datacenter)
+			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(host.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 245, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 242, Col: 21}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</td><td><div class=\"action-buttons\"><button class=\"btn-icon\" title=\"View Details\">👁️</button> <button class=\"btn-icon\" title=\"View Containers\">📦</button></div></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</span></td><td>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var36 string
+			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(host.Datacenter)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 245, Col: 27}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</td><td><div class=\"action-buttons\"><a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var37 templ.SafeURL
+			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 248, Col: 66}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\" class=\"btn-icon\" title=\"View Details\">👁️</a> <a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var38 templ.SafeURL
+			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/containers?host=%s", host.ID)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 249, Col: 76}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "\" class=\"btn-icon\" title=\"View Containers\">📦</a></div></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</tbody></table><div class=\"table-footer\"><p>Total: ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</tbody></table><div class=\"table-footer\"><p>Total: ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var36 string
-		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(hosts)))
+		var templ_7745c5c3_Var39 string
+		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(hosts)))
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 257, Col: 44}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, " hosts</p></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, " hosts</p></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -685,12 +724,12 @@ func TopologyView(topology *storage.DatacenterTopology, datacenter string) templ
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var37 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var37 == nil {
-			templ_7745c5c3_Var37 = templ.NopComponent
+		templ_7745c5c3_Var40 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var40 == nil {
+			templ_7745c5c3_Var40 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var38 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var41 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -702,233 +741,233 @@ func TopologyView(topology *storage.DatacenterTopology, datacenter string) templ
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<div class=\"page-header\"><h2>Infrastructure Topology</h2><div class=\"filters\"><select name=\"datacenter\" hx-get=\"/web/topology\" hx-target=\"main .container\"><option value=\"all\">All Datacenters</option> <option value=\"us-east\">US East</option> <option value=\"us-west\">US West</option> <option value=\"eu-west\">EU West</option></select></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<div class=\"page-header\"><h2>Infrastructure Topology</h2><div class=\"filters\"><select name=\"datacenter\" hx-get=\"/web/topology\" hx-target=\"main .container\"><option value=\"all\">All Datacenters</option> <option value=\"us-east\">US East</option> <option value=\"us-west\">US West</option> <option value=\"eu-west\">EU West</option></select></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if topology != nil {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<div class=\"topology-view\"><div class=\"datacenter-info\"><h3>Datacenter: ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<div class=\"topology-view\"><div class=\"datacenter-info\"><h3>Datacenter: ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var39 string
-				templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(topology.Datacenter)
+				var templ_7745c5c3_Var42 string
+				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(topology.Datacenter)
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 280, Col: 42}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</h3></div><div class=\"topology-grid\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</h3></div><div class=\"topology-grid\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for hostID, hostTopo := range topology.Hosts {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<div class=\"host-card\"><div class=\"host-header\"><h4>🖥️ ")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var40 string
-					templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(hostTopo.Host.Name)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 287, Col: 40}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</h4>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var41 = []any{fmt.Sprintf("badge badge-%s", hostTopo.Host.Status)}
-					templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var41...)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<span class=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var42 string
-					templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var41).String())
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<div class=\"host-card\"><div class=\"host-header\"><h4>🖥️ ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var43 string
-					templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(hostTopo.Host.Status)
+					templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(hostTopo.Host.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 289, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 287, Col: 40}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</span></div><div class=\"host-details\"><p><strong>ID:</strong> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</h4>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var44 string
-					templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(hostID)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 293, Col: 40}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+					var templ_7745c5c3_Var44 = []any{fmt.Sprintf("badge badge-%s", hostTopo.Host.Status)}
+					templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var44...)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</p><p><strong>IP:</strong> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<span class=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var45 string
-					templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(hostTopo.Host.IPAddress)
+					templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var44).String())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 294, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</p><p><strong>CPU:</strong> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var46 string
-					templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d cores", hostTopo.Host.CPU))
+					templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(hostTopo.Host.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 295, Col: 77}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 289, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</p><p><strong>Memory:</strong> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</span></div><div class=\"host-details\"><p><strong>ID:</strong> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var47 string
-					templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f GB", float64(hostTopo.Host.Memory)/1024/1024/1024))
+					templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(hostID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 296, Col: 112}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 293, Col: 40}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</p></div><div class=\"containers-section\"><h5>Containers (")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</p><p><strong>IP:</strong> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var48 string
-					templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(hostTopo.Containers)))
+					templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(hostTopo.Host.IPAddress)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 299, Col: 69}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 294, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, ")</h5>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</p><p><strong>CPU:</strong> ")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var49 string
+					templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d cores", hostTopo.Host.CPU))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 295, Col: 77}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</p><p><strong>Memory:</strong> ")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var50 string
+					templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f GB", float64(hostTopo.Host.Memory)/1024/1024/1024))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 296, Col: 112}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</p></div><div class=\"containers-section\"><h5>Containers (")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var51 string
+					templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(hostTopo.Containers)))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 299, Col: 69}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, ")</h5>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if len(hostTopo.Containers) > 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<ul class=\"container-list\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<ul class=\"container-list\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						for _, container := range hostTopo.Containers {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<li class=\"container-item\"><span class=\"container-name\">")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var49 string
-							templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 304, Col: 57}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</span> ")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var50 = []any{fmt.Sprintf("badge badge-%s badge-sm", container.Status)}
-							templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var50...)
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<span class=\"")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var51 string
-							templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var50).String())
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\">")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "<li class=\"container-item\"><span class=\"container-name\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 							var templ_7745c5c3_Var52 string
-							templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(container.Status)
+							templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 306, Col: 31}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 304, Col: 57}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</span></li>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</span> ")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var53 = []any{fmt.Sprintf("badge badge-%s badge-sm", container.Status)}
+							templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var53...)
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "<span class=\"")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var54 string
+							templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var53).String())
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "\">")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var55 string
+							templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(container.Status)
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 306, Col: 31}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "</span></li>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</ul>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "</ul>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<p class=\"no-data\">No containers</p>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<p class=\"no-data\">No containers</p>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "</div></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</div></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<div class=\"empty-state\"><p>Select a datacenter to view topology</p></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "<div class=\"empty-state\"><p>Select a datacenter to view topology</p></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = Layout("Topology").Render(templ.WithChildren(ctx, templ_7745c5c3_Var38), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = Layout("Topology").Render(templ.WithChildren(ctx, templ_7745c5c3_Var41), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -953,12 +992,12 @@ func GraphView(cfg *config.Config) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var53 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var53 == nil {
-			templ_7745c5c3_Var53 = templ.NopComponent
+		templ_7745c5c3_Var56 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var56 == nil {
+			templ_7745c5c3_Var56 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var54 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var57 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -970,13 +1009,677 @@ func GraphView(cfg *config.Config) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "<div class=\"page-header\"><h2>Infrastructure Graph</h2><div class=\"filters\"><div class=\"graph-control-group\"><label for=\"layout-select\">Layout:</label> <select id=\"layout-select\" name=\"layout\"><option value=\"cose\">Force Directed (COSE)</option> <option value=\"grid\">Grid</option> <option value=\"circle\">Circle</option> <option value=\"breadthfirst\">Hierarchical</option> <option value=\"concentric\">Concentric</option></select></div><div class=\"graph-control-group\"><label for=\"filter-type\">Node Type:</label> <select id=\"filter-type\" name=\"type\"><option value=\"all\">All Types</option> <option value=\"host\">Hosts Only</option> <option value=\"container\">Containers Only</option></select></div><div class=\"graph-control-group\"><label for=\"filter-status\">Status:</label> <select id=\"filter-status\" name=\"status\"><option value=\"all\">All Status</option> <option value=\"running\">Running</option> <option value=\"stopped\">Stopped</option> <option value=\"paused\">Paused</option></select></div><div class=\"graph-control-group\"><label for=\"filter-datacenter\">Datacenter:</label> <select id=\"filter-datacenter\" name=\"datacenter\"><option value=\"all\">All Datacenters</option></select></div><button class=\"btn btn-secondary\" id=\"btn-clear-filters\">Clear Filters</button></div></div><div class=\"graph-container\"><div class=\"graph-legend\"><div class=\"legend-item\"><div class=\"legend-color host\"></div><span>Hosts</span></div><div class=\"legend-item\"><div class=\"legend-color container-running\"></div><span>Running Containers</span></div><div class=\"legend-item\"><div class=\"legend-color container-stopped\"></div><span>Stopped Containers</span></div></div><div id=\"graph-stats\" class=\"graph-stats\"><div class=\"graph-stat-item\"><div class=\"label\">Total Nodes</div><div class=\"value\" id=\"stat-nodes\">-</div></div><div class=\"graph-stat-item\"><div class=\"label\">Hosts</div><div class=\"value\" id=\"stat-hosts\">-</div></div><div class=\"graph-stat-item\"><div class=\"label\">Containers</div><div class=\"value\" id=\"stat-containers\">-</div></div><div class=\"graph-stat-item\"><div class=\"label\">Relationships</div><div class=\"value\" id=\"stat-edges\">-</div></div></div><div class=\"graph-controls\"><div class=\"action-buttons\"><button class=\"btn btn-primary\" id=\"btn-fit\">Fit to Screen</button> <button class=\"btn btn-secondary\" id=\"btn-center\">Center</button> <button class=\"btn btn-secondary\" id=\"btn-refresh\">Refresh Data</button> <button class=\"btn btn-secondary\" id=\"btn-export-png\">Export PNG</button> <button class=\"btn btn-secondary\" id=\"btn-export-svg\">Export SVG</button> <button class=\"btn btn-secondary\" id=\"btn-export-json\">Export JSON</button></div></div><div id=\"cy\"></div></div><script src=\"https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js\"></script> <script>\n\t\t(function() {\n\t\t\tlet cy;\n\t\t\tlet originalData = { nodes: [], edges: [] };\n\t\t\tlet currentFilters = { type: 'all', status: 'all', datacenter: 'all' };\n\n\t\t\t// Initialize Cytoscape\n\t\t\tfunction initGraph(layout = 'cose') {\n\t\t\t\tfetch('/api/v1/graph')\n\t\t\t\t\t.then(response => response.json())\n\t\t\t\t\t.then(data => {\n\t\t\t\t\t\t// Store original data\n\t\t\t\t\t\toriginalData = {\n\t\t\t\t\t\t\tnodes: data.nodes || [],\n\t\t\t\t\t\t\tedges: data.edges || []\n\t\t\t\t\t\t};\n\n\t\t\t\t\t\t// Populate datacenter filter with unique datacenters\n\t\t\t\t\t\tpopulateDatacenterFilter(originalData.nodes);\n\n\t\t\t\t\t\t// Apply current filters\n\t\t\t\t\t\tconst elements = applyFilters(originalData, currentFilters);\n\n\t\t\t\t\t\t// Update stats\n\t\t\t\t\t\tconst stats = {\n\t\t\t\t\t\t\tnodes: elements.nodes.length,\n\t\t\t\t\t\t\thosts: elements.nodes.filter(n => n.data.type === 'host').length,\n\t\t\t\t\t\t\tcontainers: elements.nodes.filter(n => n.data.type === 'container').length,\n\t\t\t\t\t\t\tedges: elements.edges.length\n\t\t\t\t\t\t};\n\n\t\t\t\t\t\tdocument.getElementById('stat-nodes').textContent = stats.nodes;\n\t\t\t\t\t\tdocument.getElementById('stat-hosts').textContent = stats.hosts;\n\t\t\t\t\t\tdocument.getElementById('stat-containers').textContent = stats.containers;\n\t\t\t\t\t\tdocument.getElementById('stat-edges').textContent = stats.edges;\n\n\t\t\t\t\t\t// Initialize or update graph\n\t\t\t\t\t\tif (cy) {\n\t\t\t\t\t\t\tcy.destroy();\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tcy = cytoscape({\n\t\t\t\t\t\t\tcontainer: document.getElementById('cy'),\n\t\t\t\t\t\t\telements: elements,\n\t\t\t\t\t\t\tstyle: [\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t\t\t'label': 'data(label)',\n\t\t\t\t\t\t\t\t\t\t'color': '#f1f5f9',\n\t\t\t\t\t\t\t\t\t\t'text-valign': 'center',\n\t\t\t\t\t\t\t\t\t\t'text-halign': 'center',\n\t\t\t\t\t\t\t\t\t\t'font-size': '12px',\n\t\t\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t\t\t'border-width': 2,\n\t\t\t\t\t\t\t\t\t\t'border-color': '#8b5cf6'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[type=\"host\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t\t\t'shape': 'rectangle',\n\t\t\t\t\t\t\t\t\t\t'width': 80,\n\t\t\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t\t\t'border-color': '#4f46e5'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[type=\"container\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#10b981',\n\t\t\t\t\t\t\t\t\t\t'shape': 'ellipse',\n\t\t\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t\t\t'height': 60\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[status=\"stopped\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#94a3b8',\n\t\t\t\t\t\t\t\t\t\t'opacity': 0.7\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[status=\"running\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#10b981'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'edge',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'width': 2,\n\t\t\t\t\t\t\t\t\t\t'line-color': '#475569',\n\t\t\t\t\t\t\t\t\t\t'target-arrow-color': '#475569',\n\t\t\t\t\t\t\t\t\t\t'target-arrow-shape': 'triangle',\n\t\t\t\t\t\t\t\t\t\t'curve-style': 'bezier',\n\t\t\t\t\t\t\t\t\t\t'arrow-scale': 1.5\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node:selected',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'border-width': 4,\n\t\t\t\t\t\t\t\t\t\t'border-color': '#f59e0b'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\tlayout: {\n\t\t\t\t\t\t\t\tname: layout,\n\t\t\t\t\t\t\t\tanimate: true,\n\t\t\t\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\t\t\t\tfit: true,\n\t\t\t\t\t\t\t\tpadding: 50,\n\t\t\t\t\t\t\t\trandomize: false,\n\t\t\t\t\t\t\t\tcomponentSpacing: 100,\n\t\t\t\t\t\t\t\tnodeRepulsion: 400000,\n\t\t\t\t\t\t\t\tidealEdgeLength: 100,\n\t\t\t\t\t\t\t\tedgeElasticity: 100\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\t// Add tooltips on hover\n\t\t\t\t\t\tcy.on('tap', 'node', function(evt) {\n\t\t\t\t\t\t\tconst node = evt.target;\n\t\t\t\t\t\t\tconst data = node.data();\n\t\t\t\t\t\t\tlet info = `Type: ${data.type}\\\\nID: ${data.id}\\\\nStatus: ${data.status || 'N/A'}`;\n\t\t\t\t\t\t\tif (data.type === 'host') {\n\t\t\t\t\t\t\t\tinfo += `\\\\nIP: ${data.ip || 'N/A'}\\\\nCPU: ${data.cpu || 'N/A'}\\\\nMemory: ${data.memory ? (data.memory / 1024 / 1024 / 1024).toFixed(1) + ' GB' : 'N/A'}`;\n\t\t\t\t\t\t\t} else if (data.type === 'container') {\n\t\t\t\t\t\t\t\tinfo += `\\\\nImage: ${data.image || 'N/A'}`;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\talert(info);\n\t\t\t\t\t\t});\n\t\t\t\t\t})\n\t\t\t\t\t.catch(error => {\n\t\t\t\t\t\tconsole.error('Failed to load graph data:', error);\n\t\t\t\t\t\tdocument.getElementById('cy').innerHTML = '<div class=\"graph-loading\">Failed to load graph data</div>';\n\t\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Layout selector\n\t\t\tdocument.getElementById('layout-select').addEventListener('change', function(e) {\n\t\t\t\tif (cy) {\n\t\t\t\t\tcy.layout({\n\t\t\t\t\t\tname: e.target.value,\n\t\t\t\t\t\tanimate: true,\n\t\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\t\tfit: true,\n\t\t\t\t\t\tpadding: 50\n\t\t\t\t\t}).run();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Control buttons\n\t\t\tdocument.getElementById('btn-fit').addEventListener('click', function() {\n\t\t\t\tif (cy) cy.fit();\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-center').addEventListener('click', function() {\n\t\t\t\tif (cy) cy.center();\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-refresh').addEventListener('click', function() {\n\t\t\t\tconst layout = document.getElementById('layout-select').value;\n\t\t\t\tinitGraph(layout);\n\t\t\t});\n\n\t\t\t// Export button handlers\n\t\t\tdocument.getElementById('btn-export-png').addEventListener('click', function() {\n\t\t\t\tif (!cy) return;\n\t\t\t\tconst png = cy.png({ full: true, scale: 2 });\n\t\t\t\tdownloadFile(png, 'graphium-graph.png');\n\t\t\t\tshowNotification('Graph exported as PNG', 'success');\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-export-svg').addEventListener('click', function() {\n\t\t\t\tif (!cy) return;\n\t\t\t\tconst svg = cy.svg({ full: true, scale: 1 });\n\t\t\t\tconst blob = new Blob([svg], { type: 'image/svg+xml' });\n\t\t\t\tconst url = URL.createObjectURL(blob);\n\t\t\t\tdownloadFile(url, 'graphium-graph.svg');\n\t\t\t\tURL.revokeObjectURL(url);\n\t\t\t\tshowNotification('Graph exported as SVG', 'success');\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-export-json').addEventListener('click', function() {\n\t\t\t\tif (!cy) return;\n\t\t\t\tconst graphData = {\n\t\t\t\t\tnodes: cy.nodes().map(node => node.json()),\n\t\t\t\t\tedges: cy.edges().map(edge => edge.json())\n\t\t\t\t};\n\t\t\t\tconst json = JSON.stringify(graphData, null, 2);\n\t\t\t\tconst blob = new Blob([json], { type: 'application/json' });\n\t\t\t\tconst url = URL.createObjectURL(blob);\n\t\t\t\tdownloadFile(url, 'graphium-graph.json');\n\t\t\t\tURL.revokeObjectURL(url);\n\t\t\t\tshowNotification('Graph exported as JSON', 'success');\n\t\t\t});\n\n\t\t\t// Helper function to download files\n\t\t\tfunction downloadFile(url, filename) {\n\t\t\t\tconst link = document.createElement('a');\n\t\t\t\tlink.href = url;\n\t\t\t\tlink.download = filename;\n\t\t\t\tdocument.body.appendChild(link);\n\t\t\t\tlink.click();\n\t\t\t\tdocument.body.removeChild(link);\n\t\t\t}\n\n\t\t\t// Populate datacenter filter with unique datacenters from nodes\n\t\t\tfunction populateDatacenterFilter(nodes) {\n\t\t\t\tconst datacenters = new Set();\n\t\t\t\tnodes.forEach(node => {\n\t\t\t\t\tif (node.data && node.data.datacenter) {\n\t\t\t\t\t\tdatacenters.add(node.data.datacenter);\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\tconst select = document.getElementById('filter-datacenter');\n\t\t\t\t// Keep the \"All Datacenters\" option\n\t\t\t\tselect.innerHTML = '<option value=\"all\">All Datacenters</option>';\n\n\t\t\t\t// Add unique datacenters\n\t\t\t\tArray.from(datacenters).sort().forEach(dc => {\n\t\t\t\t\tconst option = document.createElement('option');\n\t\t\t\t\toption.value = dc;\n\t\t\t\t\toption.textContent = dc;\n\t\t\t\t\tselect.appendChild(option);\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Apply filters to graph data\n\t\t\tfunction applyFilters(data, filters) {\n\t\t\t\tlet filteredNodes = data.nodes.filter(node => {\n\t\t\t\t\tconst nodeData = node.data;\n\n\t\t\t\t\t// Filter by type\n\t\t\t\t\tif (filters.type !== 'all' && nodeData.type !== filters.type) {\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\n\t\t\t\t\t// Filter by status\n\t\t\t\t\tif (filters.status !== 'all' && nodeData.status !== filters.status) {\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\n\t\t\t\t\t// Filter by datacenter (for hosts and containers)\n\t\t\t\t\tif (filters.datacenter !== 'all' && nodeData.datacenter !== filters.datacenter) {\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\n\t\t\t\t\treturn true;\n\t\t\t\t});\n\n\t\t\t\t// Get IDs of filtered nodes\n\t\t\t\tconst nodeIds = new Set(filteredNodes.map(n => n.data.id));\n\n\t\t\t\t// Filter edges to only include those connecting visible nodes\n\t\t\t\tconst filteredEdges = data.edges.filter(edge => {\n\t\t\t\t\tconst source = edge.data.source;\n\t\t\t\t\tconst target = edge.data.target;\n\t\t\t\t\treturn nodeIds.has(source) && nodeIds.has(target);\n\t\t\t\t});\n\n\t\t\t\treturn {\n\t\t\t\t\tnodes: filteredNodes,\n\t\t\t\t\tedges: filteredEdges\n\t\t\t\t};\n\t\t\t}\n\n\t\t\t// Reapply filters and redraw graph\n\t\t\tfunction reapplyFilters() {\n\t\t\t\tconst layout = document.getElementById('layout-select').value;\n\t\t\t\tconst filteredData = applyFilters(originalData, currentFilters);\n\n\t\t\t\t// Update stats\n\t\t\t\tconst stats = {\n\t\t\t\t\tnodes: filteredData.nodes.length,\n\t\t\t\t\thosts: filteredData.nodes.filter(n => n.data.type === 'host').length,\n\t\t\t\t\tcontainers: filteredData.nodes.filter(n => n.data.type === 'container').length,\n\t\t\t\t\tedges: filteredData.edges.length\n\t\t\t\t};\n\n\t\t\t\tdocument.getElementById('stat-nodes').textContent = stats.nodes;\n\t\t\t\tdocument.getElementById('stat-hosts').textContent = stats.hosts;\n\t\t\t\tdocument.getElementById('stat-containers').textContent = stats.containers;\n\t\t\t\tdocument.getElementById('stat-edges').textContent = stats.edges;\n\n\t\t\t\t// Recreate graph with filtered data\n\t\t\t\tif (cy) {\n\t\t\t\t\tcy.destroy();\n\t\t\t\t}\n\n\t\t\t\tcy = cytoscape({\n\t\t\t\t\tcontainer: document.getElementById('cy'),\n\t\t\t\t\telements: filteredData,\n\t\t\t\t\tstyle: [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t'label': 'data(label)',\n\t\t\t\t\t\t\t\t'color': '#f1f5f9',\n\t\t\t\t\t\t\t\t'text-valign': 'center',\n\t\t\t\t\t\t\t\t'text-halign': 'center',\n\t\t\t\t\t\t\t\t'font-size': '12px',\n\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t'border-width': 2,\n\t\t\t\t\t\t\t\t'border-color': '#8b5cf6'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[type=\"host\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t'shape': 'rectangle',\n\t\t\t\t\t\t\t\t'width': 80,\n\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t'border-color': '#4f46e5'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[type=\"container\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#10b981',\n\t\t\t\t\t\t\t\t'shape': 'ellipse',\n\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t'height': 60\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[status=\"stopped\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#94a3b8',\n\t\t\t\t\t\t\t\t'opacity': 0.7\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[status=\"running\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#10b981'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'edge',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'width': 2,\n\t\t\t\t\t\t\t\t'line-color': '#475569',\n\t\t\t\t\t\t\t\t'target-arrow-color': '#475569',\n\t\t\t\t\t\t\t\t'target-arrow-shape': 'triangle',\n\t\t\t\t\t\t\t\t'curve-style': 'bezier',\n\t\t\t\t\t\t\t\t'arrow-scale': 1.5\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node:selected',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'border-width': 4,\n\t\t\t\t\t\t\t\t'border-color': '#f59e0b'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\tlayout: {\n\t\t\t\t\t\tname: layout,\n\t\t\t\t\t\tanimate: true,\n\t\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\t\tfit: true,\n\t\t\t\t\t\tpadding: 50,\n\t\t\t\t\t\trandomize: false,\n\t\t\t\t\t\tcomponentSpacing: 100,\n\t\t\t\t\t\tnodeRepulsion: 400000,\n\t\t\t\t\t\tidealEdgeLength: 100,\n\t\t\t\t\t\tedgeElasticity: 100\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Re-add tooltips\n\t\t\t\tcy.on('tap', 'node', function(evt) {\n\t\t\t\t\tconst node = evt.target;\n\t\t\t\t\tconst data = node.data();\n\t\t\t\t\tlet info = `Type: ${data.type}\\\\nID: ${data.id}\\\\nStatus: ${data.status || 'N/A'}`;\n\t\t\t\t\tif (data.type === 'host') {\n\t\t\t\t\t\tinfo += `\\\\nIP: ${data.ip || 'N/A'}\\\\nCPU: ${data.cpu || 'N/A'}\\\\nMemory: ${data.memory ? (data.memory / 1024 / 1024 / 1024).toFixed(1) + ' GB' : 'N/A'}`;\n\t\t\t\t\t} else if (data.type === 'container') {\n\t\t\t\t\t\tinfo += `\\\\nImage: ${data.image || 'N/A'}`;\n\t\t\t\t\t}\n\t\t\t\t\talert(info);\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Filter event listeners\n\t\t\tdocument.getElementById('filter-type').addEventListener('change', function(e) {\n\t\t\t\tcurrentFilters.type = e.target.value;\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\tdocument.getElementById('filter-status').addEventListener('change', function(e) {\n\t\t\t\tcurrentFilters.status = e.target.value;\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\tdocument.getElementById('filter-datacenter').addEventListener('change', function(e) {\n\t\t\t\tcurrentFilters.datacenter = e.target.value;\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-clear-filters').addEventListener('click', function() {\n\t\t\t\tcurrentFilters = { type: 'all', status: 'all', datacenter: 'all' };\n\t\t\t\tdocument.getElementById('filter-type').value = 'all';\n\t\t\t\tdocument.getElementById('filter-status').value = 'all';\n\t\t\t\tdocument.getElementById('filter-datacenter').value = 'all';\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\t// WebSocket connection for real-time updates\n\t\t\tlet ws = null;\n\t\t\tlet wsReconnectAttempts = 0;\n\t\t\tconst maxReconnectAttempts = 10;\n\t\t\tconst reconnectDelay = 3000;\n\n\t\t\tfunction connectWebSocket() {\n\t\t\t\tconst protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';\n\t\t\t\tconst wsURL = `${protocol}//${window.location.host}/api/v1/ws/graph`;\n\n\t\t\t\ttry {\n\t\t\t\t\tws = new WebSocket(wsURL);\n\n\t\t\t\t\tws.onopen = function() {\n\t\t\t\t\t\tconsole.log('WebSocket connected');\n\t\t\t\t\t\twsReconnectAttempts = 0;\n\t\t\t\t\t\t// Add connection indicator\n\t\t\t\t\t\tconst indicator = document.createElement('div');\n\t\t\t\t\t\tindicator.id = 'ws-status';\n\t\t\t\t\t\tindicator.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 8px 16px; border-radius: 4px; font-size: 14px; z-index: 1000;';\n\t\t\t\t\t\tindicator.textContent = '● Connected';\n\t\t\t\t\t\tdocument.body.appendChild(indicator);\n\t\t\t\t\t\tsetTimeout(() => indicator.remove(), 3000);\n\t\t\t\t\t};\n\n\t\t\t\t\tws.onmessage = function(event) {\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tconst graphEvent = JSON.parse(event.data);\n\t\t\t\t\t\t\tconsole.log('WebSocket event received:', graphEvent);\n\t\t\t\t\t\t\thandleGraphEvent(graphEvent);\n\t\t\t\t\t\t} catch (error) {\n\t\t\t\t\t\t\tconsole.error('Failed to parse WebSocket message:', error);\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\n\t\t\t\t\tws.onerror = function(error) {\n\t\t\t\t\t\tconsole.error('WebSocket error:', error);\n\t\t\t\t\t};\n\n\t\t\t\t\tws.onclose = function() {\n\t\t\t\t\t\tconsole.log('WebSocket disconnected');\n\t\t\t\t\t\t// Remove connection indicator if exists\n\t\t\t\t\t\tconst indicator = document.getElementById('ws-status');\n\t\t\t\t\t\tif (indicator) indicator.remove();\n\n\t\t\t\t\t\t// Attempt reconnection\n\t\t\t\t\t\tif (wsReconnectAttempts < maxReconnectAttempts) {\n\t\t\t\t\t\t\twsReconnectAttempts++;\n\t\t\t\t\t\t\tconsole.log(`Reconnecting WebSocket (attempt ${wsReconnectAttempts}/${maxReconnectAttempts})...`);\n\t\t\t\t\t\t\tsetTimeout(connectWebSocket, reconnectDelay);\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tconsole.error('Max WebSocket reconnection attempts reached');\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\t\t\t\t} catch (error) {\n\t\t\t\t\tconsole.error('Failed to create WebSocket connection:', error);\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleGraphEvent(event) {\n\t\t\t\tif (!cy) return;\n\n\t\t\t\tswitch (event.type) {\n\t\t\t\t\tcase 'container_added':\n\t\t\t\t\t\thandleContainerAdded(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'container_updated':\n\t\t\t\t\t\thandleContainerUpdated(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'container_removed':\n\t\t\t\t\t\thandleContainerRemoved(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'host_added':\n\t\t\t\t\t\thandleHostAdded(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'host_updated':\n\t\t\t\t\t\thandleHostUpdated(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'host_removed':\n\t\t\t\t\t\thandleHostRemoved(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'graph_refresh':\n\t\t\t\t\t\t// Refresh the entire graph\n\t\t\t\t\t\tconst layout = document.getElementById('layout-select').value;\n\t\t\t\t\t\tinitGraph(layout);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tdefault:\n\t\t\t\t\t\tconsole.warn('Unknown event type:', event.type);\n\t\t\t\t}\n\n\t\t\t\t// Update stats after any change\n\t\t\t\tupdateStats();\n\t\t\t}\n\n\t\t\tfunction handleContainerAdded(container) {\n\t\t\t\tconst nodeId = container['@id'] || container.id;\n\n\t\t\t\t// Check if node already exists\n\t\t\t\tif (cy.$('#' + nodeId).length > 0) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\t// Add container node\n\t\t\t\tcy.add({\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tid: nodeId,\n\t\t\t\t\t\tlabel: container.name,\n\t\t\t\t\t\ttype: 'container',\n\t\t\t\t\t\tstatus: container.status,\n\t\t\t\t\t\timage: container.image\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Add edge to host if hostedOn exists\n\t\t\t\tif (container.hostedOn) {\n\t\t\t\t\tconst hostId = container.hostedOn['@id'] || container.hostedOn;\n\t\t\t\t\tif (cy.$('#' + hostId).length > 0) {\n\t\t\t\t\t\tcy.add({\n\t\t\t\t\t\t\tdata: {\n\t\t\t\t\t\t\t\tid: 'edge-' + nodeId,\n\t\t\t\t\t\t\t\tsource: hostId,\n\t\t\t\t\t\t\t\ttarget: nodeId\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Animate the new node\n\t\t\t\tcy.$('#' + nodeId).animate({\n\t\t\t\t\tstyle: { opacity: 1 }\n\t\t\t\t}, {\n\t\t\t\t\tduration: 500\n\t\t\t\t});\n\n\t\t\t\t// Re-layout the graph\n\t\t\t\tcy.layout({\n\t\t\t\t\tname: document.getElementById('layout-select').value,\n\t\t\t\t\tanimate: true,\n\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\tfit: false\n\t\t\t\t}).run();\n\n\t\t\t\tshowNotification('Container added: ' + container.name, 'success');\n\t\t\t}\n\n\t\t\tfunction handleContainerUpdated(container) {\n\t\t\t\tconst nodeId = container['@id'] || container.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Update node data\n\t\t\t\t\tnode.data({\n\t\t\t\t\t\tlabel: container.name,\n\t\t\t\t\t\tstatus: container.status,\n\t\t\t\t\t\timage: container.image\n\t\t\t\t\t});\n\n\t\t\t\t\t// Flash animation\n\t\t\t\t\tnode.animate({\n\t\t\t\t\t\tstyle: { 'border-width': '4px' }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 300,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\tnode.animate({\n\t\t\t\t\t\t\t\tstyle: { 'border-width': '2px' }\n\t\t\t\t\t\t\t}, {\n\t\t\t\t\t\t\t\tduration: 300\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Container updated: ' + container.name, 'info');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleContainerRemoved(data) {\n\t\t\t\tconst nodeId = data.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Fade out animation\n\t\t\t\t\tnode.animate({\n\t\t\t\t\t\tstyle: { opacity: 0 }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 500,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\t// Remove node and connected edges\n\t\t\t\t\t\t\tnode.remove();\n\t\t\t\t\t\t\tcy.$('#edge-' + nodeId).remove();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Container removed', 'warning');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleHostAdded(host) {\n\t\t\t\tconst nodeId = host['@id'] || host.id;\n\n\t\t\t\t// Check if node already exists\n\t\t\t\tif (cy.$('#' + nodeId).length > 0) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\t// Add host node\n\t\t\t\tcy.add({\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tid: nodeId,\n\t\t\t\t\t\tlabel: host.name,\n\t\t\t\t\t\ttype: 'host',\n\t\t\t\t\t\tstatus: host.status,\n\t\t\t\t\t\tip: host.ipAddress,\n\t\t\t\t\t\tcpu: host.cpuCores,\n\t\t\t\t\t\tmemory: host.memoryBytes\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Animate the new node\n\t\t\t\tcy.$('#' + nodeId).animate({\n\t\t\t\t\tstyle: { opacity: 1 }\n\t\t\t\t}, {\n\t\t\t\t\tduration: 500\n\t\t\t\t});\n\n\t\t\t\t// Re-layout the graph\n\t\t\t\tcy.layout({\n\t\t\t\t\tname: document.getElementById('layout-select').value,\n\t\t\t\t\tanimate: true,\n\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\tfit: false\n\t\t\t\t}).run();\n\n\t\t\t\tshowNotification('Host added: ' + host.name, 'success');\n\t\t\t}\n\n\t\t\tfunction handleHostUpdated(host) {\n\t\t\t\tconst nodeId = host['@id'] || host.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Update node data\n\t\t\t\t\tnode.data({\n\t\t\t\t\t\tlabel: host.name,\n\t\t\t\t\t\tstatus: host.status,\n\t\t\t\t\t\tip: host.ipAddress,\n\t\t\t\t\t\tcpu: host.cpuCores,\n\t\t\t\t\t\tmemory: host.memoryBytes\n\t\t\t\t\t});\n\n\t\t\t\t\t// Flash animation\n\t\t\t\t\tnode.animate({\n\t\t\t\t\t\tstyle: { 'border-width': '6px' }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 300,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\tnode.animate({\n\t\t\t\t\t\t\t\tstyle: { 'border-width': '3px' }\n\t\t\t\t\t\t\t}, {\n\t\t\t\t\t\t\t\tduration: 300\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Host updated: ' + host.name, 'info');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleHostRemoved(data) {\n\t\t\t\tconst nodeId = data.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Get all containers connected to this host\n\t\t\t\t\tconst connectedContainers = cy.$('#' + nodeId).neighborhood('node[type=\"container\"]');\n\n\t\t\t\t\t// Fade out animation for host and containers\n\t\t\t\t\tnode.add(connectedContainers).animate({\n\t\t\t\t\t\tstyle: { opacity: 0 }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 500,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\t// Remove host, containers, and edges\n\t\t\t\t\t\t\tnode.add(connectedContainers).remove();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Host removed', 'warning');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction updateStats() {\n\t\t\t\tif (!cy) return;\n\n\t\t\t\tconst hosts = cy.nodes('[type=\"host\"]').length;\n\t\t\t\tconst containers = cy.nodes('[type=\"container\"]').length;\n\t\t\t\tconst edges = cy.edges().length;\n\n\t\t\t\tdocument.getElementById('node-count').textContent = hosts + containers;\n\t\t\t\tdocument.getElementById('edge-count').textContent = edges;\n\t\t\t}\n\n\t\t\tfunction showNotification(message, type = 'info') {\n\t\t\t\tconst colors = {\n\t\t\t\t\tsuccess: '#10b981',\n\t\t\t\t\tinfo: '#3b82f6',\n\t\t\t\t\twarning: '#f59e0b',\n\t\t\t\t\terror: '#ef4444'\n\t\t\t\t};\n\n\t\t\t\tconst notification = document.createElement('div');\n\t\t\t\tnotification.style.cssText = `\n\t\t\t\t\tposition: fixed;\n\t\t\t\t\tbottom: 20px;\n\t\t\t\t\tright: 20px;\n\t\t\t\t\tbackground: ${colors[type]};\n\t\t\t\t\tcolor: white;\n\t\t\t\t\tpadding: 12px 20px;\n\t\t\t\t\tborder-radius: 4px;\n\t\t\t\t\tfont-size: 14px;\n\t\t\t\t\tz-index: 1000;\n\t\t\t\t\tbox-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n\t\t\t\t\tanimation: slideIn 0.3s ease-out;\n\t\t\t\t`;\n\t\t\t\tnotification.textContent = message;\n\t\t\t\tdocument.body.appendChild(notification);\n\n\t\t\t\tsetTimeout(() => {\n\t\t\t\t\tnotification.style.animation = 'slideOut 0.3s ease-in';\n\t\t\t\t\tsetTimeout(() => notification.remove(), 300);\n\t\t\t\t}, 3000);\n\t\t\t}\n\n\t\t\t// Initialize graph on page load\n\t\t\tinitGraph();\n\n\t\t\t// Connect WebSocket after graph is initialized\n\t\t\tsetTimeout(connectWebSocket, 1000);\n\t\t})();\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<div class=\"page-header\"><h2>Infrastructure Graph</h2><div class=\"filters\"><div class=\"graph-control-group\"><label for=\"layout-select\">Layout:</label> <select id=\"layout-select\" name=\"layout\"><option value=\"cose\">Force Directed (COSE)</option> <option value=\"grid\">Grid</option> <option value=\"circle\">Circle</option> <option value=\"breadthfirst\">Hierarchical</option> <option value=\"concentric\">Concentric</option></select></div><div class=\"graph-control-group\"><label for=\"filter-type\">Node Type:</label> <select id=\"filter-type\" name=\"type\"><option value=\"all\">All Types</option> <option value=\"host\">Hosts Only</option> <option value=\"container\">Containers Only</option></select></div><div class=\"graph-control-group\"><label for=\"filter-status\">Status:</label> <select id=\"filter-status\" name=\"status\"><option value=\"all\">All Status</option> <option value=\"running\">Running</option> <option value=\"stopped\">Stopped</option> <option value=\"paused\">Paused</option></select></div><div class=\"graph-control-group\"><label for=\"filter-datacenter\">Datacenter:</label> <select id=\"filter-datacenter\" name=\"datacenter\"><option value=\"all\">All Datacenters</option></select></div><button class=\"btn btn-secondary\" id=\"btn-clear-filters\">Clear Filters</button></div></div><div class=\"graph-container\"><div class=\"graph-legend\"><div class=\"legend-item\"><div class=\"legend-color host\"></div><span>Hosts</span></div><div class=\"legend-item\"><div class=\"legend-color container-running\"></div><span>Running Containers</span></div><div class=\"legend-item\"><div class=\"legend-color container-stopped\"></div><span>Stopped Containers</span></div></div><div id=\"graph-stats\" class=\"graph-stats\"><div class=\"graph-stat-item\"><div class=\"label\">Total Nodes</div><div class=\"value\" id=\"stat-nodes\">-</div></div><div class=\"graph-stat-item\"><div class=\"label\">Hosts</div><div class=\"value\" id=\"stat-hosts\">-</div></div><div class=\"graph-stat-item\"><div class=\"label\">Containers</div><div class=\"value\" id=\"stat-containers\">-</div></div><div class=\"graph-stat-item\"><div class=\"label\">Relationships</div><div class=\"value\" id=\"stat-edges\">-</div></div></div><div class=\"graph-controls\"><div class=\"action-buttons\"><button class=\"btn btn-primary\" id=\"btn-fit\">Fit to Screen</button> <button class=\"btn btn-secondary\" id=\"btn-center\">Center</button> <button class=\"btn btn-secondary\" id=\"btn-refresh\">Refresh Data</button> <button class=\"btn btn-secondary\" id=\"btn-export-png\">Export PNG</button> <button class=\"btn btn-secondary\" id=\"btn-export-svg\">Export SVG</button> <button class=\"btn btn-secondary\" id=\"btn-export-json\">Export JSON</button></div></div><div id=\"cy\"></div></div><script src=\"https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js\"></script> <script>\n\t\t(function() {\n\t\t\tlet cy;\n\t\t\tlet originalData = { nodes: [], edges: [] };\n\t\t\tlet currentFilters = { type: 'all', status: 'all', datacenter: 'all' };\n\n\t\t\t// Initialize Cytoscape\n\t\t\tfunction initGraph(layout = 'cose') {\n\t\t\t\tfetch('/api/v1/graph')\n\t\t\t\t\t.then(response => response.json())\n\t\t\t\t\t.then(data => {\n\t\t\t\t\t\t// Store original data\n\t\t\t\t\t\toriginalData = {\n\t\t\t\t\t\t\tnodes: data.nodes || [],\n\t\t\t\t\t\t\tedges: data.edges || []\n\t\t\t\t\t\t};\n\n\t\t\t\t\t\t// Populate datacenter filter with unique datacenters\n\t\t\t\t\t\tpopulateDatacenterFilter(originalData.nodes);\n\n\t\t\t\t\t\t// Apply current filters\n\t\t\t\t\t\tconst elements = applyFilters(originalData, currentFilters);\n\n\t\t\t\t\t\t// Update stats\n\t\t\t\t\t\tconst stats = {\n\t\t\t\t\t\t\tnodes: elements.nodes.length,\n\t\t\t\t\t\t\thosts: elements.nodes.filter(n => n.data.type === 'host').length,\n\t\t\t\t\t\t\tcontainers: elements.nodes.filter(n => n.data.type === 'container').length,\n\t\t\t\t\t\t\tedges: elements.edges.length\n\t\t\t\t\t\t};\n\n\t\t\t\t\t\tdocument.getElementById('stat-nodes').textContent = stats.nodes;\n\t\t\t\t\t\tdocument.getElementById('stat-hosts').textContent = stats.hosts;\n\t\t\t\t\t\tdocument.getElementById('stat-containers').textContent = stats.containers;\n\t\t\t\t\t\tdocument.getElementById('stat-edges').textContent = stats.edges;\n\n\t\t\t\t\t\t// Initialize or update graph\n\t\t\t\t\t\tif (cy) {\n\t\t\t\t\t\t\tcy.destroy();\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tcy = cytoscape({\n\t\t\t\t\t\t\tcontainer: document.getElementById('cy'),\n\t\t\t\t\t\t\telements: elements,\n\t\t\t\t\t\t\tstyle: [\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t\t\t'label': 'data(label)',\n\t\t\t\t\t\t\t\t\t\t'color': '#f1f5f9',\n\t\t\t\t\t\t\t\t\t\t'text-valign': 'center',\n\t\t\t\t\t\t\t\t\t\t'text-halign': 'center',\n\t\t\t\t\t\t\t\t\t\t'font-size': '12px',\n\t\t\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t\t\t'border-width': 2,\n\t\t\t\t\t\t\t\t\t\t'border-color': '#8b5cf6'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[type=\"host\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t\t\t'shape': 'rectangle',\n\t\t\t\t\t\t\t\t\t\t'width': 80,\n\t\t\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t\t\t'border-color': '#4f46e5'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[type=\"container\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#10b981',\n\t\t\t\t\t\t\t\t\t\t'shape': 'ellipse',\n\t\t\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t\t\t'height': 60\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[status=\"stopped\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#94a3b8',\n\t\t\t\t\t\t\t\t\t\t'opacity': 0.7\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[status=\"running\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#10b981'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'edge',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'width': 2,\n\t\t\t\t\t\t\t\t\t\t'line-color': '#475569',\n\t\t\t\t\t\t\t\t\t\t'target-arrow-color': '#475569',\n\t\t\t\t\t\t\t\t\t\t'target-arrow-shape': 'triangle',\n\t\t\t\t\t\t\t\t\t\t'curve-style': 'bezier',\n\t\t\t\t\t\t\t\t\t\t'arrow-scale': 1.5\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node:selected',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'border-width': 4,\n\t\t\t\t\t\t\t\t\t\t'border-color': '#f59e0b'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\tlayout: {\n\t\t\t\t\t\t\t\tname: layout,\n\t\t\t\t\t\t\t\tanimate: true,\n\t\t\t\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\t\t\t\tfit: true,\n\t\t\t\t\t\t\t\tpadding: 50,\n\t\t\t\t\t\t\t\trandomize: false,\n\t\t\t\t\t\t\t\tcomponentSpacing: 100,\n\t\t\t\t\t\t\t\tnodeRepulsion: 400000,\n\t\t\t\t\t\t\t\tidealEdgeLength: 100,\n\t\t\t\t\t\t\t\tedgeElasticity: 100\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\t// Add tooltips on hover\n\t\t\t\t\t\tcy.on('tap', 'node', function(evt) {\n\t\t\t\t\t\t\tconst node = evt.target;\n\t\t\t\t\t\t\tconst data = node.data();\n\t\t\t\t\t\t\tlet info = `Type: ${data.type}\\\\nID: ${data.id}\\\\nStatus: ${data.status || 'N/A'}`;\n\t\t\t\t\t\t\tif (data.type === 'host') {\n\t\t\t\t\t\t\t\tinfo += `\\\\nIP: ${data.ip || 'N/A'}\\\\nCPU: ${data.cpu || 'N/A'}\\\\nMemory: ${data.memory ? (data.memory / 1024 / 1024 / 1024).toFixed(1) + ' GB' : 'N/A'}`;\n\t\t\t\t\t\t\t} else if (data.type === 'container') {\n\t\t\t\t\t\t\t\tinfo += `\\\\nImage: ${data.image || 'N/A'}`;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\talert(info);\n\t\t\t\t\t\t});\n\t\t\t\t\t})\n\t\t\t\t\t.catch(error => {\n\t\t\t\t\t\tconsole.error('Failed to load graph data:', error);\n\t\t\t\t\t\tdocument.getElementById('cy').innerHTML = '<div class=\"graph-loading\">Failed to load graph data</div>';\n\t\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Layout selector\n\t\t\tdocument.getElementById('layout-select').addEventListener('change', function(e) {\n\t\t\t\tif (cy) {\n\t\t\t\t\tcy.layout({\n\t\t\t\t\t\tname: e.target.value,\n\t\t\t\t\t\tanimate: true,\n\t\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\t\tfit: true,\n\t\t\t\t\t\tpadding: 50\n\t\t\t\t\t}).run();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Control buttons\n\t\t\tdocument.getElementById('btn-fit').addEventListener('click', function() {\n\t\t\t\tif (cy) cy.fit();\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-center').addEventListener('click', function() {\n\t\t\t\tif (cy) cy.center();\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-refresh').addEventListener('click', function() {\n\t\t\t\tconst layout = document.getElementById('layout-select').value;\n\t\t\t\tinitGraph(layout);\n\t\t\t});\n\n\t\t\t// Export button handlers\n\t\t\tdocument.getElementById('btn-export-png').addEventListener('click', function() {\n\t\t\t\tif (!cy) return;\n\t\t\t\tconst png = cy.png({ full: true, scale: 2 });\n\t\t\t\tdownloadFile(png, 'graphium-graph.png');\n\t\t\t\tshowNotification('Graph exported as PNG', 'success');\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-export-svg').addEventListener('click', function() {\n\t\t\t\tif (!cy) return;\n\t\t\t\tconst svg = cy.svg({ full: true, scale: 1 });\n\t\t\t\tconst blob = new Blob([svg], { type: 'image/svg+xml' });\n\t\t\t\tconst url = URL.createObjectURL(blob);\n\t\t\t\tdownloadFile(url, 'graphium-graph.svg');\n\t\t\t\tURL.revokeObjectURL(url);\n\t\t\t\tshowNotification('Graph exported as SVG', 'success');\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-export-json').addEventListener('click', function() {\n\t\t\t\tif (!cy) return;\n\t\t\t\tconst graphData = {\n\t\t\t\t\tnodes: cy.nodes().map(node => node.json()),\n\t\t\t\t\tedges: cy.edges().map(edge => edge.json())\n\t\t\t\t};\n\t\t\t\tconst json = JSON.stringify(graphData, null, 2);\n\t\t\t\tconst blob = new Blob([json], { type: 'application/json' });\n\t\t\t\tconst url = URL.createObjectURL(blob);\n\t\t\t\tdownloadFile(url, 'graphium-graph.json');\n\t\t\t\tURL.revokeObjectURL(url);\n\t\t\t\tshowNotification('Graph exported as JSON', 'success');\n\t\t\t});\n\n\t\t\t// Helper function to download files\n\t\t\tfunction downloadFile(url, filename) {\n\t\t\t\tconst link = document.createElement('a');\n\t\t\t\tlink.href = url;\n\t\t\t\tlink.download = filename;\n\t\t\t\tdocument.body.appendChild(link);\n\t\t\t\tlink.click();\n\t\t\t\tdocument.body.removeChild(link);\n\t\t\t}\n\n\t\t\t// Populate datacenter filter with unique datacenters from nodes\n\t\t\tfunction populateDatacenterFilter(nodes) {\n\t\t\t\tconst datacenters = new Set();\n\t\t\t\tnodes.forEach(node => {\n\t\t\t\t\tif (node.data && node.data.datacenter) {\n\t\t\t\t\t\tdatacenters.add(node.data.datacenter);\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\tconst select = document.getElementById('filter-datacenter');\n\t\t\t\t// Keep the \"All Datacenters\" option\n\t\t\t\tselect.innerHTML = '<option value=\"all\">All Datacenters</option>';\n\n\t\t\t\t// Add unique datacenters\n\t\t\t\tArray.from(datacenters).sort().forEach(dc => {\n\t\t\t\t\tconst option = document.createElement('option');\n\t\t\t\t\toption.value = dc;\n\t\t\t\t\toption.textContent = dc;\n\t\t\t\t\tselect.appendChild(option);\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Apply filters to graph data\n\t\t\tfunction applyFilters(data, filters) {\n\t\t\t\tlet filteredNodes = data.nodes.filter(node => {\n\t\t\t\t\tconst nodeData = node.data;\n\n\t\t\t\t\t// Filter by type\n\t\t\t\t\tif (filters.type !== 'all' && nodeData.type !== filters.type) {\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\n\t\t\t\t\t// Filter by status\n\t\t\t\t\tif (filters.status !== 'all' && nodeData.status !== filters.status) {\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\n\t\t\t\t\t// Filter by datacenter (for hosts and containers)\n\t\t\t\t\tif (filters.datacenter !== 'all' && nodeData.datacenter !== filters.datacenter) {\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\n\t\t\t\t\treturn true;\n\t\t\t\t});\n\n\t\t\t\t// Get IDs of filtered nodes\n\t\t\t\tconst nodeIds = new Set(filteredNodes.map(n => n.data.id));\n\n\t\t\t\t// Filter edges to only include those connecting visible nodes\n\t\t\t\tconst filteredEdges = data.edges.filter(edge => {\n\t\t\t\t\tconst source = edge.data.source;\n\t\t\t\t\tconst target = edge.data.target;\n\t\t\t\t\treturn nodeIds.has(source) && nodeIds.has(target);\n\t\t\t\t});\n\n\t\t\t\treturn {\n\t\t\t\t\tnodes: filteredNodes,\n\t\t\t\t\tedges: filteredEdges\n\t\t\t\t};\n\t\t\t}\n\n\t\t\t// Reapply filters and redraw graph\n\t\t\tfunction reapplyFilters() {\n\t\t\t\tconst layout = document.getElementById('layout-select').value;\n\t\t\t\tconst filteredData = applyFilters(originalData, currentFilters);\n\n\t\t\t\t// Update stats\n\t\t\t\tconst stats = {\n\t\t\t\t\tnodes: filteredData.nodes.length,\n\t\t\t\t\thosts: filteredData.nodes.filter(n => n.data.type === 'host').length,\n\t\t\t\t\tcontainers: filteredData.nodes.filter(n => n.data.type === 'container').length,\n\t\t\t\t\tedges: filteredData.edges.length\n\t\t\t\t};\n\n\t\t\t\tdocument.getElementById('stat-nodes').textContent = stats.nodes;\n\t\t\t\tdocument.getElementById('stat-hosts').textContent = stats.hosts;\n\t\t\t\tdocument.getElementById('stat-containers').textContent = stats.containers;\n\t\t\t\tdocument.getElementById('stat-edges').textContent = stats.edges;\n\n\t\t\t\t// Recreate graph with filtered data\n\t\t\t\tif (cy) {\n\t\t\t\t\tcy.destroy();\n\t\t\t\t}\n\n\t\t\t\tcy = cytoscape({\n\t\t\t\t\tcontainer: document.getElementById('cy'),\n\t\t\t\t\telements: filteredData,\n\t\t\t\t\tstyle: [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t'label': 'data(label)',\n\t\t\t\t\t\t\t\t'color': '#f1f5f9',\n\t\t\t\t\t\t\t\t'text-valign': 'center',\n\t\t\t\t\t\t\t\t'text-halign': 'center',\n\t\t\t\t\t\t\t\t'font-size': '12px',\n\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t'border-width': 2,\n\t\t\t\t\t\t\t\t'border-color': '#8b5cf6'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[type=\"host\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t'shape': 'rectangle',\n\t\t\t\t\t\t\t\t'width': 80,\n\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t'border-color': '#4f46e5'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[type=\"container\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#10b981',\n\t\t\t\t\t\t\t\t'shape': 'ellipse',\n\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t'height': 60\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[status=\"stopped\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#94a3b8',\n\t\t\t\t\t\t\t\t'opacity': 0.7\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[status=\"running\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#10b981'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'edge',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'width': 2,\n\t\t\t\t\t\t\t\t'line-color': '#475569',\n\t\t\t\t\t\t\t\t'target-arrow-color': '#475569',\n\t\t\t\t\t\t\t\t'target-arrow-shape': 'triangle',\n\t\t\t\t\t\t\t\t'curve-style': 'bezier',\n\t\t\t\t\t\t\t\t'arrow-scale': 1.5\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node:selected',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'border-width': 4,\n\t\t\t\t\t\t\t\t'border-color': '#f59e0b'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\tlayout: {\n\t\t\t\t\t\tname: layout,\n\t\t\t\t\t\tanimate: true,\n\t\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\t\tfit: true,\n\t\t\t\t\t\tpadding: 50,\n\t\t\t\t\t\trandomize: false,\n\t\t\t\t\t\tcomponentSpacing: 100,\n\t\t\t\t\t\tnodeRepulsion: 400000,\n\t\t\t\t\t\tidealEdgeLength: 100,\n\t\t\t\t\t\tedgeElasticity: 100\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Re-add tooltips\n\t\t\t\tcy.on('tap', 'node', function(evt) {\n\t\t\t\t\tconst node = evt.target;\n\t\t\t\t\tconst data = node.data();\n\t\t\t\t\tlet info = `Type: ${data.type}\\\\nID: ${data.id}\\\\nStatus: ${data.status || 'N/A'}`;\n\t\t\t\t\tif (data.type === 'host') {\n\t\t\t\t\t\tinfo += `\\\\nIP: ${data.ip || 'N/A'}\\\\nCPU: ${data.cpu || 'N/A'}\\\\nMemory: ${data.memory ? (data.memory / 1024 / 1024 / 1024).toFixed(1) + ' GB' : 'N/A'}`;\n\t\t\t\t\t} else if (data.type === 'container') {\n\t\t\t\t\t\tinfo += `\\\\nImage: ${data.image || 'N/A'}`;\n\t\t\t\t\t}\n\t\t\t\t\talert(info);\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Filter event listeners\n\t\t\tdocument.getElementById('filter-type').addEventListener('change', function(e) {\n\t\t\t\tcurrentFilters.type = e.target.value;\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\tdocument.getElementById('filter-status').addEventListener('change', function(e) {\n\t\t\t\tcurrentFilters.status = e.target.value;\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\tdocument.getElementById('filter-datacenter').addEventListener('change', function(e) {\n\t\t\t\tcurrentFilters.datacenter = e.target.value;\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-clear-filters').addEventListener('click', function() {\n\t\t\t\tcurrentFilters = { type: 'all', status: 'all', datacenter: 'all' };\n\t\t\t\tdocument.getElementById('filter-type').value = 'all';\n\t\t\t\tdocument.getElementById('filter-status').value = 'all';\n\t\t\t\tdocument.getElementById('filter-datacenter').value = 'all';\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\t// WebSocket connection for real-time updates\n\t\t\tlet ws = null;\n\t\t\tlet wsReconnectAttempts = 0;\n\t\t\tconst maxReconnectAttempts = 10;\n\t\t\tconst reconnectDelay = 3000;\n\n\t\t\tfunction connectWebSocket() {\n\t\t\t\tconst protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';\n\t\t\t\tconst wsURL = `${protocol}//${window.location.host}/api/v1/ws/graph`;\n\n\t\t\t\ttry {\n\t\t\t\t\tws = new WebSocket(wsURL);\n\n\t\t\t\t\tws.onopen = function() {\n\t\t\t\t\t\tconsole.log('WebSocket connected');\n\t\t\t\t\t\twsReconnectAttempts = 0;\n\t\t\t\t\t\t// Add connection indicator\n\t\t\t\t\t\tconst indicator = document.createElement('div');\n\t\t\t\t\t\tindicator.id = 'ws-status';\n\t\t\t\t\t\tindicator.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 8px 16px; border-radius: 4px; font-size: 14px; z-index: 1000;';\n\t\t\t\t\t\tindicator.textContent = '● Connected';\n\t\t\t\t\t\tdocument.body.appendChild(indicator);\n\t\t\t\t\t\tsetTimeout(() => indicator.remove(), 3000);\n\t\t\t\t\t};\n\n\t\t\t\t\tws.onmessage = function(event) {\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tconst graphEvent = JSON.parse(event.data);\n\t\t\t\t\t\t\tconsole.log('WebSocket event received:', graphEvent);\n\t\t\t\t\t\t\thandleGraphEvent(graphEvent);\n\t\t\t\t\t\t} catch (error) {\n\t\t\t\t\t\t\tconsole.error('Failed to parse WebSocket message:', error);\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\n\t\t\t\t\tws.onerror = function(error) {\n\t\t\t\t\t\tconsole.error('WebSocket error:', error);\n\t\t\t\t\t};\n\n\t\t\t\t\tws.onclose = function() {\n\t\t\t\t\t\tconsole.log('WebSocket disconnected');\n\t\t\t\t\t\t// Remove connection indicator if exists\n\t\t\t\t\t\tconst indicator = document.getElementById('ws-status');\n\t\t\t\t\t\tif (indicator) indicator.remove();\n\n\t\t\t\t\t\t// Attempt reconnection\n\t\t\t\t\t\tif (wsReconnectAttempts < maxReconnectAttempts) {\n\t\t\t\t\t\t\twsReconnectAttempts++;\n\t\t\t\t\t\t\tconsole.log(`Reconnecting WebSocket (attempt ${wsReconnectAttempts}/${maxReconnectAttempts})...`);\n\t\t\t\t\t\t\tsetTimeout(connectWebSocket, reconnectDelay);\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tconsole.error('Max WebSocket reconnection attempts reached');\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\t\t\t\t} catch (error) {\n\t\t\t\t\tconsole.error('Failed to create WebSocket connection:', error);\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleGraphEvent(event) {\n\t\t\t\tif (!cy) return;\n\n\t\t\t\tswitch (event.type) {\n\t\t\t\t\tcase 'container_added':\n\t\t\t\t\t\thandleContainerAdded(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'container_updated':\n\t\t\t\t\t\thandleContainerUpdated(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'container_removed':\n\t\t\t\t\t\thandleContainerRemoved(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'host_added':\n\t\t\t\t\t\thandleHostAdded(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'host_updated':\n\t\t\t\t\t\thandleHostUpdated(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'host_removed':\n\t\t\t\t\t\thandleHostRemoved(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'graph_refresh':\n\t\t\t\t\t\t// Refresh the entire graph\n\t\t\t\t\t\tconst layout = document.getElementById('layout-select').value;\n\t\t\t\t\t\tinitGraph(layout);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tdefault:\n\t\t\t\t\t\tconsole.warn('Unknown event type:', event.type);\n\t\t\t\t}\n\n\t\t\t\t// Update stats after any change\n\t\t\t\tupdateStats();\n\t\t\t}\n\n\t\t\tfunction handleContainerAdded(container) {\n\t\t\t\tconst nodeId = container['@id'] || container.id;\n\n\t\t\t\t// Check if node already exists\n\t\t\t\tif (cy.$('#' + nodeId).length > 0) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\t// Add container node\n\t\t\t\tcy.add({\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tid: nodeId,\n\t\t\t\t\t\tlabel: container.name,\n\t\t\t\t\t\ttype: 'container',\n\t\t\t\t\t\tstatus: container.status,\n\t\t\t\t\t\timage: container.image\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Add edge to host if hostedOn exists\n\t\t\t\tif (container.hostedOn) {\n\t\t\t\t\tconst hostId = container.hostedOn['@id'] || container.hostedOn;\n\t\t\t\t\tif (cy.$('#' + hostId).length > 0) {\n\t\t\t\t\t\tcy.add({\n\t\t\t\t\t\t\tdata: {\n\t\t\t\t\t\t\t\tid: 'edge-' + nodeId,\n\t\t\t\t\t\t\t\tsource: hostId,\n\t\t\t\t\t\t\t\ttarget: nodeId\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Animate the new node\n\t\t\t\tcy.$('#' + nodeId).animate({\n\t\t\t\t\tstyle: { opacity: 1 }\n\t\t\t\t}, {\n\t\t\t\t\tduration: 500\n\t\t\t\t});\n\n\t\t\t\t// Re-layout the graph\n\t\t\t\tcy.layout({\n\t\t\t\t\tname: document.getElementById('layout-select').value,\n\t\t\t\t\tanimate: true,\n\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\tfit: false\n\t\t\t\t}).run();\n\n\t\t\t\tshowNotification('Container added: ' + container.name, 'success');\n\t\t\t}\n\n\t\t\tfunction handleContainerUpdated(container) {\n\t\t\t\tconst nodeId = container['@id'] || container.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Update node data\n\t\t\t\t\tnode.data({\n\t\t\t\t\t\tlabel: container.name,\n\t\t\t\t\t\tstatus: container.status,\n\t\t\t\t\t\timage: container.image\n\t\t\t\t\t});\n\n\t\t\t\t\t// Flash animation\n\t\t\t\t\tnode.animate({\n\t\t\t\t\t\tstyle: { 'border-width': '4px' }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 300,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\tnode.animate({\n\t\t\t\t\t\t\t\tstyle: { 'border-width': '2px' }\n\t\t\t\t\t\t\t}, {\n\t\t\t\t\t\t\t\tduration: 300\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Container updated: ' + container.name, 'info');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleContainerRemoved(data) {\n\t\t\t\tconst nodeId = data.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Fade out animation\n\t\t\t\t\tnode.animate({\n\t\t\t\t\t\tstyle: { opacity: 0 }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 500,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\t// Remove node and connected edges\n\t\t\t\t\t\t\tnode.remove();\n\t\t\t\t\t\t\tcy.$('#edge-' + nodeId).remove();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Container removed', 'warning');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleHostAdded(host) {\n\t\t\t\tconst nodeId = host['@id'] || host.id;\n\n\t\t\t\t// Check if node already exists\n\t\t\t\tif (cy.$('#' + nodeId).length > 0) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\t// Add host node\n\t\t\t\tcy.add({\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tid: nodeId,\n\t\t\t\t\t\tlabel: host.name,\n\t\t\t\t\t\ttype: 'host',\n\t\t\t\t\t\tstatus: host.status,\n\t\t\t\t\t\tip: host.ipAddress,\n\t\t\t\t\t\tcpu: host.cpuCores,\n\t\t\t\t\t\tmemory: host.memoryBytes\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Animate the new node\n\t\t\t\tcy.$('#' + nodeId).animate({\n\t\t\t\t\tstyle: { opacity: 1 }\n\t\t\t\t}, {\n\t\t\t\t\tduration: 500\n\t\t\t\t});\n\n\t\t\t\t// Re-layout the graph\n\t\t\t\tcy.layout({\n\t\t\t\t\tname: document.getElementById('layout-select').value,\n\t\t\t\t\tanimate: true,\n\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\tfit: false\n\t\t\t\t}).run();\n\n\t\t\t\tshowNotification('Host added: ' + host.name, 'success');\n\t\t\t}\n\n\t\t\tfunction handleHostUpdated(host) {\n\t\t\t\tconst nodeId = host['@id'] || host.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Update node data\n\t\t\t\t\tnode.data({\n\t\t\t\t\t\tlabel: host.name,\n\t\t\t\t\t\tstatus: host.status,\n\t\t\t\t\t\tip: host.ipAddress,\n\t\t\t\t\t\tcpu: host.cpuCores,\n\t\t\t\t\t\tmemory: host.memoryBytes\n\t\t\t\t\t});\n\n\t\t\t\t\t// Flash animation\n\t\t\t\t\tnode.animate({\n\t\t\t\t\t\tstyle: { 'border-width': '6px' }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 300,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\tnode.animate({\n\t\t\t\t\t\t\t\tstyle: { 'border-width': '3px' }\n\t\t\t\t\t\t\t}, {\n\t\t\t\t\t\t\t\tduration: 300\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Host updated: ' + host.name, 'info');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleHostRemoved(data) {\n\t\t\t\tconst nodeId = data.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Get all containers connected to this host\n\t\t\t\t\tconst connectedContainers = cy.$('#' + nodeId).neighborhood('node[type=\"container\"]');\n\n\t\t\t\t\t// Fade out animation for host and containers\n\t\t\t\t\tnode.add(connectedContainers).animate({\n\t\t\t\t\t\tstyle: { opacity: 0 }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 500,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\t// Remove host, containers, and edges\n\t\t\t\t\t\t\tnode.add(connectedContainers).remove();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Host removed', 'warning');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction updateStats() {\n\t\t\t\tif (!cy) return;\n\n\t\t\t\tconst hosts = cy.nodes('[type=\"host\"]').length;\n\t\t\t\tconst containers = cy.nodes('[type=\"container\"]').length;\n\t\t\t\tconst edges = cy.edges().length;\n\n\t\t\t\tdocument.getElementById('node-count').textContent = hosts + containers;\n\t\t\t\tdocument.getElementById('edge-count').textContent = edges;\n\t\t\t}\n\n\t\t\tfunction showNotification(message, type = 'info') {\n\t\t\t\tconst colors = {\n\t\t\t\t\tsuccess: '#10b981',\n\t\t\t\t\tinfo: '#3b82f6',\n\t\t\t\t\twarning: '#f59e0b',\n\t\t\t\t\terror: '#ef4444'\n\t\t\t\t};\n\n\t\t\t\tconst notification = document.createElement('div');\n\t\t\t\tnotification.style.cssText = `\n\t\t\t\t\tposition: fixed;\n\t\t\t\t\tbottom: 20px;\n\t\t\t\t\tright: 20px;\n\t\t\t\t\tbackground: ${colors[type]};\n\t\t\t\t\tcolor: white;\n\t\t\t\t\tpadding: 12px 20px;\n\t\t\t\t\tborder-radius: 4px;\n\t\t\t\t\tfont-size: 14px;\n\t\t\t\t\tz-index: 1000;\n\t\t\t\t\tbox-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n\t\t\t\t\tanimation: slideIn 0.3s ease-out;\n\t\t\t\t`;\n\t\t\t\tnotification.textContent = message;\n\t\t\t\tdocument.body.appendChild(notification);\n\n\t\t\t\tsetTimeout(() => {\n\t\t\t\t\tnotification.style.animation = 'slideOut 0.3s ease-in';\n\t\t\t\t\tsetTimeout(() => notification.remove(), 300);\n\t\t\t\t}, 3000);\n\t\t\t}\n\n\t\t\t// Initialize graph on page load\n\t\t\tinitGraph();\n\n\t\t\t// Connect WebSocket after graph is initialized\n\t\t\tsetTimeout(connectWebSocket, 1000);\n\t\t})();\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = Layout("Graph Visualization").Render(templ.WithChildren(ctx, templ_7745c5c3_Var54), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = Layout("Graph Visualization").Render(templ.WithChildren(ctx, templ_7745c5c3_Var57), templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+// Container detail view template
+func ContainerDetail(container *models.Container, host *models.Host) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var58 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var58 == nil {
+			templ_7745c5c3_Var58 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Var59 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<div class=\"page-header\"><div><a href=\"/web/containers\" class=\"btn btn-secondary\">← Back to Containers</a><h2>Container Details</h2></div></div><div class=\"detail-container\"><div class=\"detail-section\"><h3>Basic Information</h3><div class=\"detail-grid\"><div class=\"detail-item\"><span class=\"detail-label\">Name:</span> <span class=\"detail-value\"><strong>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var60 string
+			templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1197, Col: 57}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "</strong></span></div><div class=\"detail-item\"><span class=\"detail-label\">ID:</span> <span class=\"detail-value\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var61 string
+			templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1201, Col: 47}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "</span></div><div class=\"detail-item\"><span class=\"detail-label\">Status:</span> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var62 = []any{fmt.Sprintf("badge badge-%s", container.Status)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var62...)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "<span class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var63 string
+			templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var62).String())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var64 string
+			templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(container.Status)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1206, Col: 25}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "</span></div><div class=\"detail-item\"><span class=\"detail-label\">Image:</span> <span class=\"detail-value\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var65 string
+			templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(container.Image)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1211, Col: 50}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "</span></div></div></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if host != nil {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<div class=\"detail-section\"><h3>Host Information</h3><div class=\"detail-grid\"><div class=\"detail-item\"><span class=\"detail-label\">Host Name:</span> <span class=\"detail-value\"><a href=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var66 templ.SafeURL
+				templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1223, Col: 66}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var67 string
+				templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1223, Col: 80}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var67))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "</a></span></div><div class=\"detail-item\"><span class=\"detail-label\">Host IP:</span> <span class=\"detail-value\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var68 string
+				templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(host.IPAddress)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1228, Col: 50}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var68))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "</span></div><div class=\"detail-item\"><span class=\"detail-label\">Datacenter:</span> <span class=\"detail-value\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var69 string
+				templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.JoinStringErrs(host.Datacenter)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1232, Col: 51}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var69))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "</span></div></div></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if len(container.Ports) > 0 {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "<div class=\"detail-section\"><h3>Network Ports</h3><div class=\"table-container\"><table class=\"data-table\"><thead><tr><th>Host Port</th><th>Container Port</th><th>Protocol</th></tr></thead> <tbody>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				for _, port := range container.Ports {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "<tr><td>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var70 string
+					templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", port.HostPort))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1253, Col: 48}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var70))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "</td><td>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var71 string
+					templ_7745c5c3_Var71, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", port.ContainerPort))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1254, Col: 53}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var71))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "</td><td>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var72 string
+					templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.JoinStringErrs(port.Protocol)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1255, Col: 29}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var72))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "</td></tr>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "</tbody></table></div></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if len(container.Env) > 0 {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "<div class=\"detail-section\"><h3>Environment Variables</h3><div class=\"table-container\"><table class=\"data-table\"><thead><tr><th>Variable</th><th>Value</th></tr></thead> <tbody>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				for key, value := range container.Env {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<tr><td><code>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var73 string
+					templ_7745c5c3_Var73, templ_7745c5c3_Err = templ.JoinStringErrs(key)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1278, Col: 25}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var73))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "</code></td><td><code>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var74 string
+					templ_7745c5c3_Var74, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1279, Col: 27}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var74))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "</code></td></tr>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "</tbody></table></div></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if container.Created != "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "<div class=\"detail-section\"><h3>Timestamps</h3><div class=\"detail-grid\"><div class=\"detail-item\"><span class=\"detail-label\">Created:</span> <span class=\"detail-value\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var75 string
+				templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.JoinStringErrs(container.Created)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1294, Col: 53}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var75))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "</span></div></div></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "<div class=\"detail-section\"><h3>JSON-LD Metadata</h3><div class=\"detail-grid\"><div class=\"detail-item\"><span class=\"detail-label\">Context:</span> <span class=\"detail-value\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var76 string
+			templ_7745c5c3_Var76, templ_7745c5c3_Err = templ.JoinStringErrs(container.Context)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1305, Col: 52}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var76))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "</span></div><div class=\"detail-item\"><span class=\"detail-label\">Type:</span> <span class=\"detail-value\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var77 string
+			templ_7745c5c3_Var77, templ_7745c5c3_Err = templ.JoinStringErrs(container.Type)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1309, Col: 49}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var77))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "</span></div><div class=\"detail-item\"><span class=\"detail-label\">ID:</span> <span class=\"detail-value\"><small>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var78 string
+			templ_7745c5c3_Var78, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1313, Col: 54}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var78))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "</small></span></div></div></div></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			return nil
+		})
+		templ_7745c5c3_Err = Layout("Container Details").Render(templ.WithChildren(ctx, templ_7745c5c3_Var59), templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+// Host detail view template
+func HostDetail(host *models.Host, containers []*models.Container) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var79 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var79 == nil {
+			templ_7745c5c3_Var79 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Var80 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<div class=\"page-header\"><div><a href=\"/web/hosts\" class=\"btn btn-secondary\">← Back to Hosts</a><h2>Host Details</h2></div></div><div class=\"detail-container\"><div class=\"detail-section\"><h3>Basic Information</h3><div class=\"detail-grid\"><div class=\"detail-item\"><span class=\"detail-label\">Name:</span> <span class=\"detail-value\"><strong>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var81 string
+			templ_7745c5c3_Var81, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1337, Col: 52}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var81))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "</strong></span></div><div class=\"detail-item\"><span class=\"detail-label\">ID:</span> <span class=\"detail-value\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var82 string
+			templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1341, Col: 42}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var82))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "</span></div><div class=\"detail-item\"><span class=\"detail-label\">Status:</span> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var83 = []any{fmt.Sprintf("badge badge-%s", host.Status)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var83...)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "<span class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var84 string
+			templ_7745c5c3_Var84, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var83).String())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var84))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var85 string
+			templ_7745c5c3_Var85, templ_7745c5c3_Err = templ.JoinStringErrs(host.Status)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1346, Col: 20}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var85))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "</span></div><div class=\"detail-item\"><span class=\"detail-label\">IP Address:</span> <span class=\"detail-value\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var86 string
+			templ_7745c5c3_Var86, templ_7745c5c3_Err = templ.JoinStringErrs(host.IPAddress)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1351, Col: 49}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var86))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "</span></div><div class=\"detail-item\"><span class=\"detail-label\">Datacenter:</span> <span class=\"detail-value\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var87 string
+			templ_7745c5c3_Var87, templ_7745c5c3_Err = templ.JoinStringErrs(host.Datacenter)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1355, Col: 50}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var87))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "</span></div></div></div><div class=\"detail-section\"><h3>Hardware Resources</h3><div class=\"detail-grid\"><div class=\"detail-item\"><span class=\"detail-label\">CPU Cores:</span> <span class=\"detail-value\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var88 string
+			templ_7745c5c3_Var88, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d cores", host.CPU))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1365, Col: 68}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var88))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "</span></div><div class=\"detail-item\"><span class=\"detail-label\">Memory:</span> <span class=\"detail-value\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var89 string
+			templ_7745c5c3_Var89, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f GB", float64(host.Memory)/1024/1024/1024))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1369, Col: 100}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var89))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "</span></div></div></div><div class=\"detail-section\"><h3>Containers (")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var90 string
+			templ_7745c5c3_Var90, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(containers)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1375, Col: 56}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var90))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, ")</h3>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if len(containers) > 0 {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "<div class=\"table-container\"><table class=\"data-table\"><thead><tr><th>Name</th><th>Image</th><th>Status</th><th>Actions</th></tr></thead> <tbody>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				for _, container := range containers {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "<tr><td><strong>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var91 string
+					templ_7745c5c3_Var91, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1391, Col: 35}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var91))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, "</strong><br><small class=\"text-muted\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var92 string
+					templ_7745c5c3_Var92, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1393, Col: 51}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var92))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, "</small></td><td>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var93 string
+					templ_7745c5c3_Var93, templ_7745c5c3_Err = templ.JoinStringErrs(container.Image)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1395, Col: 31}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var93))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "</td><td>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var94 = []any{fmt.Sprintf("badge badge-%s", container.Status)}
+					templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var94...)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "<span class=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var95 string
+					templ_7745c5c3_Var95, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var94).String())
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var95))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, "\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var96 string
+					templ_7745c5c3_Var96, templ_7745c5c3_Err = templ.JoinStringErrs(container.Status)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1398, Col: 30}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var96))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, "</span></td><td><a href=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var97 templ.SafeURL
+					templ_7745c5c3_Var97, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1402, Col: 79}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var97))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "\" class=\"btn-icon\" title=\"View Details\">👁️</a></td></tr>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "</tbody></table></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "<p class=\"no-data\">No containers running on this host</p>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "</div><div class=\"detail-section\"><h3>JSON-LD Metadata</h3><div class=\"detail-grid\"><div class=\"detail-item\"><span class=\"detail-label\">Context:</span> <span class=\"detail-value\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var98 string
+			templ_7745c5c3_Var98, templ_7745c5c3_Err = templ.JoinStringErrs(host.Context)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1419, Col: 47}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var98))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, "</span></div><div class=\"detail-item\"><span class=\"detail-label\">Type:</span> <span class=\"detail-value\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var99 string
+			templ_7745c5c3_Var99, templ_7745c5c3_Err = templ.JoinStringErrs(host.Type)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1423, Col: 44}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var99))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "</span></div><div class=\"detail-item\"><span class=\"detail-label\">ID:</span> <span class=\"detail-value\"><small>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var100 string
+			templ_7745c5c3_Var100, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1427, Col: 49}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var100))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, "</small></span></div></div></div></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			return nil
+		})
+		templ_7745c5c3_Err = Layout("Host Details").Render(templ.WithChildren(ctx, templ_7745c5c3_Var80), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
