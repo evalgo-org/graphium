@@ -181,7 +181,7 @@ jobs:
       - name: Merge coverage reports
         run: |
           echo "mode: set" > coverage.out
-          grep -h -v "mode: set" coverage.*.out >> coverage.out || true
+          grep -h -v "^mode:" coverage.*.out >> coverage.out || true
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v4
