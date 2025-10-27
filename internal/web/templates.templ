@@ -553,8 +553,343 @@ templ GraphView(cfg *config.Config) {
 				initGraph(layout);
 			});
 
+			// WebSocket connection for real-time updates
+			let ws = null;
+			let wsReconnectAttempts = 0;
+			const maxReconnectAttempts = 10;
+			const reconnectDelay = 3000;
+
+			function connectWebSocket() {
+				const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+				const wsURL = `${protocol}//${window.location.host}/api/v1/ws/graph`;
+
+				try {
+					ws = new WebSocket(wsURL);
+
+					ws.onopen = function() {
+						console.log('WebSocket connected');
+						wsReconnectAttempts = 0;
+						// Add connection indicator
+						const indicator = document.createElement('div');
+						indicator.id = 'ws-status';
+						indicator.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 8px 16px; border-radius: 4px; font-size: 14px; z-index: 1000;';
+						indicator.textContent = '● Connected';
+						document.body.appendChild(indicator);
+						setTimeout(() => indicator.remove(), 3000);
+					};
+
+					ws.onmessage = function(event) {
+						try {
+							const graphEvent = JSON.parse(event.data);
+							console.log('WebSocket event received:', graphEvent);
+							handleGraphEvent(graphEvent);
+						} catch (error) {
+							console.error('Failed to parse WebSocket message:', error);
+						}
+					};
+
+					ws.onerror = function(error) {
+						console.error('WebSocket error:', error);
+					};
+
+					ws.onclose = function() {
+						console.log('WebSocket disconnected');
+						// Remove connection indicator if exists
+						const indicator = document.getElementById('ws-status');
+						if (indicator) indicator.remove();
+
+						// Attempt reconnection
+						if (wsReconnectAttempts < maxReconnectAttempts) {
+							wsReconnectAttempts++;
+							console.log(`Reconnecting WebSocket (attempt ${wsReconnectAttempts}/${maxReconnectAttempts})...`);
+							setTimeout(connectWebSocket, reconnectDelay);
+						} else {
+							console.error('Max WebSocket reconnection attempts reached');
+						}
+					};
+				} catch (error) {
+					console.error('Failed to create WebSocket connection:', error);
+				}
+			}
+
+			function handleGraphEvent(event) {
+				if (!cy) return;
+
+				switch (event.type) {
+					case 'container_added':
+						handleContainerAdded(event.data);
+						break;
+					case 'container_updated':
+						handleContainerUpdated(event.data);
+						break;
+					case 'container_removed':
+						handleContainerRemoved(event.data);
+						break;
+					case 'host_added':
+						handleHostAdded(event.data);
+						break;
+					case 'host_updated':
+						handleHostUpdated(event.data);
+						break;
+					case 'host_removed':
+						handleHostRemoved(event.data);
+						break;
+					case 'graph_refresh':
+						// Refresh the entire graph
+						const layout = document.getElementById('layout-select').value;
+						initGraph(layout);
+						break;
+					default:
+						console.warn('Unknown event type:', event.type);
+				}
+
+				// Update stats after any change
+				updateStats();
+			}
+
+			function handleContainerAdded(container) {
+				const nodeId = container['@id'] || container.id;
+
+				// Check if node already exists
+				if (cy.$('#' + nodeId).length > 0) {
+					return;
+				}
+
+				// Add container node
+				cy.add({
+					data: {
+						id: nodeId,
+						label: container.name,
+						type: 'container',
+						status: container.status,
+						image: container.image
+					}
+				});
+
+				// Add edge to host if hostedOn exists
+				if (container.hostedOn) {
+					const hostId = container.hostedOn['@id'] || container.hostedOn;
+					if (cy.$('#' + hostId).length > 0) {
+						cy.add({
+							data: {
+								id: 'edge-' + nodeId,
+								source: hostId,
+								target: nodeId
+							}
+						});
+					}
+				}
+
+				// Animate the new node
+				cy.$('#' + nodeId).animate({
+					style: { opacity: 1 }
+				}, {
+					duration: 500
+				});
+
+				// Re-layout the graph
+				cy.layout({
+					name: document.getElementById('layout-select').value,
+					animate: true,
+					animationDuration: 500,
+					fit: false
+				}).run();
+
+				showNotification('Container added: ' + container.name, 'success');
+			}
+
+			function handleContainerUpdated(container) {
+				const nodeId = container['@id'] || container.id;
+				const node = cy.$('#' + nodeId);
+
+				if (node.length > 0) {
+					// Update node data
+					node.data({
+						label: container.name,
+						status: container.status,
+						image: container.image
+					});
+
+					// Flash animation
+					node.animate({
+						style: { 'border-width': '4px' }
+					}, {
+						duration: 300,
+						complete: function() {
+							node.animate({
+								style: { 'border-width': '2px' }
+							}, {
+								duration: 300
+							});
+						}
+					});
+
+					showNotification('Container updated: ' + container.name, 'info');
+				}
+			}
+
+			function handleContainerRemoved(data) {
+				const nodeId = data.id;
+				const node = cy.$('#' + nodeId);
+
+				if (node.length > 0) {
+					// Fade out animation
+					node.animate({
+						style: { opacity: 0 }
+					}, {
+						duration: 500,
+						complete: function() {
+							// Remove node and connected edges
+							node.remove();
+							cy.$('#edge-' + nodeId).remove();
+						}
+					});
+
+					showNotification('Container removed', 'warning');
+				}
+			}
+
+			function handleHostAdded(host) {
+				const nodeId = host['@id'] || host.id;
+
+				// Check if node already exists
+				if (cy.$('#' + nodeId).length > 0) {
+					return;
+				}
+
+				// Add host node
+				cy.add({
+					data: {
+						id: nodeId,
+						label: host.name,
+						type: 'host',
+						status: host.status,
+						ip: host.ipAddress,
+						cpu: host.cpuCores,
+						memory: host.memoryBytes
+					}
+				});
+
+				// Animate the new node
+				cy.$('#' + nodeId).animate({
+					style: { opacity: 1 }
+				}, {
+					duration: 500
+				});
+
+				// Re-layout the graph
+				cy.layout({
+					name: document.getElementById('layout-select').value,
+					animate: true,
+					animationDuration: 500,
+					fit: false
+				}).run();
+
+				showNotification('Host added: ' + host.name, 'success');
+			}
+
+			function handleHostUpdated(host) {
+				const nodeId = host['@id'] || host.id;
+				const node = cy.$('#' + nodeId);
+
+				if (node.length > 0) {
+					// Update node data
+					node.data({
+						label: host.name,
+						status: host.status,
+						ip: host.ipAddress,
+						cpu: host.cpuCores,
+						memory: host.memoryBytes
+					});
+
+					// Flash animation
+					node.animate({
+						style: { 'border-width': '6px' }
+					}, {
+						duration: 300,
+						complete: function() {
+							node.animate({
+								style: { 'border-width': '3px' }
+							}, {
+								duration: 300
+							});
+						}
+					});
+
+					showNotification('Host updated: ' + host.name, 'info');
+				}
+			}
+
+			function handleHostRemoved(data) {
+				const nodeId = data.id;
+				const node = cy.$('#' + nodeId);
+
+				if (node.length > 0) {
+					// Get all containers connected to this host
+					const connectedContainers = cy.$('#' + nodeId).neighborhood('node[type="container"]');
+
+					// Fade out animation for host and containers
+					node.add(connectedContainers).animate({
+						style: { opacity: 0 }
+					}, {
+						duration: 500,
+						complete: function() {
+							// Remove host, containers, and edges
+							node.add(connectedContainers).remove();
+						}
+					});
+
+					showNotification('Host removed', 'warning');
+				}
+			}
+
+			function updateStats() {
+				if (!cy) return;
+
+				const hosts = cy.nodes('[type="host"]').length;
+				const containers = cy.nodes('[type="container"]').length;
+				const edges = cy.edges().length;
+
+				document.getElementById('node-count').textContent = hosts + containers;
+				document.getElementById('edge-count').textContent = edges;
+			}
+
+			function showNotification(message, type = 'info') {
+				const colors = {
+					success: '#10b981',
+					info: '#3b82f6',
+					warning: '#f59e0b',
+					error: '#ef4444'
+				};
+
+				const notification = document.createElement('div');
+				notification.style.cssText = `
+					position: fixed;
+					bottom: 20px;
+					right: 20px;
+					background: ${colors[type]};
+					color: white;
+					padding: 12px 20px;
+					border-radius: 4px;
+					font-size: 14px;
+					z-index: 1000;
+					box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+					animation: slideIn 0.3s ease-out;
+				`;
+				notification.textContent = message;
+				document.body.appendChild(notification);
+
+				setTimeout(() => {
+					notification.style.animation = 'slideOut 0.3s ease-in';
+					setTimeout(() => notification.remove(), 300);
+				}, 3000);
+			}
+
 			// Initialize graph on page load
 			initGraph();
+
+			// Connect WebSocket after graph is initialized
+			setTimeout(connectWebSocket, 1000);
 		})();
 		</script>
 	}
