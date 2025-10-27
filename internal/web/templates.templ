@@ -2016,11 +2016,37 @@ templ UsersList(users []*models.User, currentUser *models.User) {
 				modal.style.display = 'none';
 			}
 
+			function showRevokeApiKeyModal(userId, username, apiKey) {
+				const modal = document.getElementById('revokeApiKeyModal');
+				const apiKeyEl = document.getElementById('revokeApiKey');
+				const usernameEl = document.getElementById('revokeUsername');
+				const form = document.getElementById('revokeApiKeyForm');
+
+				// Truncate API key for display (show first 8 and last 4 chars)
+				const displayKey = apiKey.length > 12 ?
+					apiKey.substring(0, 8) + '...' + apiKey.substring(apiKey.length - 4) :
+					apiKey;
+				apiKeyEl.textContent = displayKey;
+				usernameEl.textContent = username;
+				form.action = '/web/users/' + userId + '/apikeys/' + encodeURIComponent(apiKey) + '/revoke';
+				modal.style.display = 'flex';
+			}
+
+			function closeRevokeApiKeyModal() {
+				const modal = document.getElementById('revokeApiKeyModal');
+				modal.style.display = 'none';
+			}
+
 			// Close modal when clicking outside of it
 			window.onclick = function(event) {
-				const modal = document.getElementById('deleteModal');
-				if (event.target == modal) {
+				const deleteModal = document.getElementById('deleteModal');
+				const revokeModal = document.getElementById('revokeApiKeyModal');
+
+				if (event.target == deleteModal) {
 					closeDeleteModal();
+				}
+				if (event.target == revokeModal) {
+					closeRevokeApiKeyModal();
 				}
 			}
 
@@ -2028,6 +2054,7 @@ templ UsersList(users []*models.User, currentUser *models.User) {
 			document.addEventListener('keydown', function(event) {
 				if (event.key === 'Escape') {
 					closeDeleteModal();
+					closeRevokeApiKeyModal();
 				}
 			});
 		</script>

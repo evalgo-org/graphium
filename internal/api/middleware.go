@@ -11,7 +11,7 @@ func ValidateContentType(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Skip validation for web UI routes (they use form submissions)
 		path := c.Request().URL.Path
-		if strings.HasPrefix(path, "/web/") || path == "/" {
+		if strings.HasPrefix(path, "/web/") {
 			return next(c)
 		}
 
@@ -21,13 +21,16 @@ func ValidateContentType(next echo.HandlerFunc) echo.HandlerFunc {
 		if method == "POST" || method == "PUT" || method == "PATCH" {
 			contentType := c.Request().Header.Get("Content-Type")
 
-			// Allow empty body for some requests
-			if c.Request().ContentLength == 0 {
+			// Allow empty body/contentType for some requests (e.g., POST with no body)
+			// ContentLength -1 means unknown/not set (common in tests and some clients)
+			// ContentLength 0 means explicitly empty
+			if c.Request().ContentLength == 0 && contentType == "" {
 				return next(c)
 			}
 
-			// Check if Content-Type is application/json
-			if !strings.HasPrefix(contentType, "application/json") {
+			// If there's a body (ContentLength > 0 or ContentLength == -1 with ContentType set),
+			// check if Content-Type is application/json
+			if contentType != "" && !strings.HasPrefix(contentType, "application/json") {
 				return BadRequestError(
 					"Invalid Content-Type",
 					"Content-Type must be 'application/json'. Got: "+contentType,
@@ -44,7 +47,7 @@ func ValidateAcceptHeader(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Skip validation for web UI routes (they accept HTML)
 		path := c.Request().URL.Path
-		if strings.HasPrefix(path, "/web/") || path == "/" || strings.HasPrefix(path, "/static/") {
+		if strings.HasPrefix(path, "/web/") || strings.HasPrefix(path, "/static/") {
 			return next(c)
 		}
 
