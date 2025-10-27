@@ -161,6 +161,21 @@ type SecurityConfig struct {
 
 	// APIKeys are valid API keys for authentication (optional)
 	APIKeys []string `mapstructure:"api_keys"`
+
+	// AuthEnabled enables JWT authentication (default: false for backwards compatibility)
+	AuthEnabled bool `mapstructure:"auth_enabled"`
+
+	// JWTSecret is the secret key for signing JWT tokens
+	JWTSecret string `mapstructure:"jwt_secret"`
+
+	// JWTExpiration is the JWT token expiration duration (default: 24h)
+	JWTExpiration time.Duration `mapstructure:"jwt_expiration"`
+
+	// RefreshTokenExpiration is the refresh token expiration duration (default: 7 days)
+	RefreshTokenExpiration time.Duration `mapstructure:"refresh_token_expiration"`
+
+	// AgentTokenSecret is the secret key for agent authentication tokens
+	AgentTokenSecret string `mapstructure:"agent_token_secret"`
 }
 
 var cfg *Config
@@ -245,6 +260,11 @@ func setDefaults(v *viper.Viper) {
 
 	v.SetDefault("security.rate_limit", 100)
 	v.SetDefault("security.allowed_origins", []string{"*"})
+	v.SetDefault("security.auth_enabled", false)
+	v.SetDefault("security.jwt_secret", "change-me-in-production")
+	v.SetDefault("security.jwt_expiration", "24h")
+	v.SetDefault("security.refresh_token_expiration", "168h") // 7 days
+	v.SetDefault("security.agent_token_secret", "change-me-in-production")
 }
 
 func validate(cfg *Config) error {
