@@ -1,3 +1,34 @@
+// Package config provides configuration management for Graphium.
+//
+// This package handles loading configuration from multiple sources:
+//   - YAML configuration files
+//   - Environment variables (with CG_ prefix)
+//   - .env files
+//   - Default values
+//
+// # Configuration Sources Priority
+//
+// Configuration is loaded in the following order (later sources override earlier ones):
+//  1. Default values (hardcoded)
+//  2. Configuration files (./configs/config.yaml, ~/.graphium/config.yaml, /etc/graphium/config.yaml)
+//  3. .env files
+//  4. Environment variables (CG_ prefix)
+//
+// # Usage Example
+//
+//	cfg, err := config.Load("configs/config.yaml")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	fmt.Printf("Server: %s:%d\n", cfg.Server.Host, cfg.Server.Port)
+//
+// # Environment Variables
+//
+// Environment variables override all other configuration sources.
+// Use CG_ prefix and underscores for nested keys:
+//   - CG_SERVER_PORT=8095
+//   - CG_COUCHDB_URL=http://localhost:5984
+//   - CG_AGENT_ENABLED=true
 package config
 
 import (
@@ -8,61 +39,140 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Config is the root configuration structure for Graphium.
+// It contains all configuration sections for server, database, agent, logging, and security.
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	CouchDB  CouchDBConfig  `mapstructure:"couchdb"`
-	Agent    AgentConfig    `mapstructure:"agent"`
-	Logging  LoggingConfig  `mapstructure:"logging"`
+	// Server contains HTTP server configuration
+	Server ServerConfig `mapstructure:"server"`
+
+	// CouchDB contains database connection settings
+	CouchDB CouchDBConfig `mapstructure:"couchdb"`
+
+	// Agent contains Docker agent configuration
+	Agent AgentConfig `mapstructure:"agent"`
+
+	// Logging contains logging and observability settings
+	Logging LoggingConfig `mapstructure:"logging"`
+
+	// Security contains security and rate limiting settings
 	Security SecurityConfig `mapstructure:"security"`
 }
 
+// ServerConfig contains HTTP server configuration.
 type ServerConfig struct {
-	Host            string        `mapstructure:"host"`
-	Port            int           `mapstructure:"port"`
-	ReadTimeout     time.Duration `mapstructure:"read_timeout"`
-	WriteTimeout    time.Duration `mapstructure:"write_timeout"`
+	// Host is the server bind address (default: localhost)
+	Host string `mapstructure:"host"`
+
+	// Port is the server listen port (default: 8095)
+	Port int `mapstructure:"port"`
+
+	// ReadTimeout is the maximum duration for reading requests
+	ReadTimeout time.Duration `mapstructure:"read_timeout"`
+
+	// WriteTimeout is the maximum duration for writing responses
+	WriteTimeout time.Duration `mapstructure:"write_timeout"`
+
+	// ShutdownTimeout is the maximum duration for graceful shutdown
 	ShutdownTimeout time.Duration `mapstructure:"shutdown_timeout"`
-	Debug           bool          `mapstructure:"debug"`
-	TLSEnabled      bool          `mapstructure:"tls_enabled"`
-	TLSCert         string        `mapstructure:"tls_cert"`
-	TLSKey          string        `mapstructure:"tls_key"`
+
+	// Debug enables debug logging and additional endpoints
+	Debug bool `mapstructure:"debug"`
+
+	// TLSEnabled enables HTTPS
+	TLSEnabled bool `mapstructure:"tls_enabled"`
+
+	// TLSCert is the path to the TLS certificate file
+	TLSCert string `mapstructure:"tls_cert"`
+
+	// TLSKey is the path to the TLS private key file
+	TLSKey string `mapstructure:"tls_key"`
 }
 
+// CouchDBConfig contains CouchDB connection settings.
 type CouchDBConfig struct {
-	URL            string `mapstructure:"url"`
-	Database       string `mapstructure:"database"`
-	Username       string `mapstructure:"username"`
-	Password       string `mapstructure:"password"`
-	MaxConnections int    `mapstructure:"max_connections"`
-	Timeout        int    `mapstructure:"timeout"`
+	// URL is the CouchDB server URL (e.g., http://localhost:5984)
+	URL string `mapstructure:"url"`
+
+	// Database is the database name to use
+	Database string `mapstructure:"database"`
+
+	// Username for CouchDB authentication
+	Username string `mapstructure:"username"`
+
+	// Password for CouchDB authentication
+	Password string `mapstructure:"password"`
+
+	// MaxConnections is the maximum number of concurrent connections
+	MaxConnections int `mapstructure:"max_connections"`
+
+	// Timeout in seconds for database operations
+	Timeout int `mapstructure:"timeout"`
 }
 
+// AgentConfig contains Docker agent configuration.
 type AgentConfig struct {
-	Enabled      bool          `mapstructure:"enabled"`
-	APIURL       string        `mapstructure:"api_url"`
-	HostID       string        `mapstructure:"host_id"`
-	Datacenter   string        `mapstructure:"datacenter"`
+	// Enabled determines if the agent should run
+	Enabled bool `mapstructure:"enabled"`
+
+	// APIURL is the URL of the Graphium API server
+	APIURL string `mapstructure:"api_url"`
+
+	// HostID is the unique identifier for this host
+	HostID string `mapstructure:"host_id"`
+
+	// Datacenter is the datacenter/location identifier
+	Datacenter string `mapstructure:"datacenter"`
+
+	// SyncInterval is the duration between container syncs
 	SyncInterval time.Duration `mapstructure:"sync_interval"`
-	DockerSocket string        `mapstructure:"docker_socket"`
+
+	// DockerSocket is the path to the Docker socket
+	DockerSocket string `mapstructure:"docker_socket"`
 }
 
+// LoggingConfig contains logging configuration.
 type LoggingConfig struct {
-	Level      string `mapstructure:"level"`
-	Format     string `mapstructure:"format"`
-	Output     string `mapstructure:"output"`
-	MaxSize    int    `mapstructure:"max_size"`
-	MaxBackups int    `mapstructure:"max_backups"`
-	MaxAge     int    `mapstructure:"max_age"`
+	// Level is the log level (debug, info, warn, error)
+	Level string `mapstructure:"level"`
+
+	// Format is the log format (json, text)
+	Format string `mapstructure:"format"`
+
+	// Output is the log output destination (stdout, file)
+	Output string `mapstructure:"output"`
+
+	// MaxSize is the maximum log file size in megabytes
+	MaxSize int `mapstructure:"max_size"`
+
+	// MaxBackups is the maximum number of old log files to keep
+	MaxBackups int `mapstructure:"max_backups"`
+
+	// MaxAge is the maximum number of days to keep old log files
+	MaxAge int `mapstructure:"max_age"`
 }
 
+// SecurityConfig contains security and rate limiting settings.
 type SecurityConfig struct {
-	RateLimit      int      `mapstructure:"rate_limit"`
+	// RateLimit is the maximum requests per second per client
+	RateLimit int `mapstructure:"rate_limit"`
+
+	// AllowedOrigins are the CORS allowed origins
 	AllowedOrigins []string `mapstructure:"allowed_origins"`
-	APIKeys        []string `mapstructure:"api_keys"`
+
+	// APIKeys are valid API keys for authentication (optional)
+	APIKeys []string `mapstructure:"api_keys"`
 }
 
 var cfg *Config
 
+// Load reads configuration from a file and environment variables.
+// If cfgFile is empty, it searches for config.yaml in standard locations.
+//
+// Configuration precedence (highest to lowest):
+//  1. Environment variables (CG_ prefix)
+//  2. .env file
+//  3. Configuration file
+//  4. Default values
 func Load(cfgFile string) (*Config, error) {
 	v := viper.New()
 

@@ -1,3 +1,31 @@
+// Package validation provides JSON-LD document validation for Graphium models.
+//
+// This package validates both the structure and semantic correctness of JSON-LD
+// documents representing containers, hosts, and other infrastructure components.
+// It uses:
+//   - go-playground/validator for struct-level validation
+//   - json-gold for JSON-LD semantic validation
+//
+// # Validation Process
+//
+// 1. JSON parsing - Ensures valid JSON syntax
+// 2. Struct validation - Checks required fields and constraints
+// 3. JSON-LD validation - Verifies semantic correctness
+// 4. Schema.org compliance - Validates against Schema.org vocabulary
+//
+// # Usage Example
+//
+//	validator := validation.New()
+//	result, err := validator.ValidateContainer(jsonData)
+//	if err != nil {
+//	    // Handle error
+//	}
+//	if !result.Valid {
+//	    // Handle validation errors
+//	    for _, err := range result.Errors {
+//	        fmt.Printf("%s: %s\n", err.Field, err.Message)
+//	    }
+//	}
 package validation
 
 import (
@@ -10,26 +38,42 @@ import (
 	"github.com/piprate/json-gold/ld"
 )
 
-// Validator handles JSON-LD document validation
+// Validator handles JSON-LD document validation for Graphium models.
+// It combines struct validation with JSON-LD semantic validation to ensure
+// both syntactic and semantic correctness of documents.
 type Validator struct {
+	// structValidator validates Go struct constraints and tags
 	structValidator *validator.Validate
+
+	// jsonldProcessor validates JSON-LD semantic correctness
 	jsonldProcessor *ld.JsonLdProcessor
 }
 
-// ValidationError represents a single validation error
+// ValidationError represents a single validation error with field-level details.
+// It includes the field name, error message, and optionally the invalid value.
 type ValidationError struct {
-	Field   string `json:"field"`
+	// Field is the name of the field that failed validation
+	Field string `json:"field"`
+
+	// Message describes why the validation failed
 	Message string `json:"message"`
-	Value   interface{} `json:"value,omitempty"`
+
+	// Value is the invalid value that caused the error (optional)
+	Value interface{} `json:"value,omitempty"`
 }
 
-// ValidationResult represents the result of validation
+// ValidationResult represents the complete result of a validation operation.
+// It indicates whether validation passed and includes any errors found.
 type ValidationResult struct {
-	Valid  bool              `json:"valid"`
+	// Valid is true if validation passed, false otherwise
+	Valid bool `json:"valid"`
+
+	// Errors contains all validation errors found (empty if Valid is true)
 	Errors []ValidationError `json:"errors,omitempty"`
 }
 
-// New creates a new validator instance
+// New creates a new Validator instance with struct and JSON-LD validators.
+// The validator is ready to validate containers, hosts, and other models.
 func New() *Validator {
 	return &Validator{
 		structValidator: validator.New(),
