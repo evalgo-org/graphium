@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"evalgo.org/graphium/internal/config"
-	"evalgo.org/graphium/internal/storage"
+	_ "evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/internal/validation"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
