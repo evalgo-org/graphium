@@ -34,6 +34,7 @@ templ LayoutWithUser(title string, user *models.User) {
 				<li><a href="/" class="nav-link">Dashboard</a></li>
 				<li><a href="/web/containers" class="nav-link">Containers</a></li>
 				<li><a href="/web/hosts" class="nav-link">Hosts</a></li>
+				<li><a href="/web/stacks" class="nav-link">Stacks</a></li>
 				<li><a href="/web/graph" class="nav-link">Graph</a></li>
 				<li><a href="/web/topology" class="nav-link">Topology</a></li>
 			</ul>
@@ -2488,5 +2489,39 @@ templ ContainerLogsView(container *models.Container, host *models.Host, user *mo
 			});
 			observer.observe(logsContainer, { childList: true, subtree: true });
 		</script>
+	}
+}
+
+templ StacksListWithUser(stacks []*models.Stack, pagination PaginationInfo, user *models.User) {
+	@LayoutWithUser("Stacks", user) {
+		<div class="page-header">
+			<h2>Stacks</h2>
+			<p>Multi-container stack management</p>
+		</div>
+		<div class="info-box">
+			<h3>Stacks Feature</h3>
+			<p>The web UI for stacks is under development. Please use the CLI to manage stacks:</p>
+			<ul>
+				<li><code>graphium stack deploy &lt;definition-file&gt;</code> - Deploy a stack</li>
+				<li><code>graphium stack list</code> - List all stacks</li>
+				<li><code>graphium stack status &lt;id&gt;</code> - View stack details</li>
+				<li><code>graphium stack stop &lt;id&gt;</code> - Stop a running stack</li>
+				<li><code>graphium stack remove &lt;id&gt;</code> - Remove a stack</li>
+			</ul>
+			<p>Example stack definitions are available in: <code>configs/examples/stacks/</code></p>
+		</div>
+	}
+}
+
+templ StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInfo, queryParams string) {
+	<div>Stacks table - Use CLI for now</div>
+}
+
+templ StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment, user *models.User) {
+	@LayoutWithUser("Stack Detail", user) {
+		<div>
+			<h2>Stack: { stack.Name }</h2>
+			<p>Use CLI for full details</p>
+		</div>
 	}
 }

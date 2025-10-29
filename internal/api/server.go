@@ -255,6 +255,9 @@ func (s *Server) setupRoutes() {
 	webGroup.GET("/hosts", webHandler.HostsList)
 	webGroup.GET("/hosts/table", webHandler.HostsTable)
 	webGroup.GET("/hosts/:id", webHandler.HostDetail)
+	webGroup.GET("/stacks", webHandler.StacksList)
+	webGroup.GET("/stacks/table", webHandler.StacksTable)
+	webGroup.GET("/stacks/:id", webHandler.StackDetail)
 	webGroup.GET("/topology", webHandler.TopologyView)
 	webGroup.GET("/graph", webHandler.GraphView)
 }
