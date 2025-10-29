@@ -1,0 +1,107 @@
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "ha-webapp",
+  "description": "High-availability web application with multiple replicas and load balancing",
+  "network": {
+    "name": "ha-network",
+    "driver": "bridge",
+    "createIfNotExists": true
+  },
+  "itemListElement": [
+    {
+      "@type": "SoftwareApplication",
+      "position": 1,
+      "name": "haproxy",
+      "image": "haproxy:2.8-alpine",
+      "ports": [
+        {
+          "containerPort": 80,
+          "hostPort": 80,
+          "protocol": "tcp"
+        },
+        {
+          "containerPort": 8404,
+          "hostPort": 8404,
+          "protocol": "tcp"
+        }
+      ],
+      "volumeMounts": [
+        {
+          "source": "./haproxy.cfg",
+          "target": "/usr/local/etc/haproxy/haproxy.cfg",
+          "type": "bind",
+          "readOnly": true
+        }
+      ],
+      "healthCheck": {
+        "type": "http",
+        "path": "/stats",
+        "port": 8404
+      }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "position": 2,
+      "name": "web1",
+      "image": "nginx:alpine",
+      "ports": [
+        {
+          "containerPort": 80,
+          "hostPort": 8081,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": {
+        "NGINX_WORKER_PROCESSES": "auto"
+      },
+      "healthCheck": {
+        "type": "http",
+        "path": "/health",
+        "port": 80
+      }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "position": 3,
+      "name": "web2",
+      "image": "nginx:alpine",
+      "ports": [
+        {
+          "containerPort": 80,
+          "hostPort": 8082,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": {
+        "NGINX_WORKER_PROCESSES": "auto"
+      },
+      "healthCheck": {
+        "type": "http",
+        "path": "/health",
+        "port": 80
+      }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "position": 4,
+      "name": "web3",
+      "image": "nginx:alpine",
+      "ports": [
+        {
+          "containerPort": 80,
+          "hostPort": 8083,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": {
+        "NGINX_WORKER_PROCESSES": "auto"
+      },
+      "healthCheck": {
+        "type": "http",
+        "path": "/health",
+        "port": 80
+      }
+    }
+  ]
+}

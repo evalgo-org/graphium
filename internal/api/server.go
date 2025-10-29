@@ -173,6 +173,15 @@ func (s *Server) setupRoutes() {
 	// Database info
 	v1.GET("/info", s.getDatabaseInfo, s.authMiddle.RequireRead)
 
+	// Stack routes
+	stackRoutes := v1.Group("/stacks")
+	stackRoutes.GET("", s.listStacks, s.authMiddle.RequireRead)
+	stackRoutes.GET("/:id", s.getStack, ValidateIDFormat, s.authMiddle.RequireRead)
+	stackRoutes.GET("/:id/deployment", s.getStackDeployment, ValidateIDFormat, s.authMiddle.RequireRead)
+	stackRoutes.POST("", s.deployStack, s.authMiddle.RequireWrite)
+	stackRoutes.POST("/:id/stop", s.stopStack, ValidateIDFormat, s.authMiddle.RequireWrite)
+	stackRoutes.DELETE("/:id", s.removeStack, ValidateIDFormat, s.authMiddle.RequireWrite)
+
 	// Authentication routes
 	authRoutes := v1.Group("/auth")
 	authRoutes.POST("/login", s.login)
