@@ -2496,32 +2496,153 @@ templ StacksListWithUser(stacks []*models.Stack, pagination PaginationInfo, user
 	@LayoutWithUser("Stacks", user) {
 		<div class="page-header">
 			<h2>Stacks</h2>
-			<p>Multi-container stack management</p>
+			<p>Multi-container distributed stack deployments</p>
 		</div>
-		<div class="info-box">
-			<h3>Stacks Feature</h3>
-			<p>The web UI for stacks is under development. Please use the CLI to manage stacks:</p>
-			<ul>
-				<li><code>graphium stack deploy &lt;definition-file&gt;</code> - Deploy a stack</li>
-				<li><code>graphium stack list</code> - List all stacks</li>
-				<li><code>graphium stack status &lt;id&gt;</code> - View stack details</li>
-				<li><code>graphium stack stop &lt;id&gt;</code> - Stop a running stack</li>
-				<li><code>graphium stack remove &lt;id&gt;</code> - Remove a stack</li>
-			</ul>
-			<p>Example stack definitions are available in: <code>configs/examples/stacks/</code></p>
+		<div class="table-container" id="stacks-table" hx-get="/web/stacks/table" hx-trigger="load" hx-swap="innerHTML">
+			<div class="loading">Loading stacks...</div>
 		</div>
 	}
 }
 
 templ StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInfo, queryParams string) {
-	<div>Stacks table - Use CLI for now</div>
+	if len(stacks) == 0 {
+		<div class="empty-state">
+			<p>No stacks deployed yet</p>
+			<p>Use the CLI to deploy your first stack</p>
+		</div>
+	} else {
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Status</th>
+					<th>Datacenter</th>
+					<th>Mode</th>
+					<th>Strategy</th>
+					<th>Deployed</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, stack := range stacks {
+					<tr>
+						<td>
+							<a href={ templ.URL("/web/stacks/" + stack.ID) }>{ stack.Name }</a>
+							if stack.Description != "" {
+								<br/><small class="text-muted">{ stack.Description }</small>
+							}
+						</td>
+						<td>
+							<span class={ "badge badge-" + stack.Status }>{ stack.Status }</span>
+						</td>
+						<td>{ stack.Datacenter }</td>
+						<td>{ stack.Deployment.Mode }</td>
+						<td>{ stack.Deployment.PlacementStrategy }</td>
+						<td>
+							if stack.DeployedAt != nil {
+								{ stack.DeployedAt.Format("2006-01-02 15:04") }
+							} else {
+								<span class="text-muted">Not deployed</span>
+							}
+						</td>
+						<td>
+							<a href={ templ.URL("/web/stacks/" + stack.ID) } class="btn btn-sm btn-secondary">View</a>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
 }
 
 templ StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment, user *models.User) {
 	@LayoutWithUser("Stack Detail", user) {
-		<div>
-			<h2>Stack: { stack.Name }</h2>
-			<p>Use CLI for full details</p>
+		<div class="page-header">
+			<div>
+				<a href="/web/stacks" class="btn btn-secondary">Back to Stacks</a>
+				<h2>{ stack.Name }</h2>
+				if stack.Description != "" {
+					<p>{ stack.Description }</p>
+				}
+			</div>
+			<div>
+				<span class={ "badge badge-" + stack.Status }>{ stack.Status }</span>
+			</div>
+		</div>
+		<div class="detail-container">
+			<div class="detail-section">
+				<h3>Stack Information</h3>
+				<dl class="detail-list">
+					<dt>Stack ID</dt>
+					<dd>{ stack.ID }</dd>
+					<dt>Datacenter</dt>
+					<dd>{ stack.Datacenter }</dd>
+					<dt>Deployment Mode</dt>
+					<dd>{ stack.Deployment.Mode }</dd>
+					<dt>Placement Strategy</dt>
+					<dd>{ stack.Deployment.PlacementStrategy }</dd>
+					<dt>Network Mode</dt>
+					<dd>{ stack.Deployment.NetworkMode }</dd>
+					<dt>Owner</dt>
+					<dd>{ stack.Owner }</dd>
+					<dt>Created</dt>
+					<dd>{ stack.CreatedAt.Format("2006-01-02 15:04:05") }</dd>
+					if stack.DeployedAt != nil {
+						<dt>Deployed</dt>
+						<dd>{ stack.DeployedAt.Format("2006-01-02 15:04:05") }</dd>
+					}
+				</dl>
+			</div>
+			if deployment != nil && len(deployment.Placements) > 0 {
+				<div class="detail-section">
+					<h3>Container Placements</h3>
+					<table class="data-table">
+						<thead>
+							<tr>
+								<th>Container</th>
+								<th>Host</th>
+								<th>IP Address</th>
+								<th>Ports</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, placement := range deployment.Placements {
+								<tr>
+									<td>{ placement.ContainerName }</td>
+									<td>{ placement.HostID }</td>
+									<td>{ placement.IPAddress }</td>
+									<td>
+										for containerPort, hostPort := range placement.Ports {
+											<span class="port-mapping">{ fmt.Sprintf("%d:%d", containerPort, hostPort) }</span>
+										}
+									</td>
+									<td>
+										<span class={ "badge badge-" + placement.Status }>{ placement.Status }</span>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+			if deployment != nil && len(deployment.NetworkConfig.ServiceEndpoints) > 0 {
+				<div class="detail-section">
+					<h3>Service Endpoints</h3>
+					<dl class="detail-list">
+						for serviceName, endpoint := range deployment.NetworkConfig.ServiceEndpoints {
+							<dt>{ serviceName }</dt>
+							<dd>{ endpoint }</dd>
+						}
+					</dl>
+				</div>
+			}
+			if stack.ErrorMessage != "" {
+				<div class="detail-section error">
+					<h3>Error</h3>
+					<p>{ stack.ErrorMessage }</p>
+				</div>
+			}
 		</div>
 	}
 }
