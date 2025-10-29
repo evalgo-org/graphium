@@ -18,8 +18,14 @@ func (s *Storage) SaveStack(stack *models.Stack) error {
 		stack.Type = "ItemList"
 	}
 
-	_, err := s.service.SaveGenericDocument(stack)
-	return err
+	resp, err := s.service.SaveGenericDocument(stack)
+	if err != nil {
+		return err
+	}
+
+	// Update stack with new revision
+	stack.Rev = resp.Rev
+	return nil
 }
 
 // GetStack retrieves a stack by ID.
@@ -33,8 +39,14 @@ func (s *Storage) GetStack(id string) (*models.Stack, error) {
 
 // UpdateStack updates an existing stack.
 func (s *Storage) UpdateStack(stack *models.Stack) error {
-	_, err := s.service.SaveGenericDocument(stack)
-	return err
+	resp, err := s.service.SaveGenericDocument(stack)
+	if err != nil {
+		return err
+	}
+
+	// Update stack with new revision
+	stack.Rev = resp.Rev
+	return nil
 }
 
 // DeleteStack deletes a stack by ID.

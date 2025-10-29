@@ -78,6 +78,10 @@ func (o *DistributedStackOrchestrator) DeployStack(
 	// Determine container placement
 	placements, err := strategy.PlaceContainers(ctx, stack, definition, hosts)
 	if err != nil {
+		// Refresh stack to get latest revision
+		if latestStack, getErr := o.storage.GetStack(stack.ID); getErr == nil {
+			stack = latestStack
+		}
 		stack.Status = "error"
 		stack.ErrorMessage = fmt.Sprintf("placement failed: %v", err)
 		o.storage.UpdateStack(stack)
@@ -89,6 +93,10 @@ func (o *DistributedStackOrchestrator) DeployStack(
 
 	// Prepare cross-host networking
 	if err := o.prepareCrossHostNetworking(deployment, hostGroups, hosts); err != nil {
+		// Refresh stack to get latest revision
+		if latestStack, getErr := o.storage.GetStack(stack.ID); getErr == nil {
+			stack = latestStack
+		}
 		stack.Status = "error"
 		stack.ErrorMessage = fmt.Sprintf("network preparation failed: %v", err)
 		o.storage.UpdateStack(stack)
@@ -97,6 +105,10 @@ func (o *DistributedStackOrchestrator) DeployStack(
 
 	// Deploy containers to each host
 	if err := o.deployToHosts(ctx, stack, definition, hostGroups, deployment, hosts); err != nil {
+		// Refresh stack to get latest revision
+		if latestStack, getErr := o.storage.GetStack(stack.ID); getErr == nil {
+			stack = latestStack
+		}
 		stack.Status = "error"
 		stack.ErrorMessage = fmt.Sprintf("deployment failed: %v", err)
 		o.storage.UpdateStack(stack)
@@ -113,6 +125,7 @@ func (o *DistributedStackOrchestrator) DeployStack(
 	}
 
 	// Update stack status
+	// Note: UpdateStack automatically updates the Rev field, so no need to fetch latest
 	stack.Status = "running"
 	stack.DeployedAt = &now
 	stack.ErrorMessage = ""
@@ -339,6 +352,7 @@ func (o *DistributedStackOrchestrator) StopStack(
 	}
 
 	// Update stack status
+	// Note: UpdateStack automatically updates the Rev field, so no need to fetch latest
 	stack.Status = "stopped"
 	return o.storage.UpdateStack(stack)
 }
