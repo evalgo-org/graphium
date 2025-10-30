@@ -1,0 +1,163 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@id": "https://graphium.local/stacks/microservices",
+      "@type": ["datacenter:Stack", "SoftwareApplication"],
+      "name": "microservices",
+      "description": "Microservices architecture with service discovery",
+      "locatedInHost": {
+        "@id": "host1"
+      },
+      "network": {
+        "name": "microservices-net",
+        "driver": "bridge",
+        "subnet": "172.21.0.0/16",
+        "labels": {
+          "stack": "microservices"
+        }
+      },
+      "hasPart": [
+        {
+          "@id": "https://graphium.local/containers/redis-cache",
+          "@type": "datacenter:Container",
+          "name": "redis",
+          "image": "redis:7-alpine",
+          "description": "Redis cache and message broker",
+          "command": ["redis-server", "--appendonly", "yes"],
+          "ports": [
+            {
+              "containerPort": 6379,
+              "hostPort": 6379,
+              "protocol": "tcp"
+            }
+          ],
+          "volumes": [
+            {
+              "name": "redis-data",
+              "mountPath": "/data",
+              "driver": "local"
+            }
+          ],
+          "labels": {
+            "app": "microservices",
+            "service": "cache"
+          },
+          "restartPolicy": "unless-stopped",
+          "resources": {
+            "cpu": "0.25",
+            "memory": "256M"
+          }
+        },
+        {
+          "@id": "https://graphium.local/containers/auth-service",
+          "@type": "datacenter:Container",
+          "name": "auth-service",
+          "image": "my-registry/auth-service:latest",
+          "description": "Authentication and authorization service",
+          "dependsOn": ["redis"],
+          "ports": [
+            {
+              "containerPort": 8001,
+              "hostPort": 8001,
+              "protocol": "tcp"
+            }
+          ],
+          "environment": {
+            "SERVICE_NAME": "auth-service",
+            "SERVICE_PORT": "8001",
+            "REDIS_HOST": "redis",
+            "REDIS_PORT": "6379",
+            "JWT_SECRET": "${JWT_SECRET}",
+            "TOKEN_EXPIRY": "3600"
+          },
+          "labels": {
+            "app": "microservices",
+            "service": "auth"
+          },
+          "restartPolicy": "unless-stopped",
+          "resources": {
+            "cpu": "0.5",
+            "memory": "512M"
+          }
+        },
+        {
+          "@id": "https://graphium.local/containers/user-service",
+          "@type": "datacenter:Container",
+          "name": "user-service",
+          "image": "my-registry/user-service:latest",
+          "description": "User management service",
+          "dependsOn": ["redis", "auth-service"],
+          "locatedInHost": {
+            "@id": "host2"
+          },
+          "ports": [
+            {
+              "containerPort": 8002,
+              "hostPort": 8002,
+              "protocol": "tcp"
+            }
+          ],
+          "environment": {
+            "SERVICE_NAME": "user-service",
+            "SERVICE_PORT": "8002",
+            "REDIS_HOST": "redis",
+            "AUTH_SERVICE_URL": "http://auth-service:8001"
+          },
+          "labels": {
+            "app": "microservices",
+            "service": "users"
+          },
+          "restartPolicy": "unless-stopped",
+          "resources": {
+            "cpu": "0.5",
+            "memory": "512M"
+          }
+        },
+        {
+          "@id": "https://graphium.local/containers/api-gateway",
+          "@type": "datacenter:Container",
+          "name": "api-gateway",
+          "image": "my-registry/api-gateway:latest",
+          "description": "API Gateway and load balancer",
+          "dependsOn": ["auth-service", "user-service"],
+          "ports": [
+            {
+              "containerPort": 80,
+              "hostPort": 8080,
+              "protocol": "tcp"
+            },
+            {
+              "containerPort": 443,
+              "hostPort": 8443,
+              "protocol": "tcp"
+            }
+          ],
+          "environment": {
+            "GATEWAY_PORT": "80",
+            "AUTH_SERVICE_URL": "http://auth-service:8001",
+            "USER_SERVICE_URL": "http://user-service:8002",
+            "RATE_LIMIT": "100",
+            "TIMEOUT": "30s"
+          },
+          "labels": {
+            "app": "microservices",
+            "service": "gateway"
+          },
+          "restartPolicy": "unless-stopped",
+          "resources": {
+            "cpu": "0.5",
+            "memory": "512M"
+          },
+          "healthCheck": {
+            "command": ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"],
+            "interval": 30,
+            "timeout": 10,
+            "retries": 3,
+            "startPeriod": 40
+          }
+        }
+      ]
+    }
+  ]
+}

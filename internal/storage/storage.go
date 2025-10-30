@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"time"
 
@@ -748,4 +749,42 @@ func (s *Storage) ListIgnored() ([]*models.IgnoreListEntry, error) {
 	}
 
 	return result, nil
+}
+
+// ===============================================================
+// Generic Document Operations
+// ===============================================================
+
+// SaveDocument saves a generic document to CouchDB.
+// This is useful for storing arbitrary JSON-LD documents.
+// It updates the document's _rev field after a successful save.
+func (s *Storage) SaveDocument(doc interface{}) error {
+	resp, err := s.service.SaveGenericDocument(doc)
+	if err != nil {
+		return err
+	}
+
+	// Update the document's _rev field with the new revision
+	// This is critical for subsequent saves to work without conflicts
+	if resp != nil && resp.Rev != "" {
+		// Use reflection to set the Rev field
+		docValue := reflect.ValueOf(doc)
+		if docValue.Kind() == reflect.Ptr {
+			docValue = docValue.Elem()
+		}
+
+		if docValue.Kind() == reflect.Struct {
+			revField := docValue.FieldByName("Rev")
+			if revField.IsValid() && revField.CanSet() && revField.Kind() == reflect.String {
+				revField.SetString(resp.Rev)
+			}
+		}
+	}
+
+	return nil
+}
+
+// GetDocument retrieves a generic document by ID.
+func (s *Storage) GetDocument(id string, result interface{}) error {
+	return s.service.GetGenericDocument(id, result)
 }

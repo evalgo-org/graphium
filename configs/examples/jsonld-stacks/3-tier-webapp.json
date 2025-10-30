@@ -1,0 +1,116 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@id": "https://graphium.local/stacks/3-tier-webapp",
+      "@type": ["datacenter:Stack", "SoftwareApplication"],
+      "name": "3-tier-webapp",
+      "description": "Three-tier web application with database, API, and frontend",
+      "network": {
+        "name": "webapp-network",
+        "driver": "bridge",
+        "subnet": "172.20.0.0/16",
+        "gateway": "172.20.0.1",
+        "ipRange": "172.20.1.0/24",
+        "labels": {
+          "stack": "3-tier-webapp"
+        }
+      },
+      "hasPart": [
+        {
+          "@id": "https://graphium.local/containers/postgres-db",
+          "@type": "datacenter:Container",
+          "name": "db",
+          "image": "postgres:15-alpine",
+          "description": "PostgreSQL database",
+          "environment": {
+            "POSTGRES_USER": "webapp",
+            "POSTGRES_PASSWORD": "secret123",
+            "POSTGRES_DB": "webapp_db"
+          },
+          "volumes": [
+            {
+              "name": "postgres-data",
+              "mountPath": "/var/lib/postgresql/data",
+              "driver": "local"
+            }
+          ],
+          "labels": {
+            "app": "3-tier-webapp",
+            "tier": "database"
+          },
+          "restartPolicy": "unless-stopped",
+          "healthCheck": {
+            "command": ["CMD-SHELL", "pg_isready -U webapp"],
+            "interval": 10,
+            "timeout": 5,
+            "retries": 5,
+            "startPeriod": 0
+          }
+        },
+        {
+          "@id": "https://graphium.local/containers/nodejs-api",
+          "@type": "datacenter:Container",
+          "name": "api",
+          "image": "node:18-alpine",
+          "description": "Node.js REST API",
+          "dependsOn": ["db"],
+          "command": ["node", "server.js"],
+          "environment": {
+            "NODE_ENV": "production",
+            "DB_HOST": "db",
+            "DB_PORT": "5432",
+            "DB_USER": "webapp",
+            "DB_PASSWORD": "secret123",
+            "DB_NAME": "webapp_db",
+            "API_PORT": "3000"
+          },
+          "ports": [
+            {
+              "containerPort": 3000,
+              "hostPort": 3000,
+              "protocol": "tcp"
+            }
+          ],
+          "labels": {
+            "app": "3-tier-webapp",
+            "tier": "backend"
+          },
+          "restartPolicy": "unless-stopped",
+          "resources": {
+            "cpu": "0.5",
+            "memory": "512M"
+          }
+        },
+        {
+          "@id": "https://graphium.local/containers/nginx-frontend",
+          "@type": "datacenter:Container",
+          "name": "frontend",
+          "image": "nginx:alpine",
+          "description": "Nginx frontend proxy",
+          "dependsOn": ["api"],
+          "ports": [
+            {
+              "containerPort": 80,
+              "hostPort": 8080,
+              "protocol": "tcp"
+            }
+          ],
+          "environment": {
+            "NGINX_BACKEND_HOST": "api",
+            "NGINX_BACKEND_PORT": "3000"
+          },
+          "labels": {
+            "app": "3-tier-webapp",
+            "tier": "frontend"
+          },
+          "restartPolicy": "unless-stopped",
+          "resources": {
+            "cpu": "0.25",
+            "memory": "256M"
+          }
+        }
+      ]
+    }
+  ]
+}

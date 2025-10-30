@@ -186,6 +186,13 @@ func (s *Server) setupRoutes() {
 	stackRoutes.POST("/:id/stop", s.stopStack, ValidateIDFormat, s.authMiddle.RequireWrite)
 	stackRoutes.DELETE("/:id", s.removeStack, ValidateIDFormat, s.authMiddle.RequireWrite)
 
+	// JSON-LD Stack routes
+	jsonldStacks := v1.Group("/stacks/jsonld")
+	jsonldStacks.POST("", s.deployJSONLDStack, s.authMiddle.RequireWrite)
+	jsonldStacks.POST("/validate", s.validateJSONLDStack, s.authMiddle.RequireRead)
+	jsonldStacks.GET("/deployments", s.listJSONLDDeployments, s.authMiddle.RequireRead)
+	jsonldStacks.GET("/deployments/:id", s.getJSONLDDeployment, ValidateIDFormat, s.authMiddle.RequireRead)
+
 	// Authentication routes
 	authRoutes := v1.Group("/auth")
 	authRoutes.POST("/login", s.login)
@@ -290,6 +297,15 @@ func (s *Server) setupRoutes() {
 	webGroup.POST("/stacks/:id/restart", webHandler.RestartStack)
 	webGroup.POST("/stacks/:id/delete", webHandler.DeleteStack)
 	webGroup.POST("/stacks/:id/containers/assign", webHandler.AssignContainersToStack)
+
+	// JSON-LD Stack Deployment routes (Web UI)
+	webGroup.GET("/stacks/jsonld/deploy", webHandler.JSONLDDeployPage)
+	webGroup.POST("/stacks/jsonld/deploy", webHandler.JSONLDDeploy)
+	webGroup.POST("/stacks/jsonld/validate", webHandler.JSONLDValidate)
+	webGroup.GET("/stacks/jsonld/deployments", webHandler.JSONLDDeploymentsList)
+	webGroup.GET("/stacks/jsonld/deployments/table", webHandler.JSONLDDeploymentsTable)
+	webGroup.GET("/stacks/jsonld/deployments/:id", webHandler.JSONLDDeploymentDetail)
+
 	webGroup.GET("/topology", webHandler.TopologyView)
 	webGroup.GET("/graph", webHandler.GraphView)
 }

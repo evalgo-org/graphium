@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/labstack/echo/v4"
 
 	evecommon "eve.evalgo.org/common"
@@ -744,9 +745,16 @@ func (h *Handler) BulkStopContainers(c echo.Context) error {
 		})
 	}
 
-	return h.performDockerBulkAction(c, req.ContainerIDs, "stop", func(dockerClient interface{}, containerID string) error {
-		// TODO: Use EVE Docker client to stop container
-		return fmt.Errorf("stop action not yet implemented")
+	return h.performDockerBulkAction(c, req.ContainerIDs, "stop", func(dockerSocket string, containerID string) error {
+		ctx, cli, err := evecommon.CtxCli(dockerSocket)
+		if err != nil {
+			return fmt.Errorf("failed to create Docker client: %w", err)
+		}
+		defer cli.Close()
+
+		// Stop the container with 10 second timeout
+		timeout := 10
+		return evecommon.ContainerStop(ctx, cli, containerID, timeout)
 	})
 }
 
@@ -763,9 +771,15 @@ func (h *Handler) BulkStartContainers(c echo.Context) error {
 		})
 	}
 
-	return h.performDockerBulkAction(c, req.ContainerIDs, "start", func(dockerClient interface{}, containerID string) error {
-		// TODO: Use EVE Docker client to start container
-		return fmt.Errorf("start action not yet implemented")
+	return h.performDockerBulkAction(c, req.ContainerIDs, "start", func(dockerSocket string, containerID string) error {
+		ctx, cli, err := evecommon.CtxCli(dockerSocket)
+		if err != nil {
+			return fmt.Errorf("failed to create Docker client: %w", err)
+		}
+		defer cli.Close()
+
+		// Start the container using Docker client interface
+		return cli.ContainerStart(ctx, containerID, containertypes.StartOptions{})
 	})
 }
 
@@ -782,14 +796,26 @@ func (h *Handler) BulkRestartContainers(c echo.Context) error {
 		})
 	}
 
-	return h.performDockerBulkAction(c, req.ContainerIDs, "restart", func(dockerClient interface{}, containerID string) error {
-		// TODO: Use EVE Docker client to restart container
-		return fmt.Errorf("restart action not yet implemented")
+	return h.performDockerBulkAction(c, req.ContainerIDs, "restart", func(dockerSocket string, containerID string) error {
+		ctx, cli, err := evecommon.CtxCli(dockerSocket)
+		if err != nil {
+			return fmt.Errorf("failed to create Docker client: %w", err)
+		}
+		defer cli.Close()
+
+		// Stop the container first
+		timeout := 10
+		if err := evecommon.ContainerStop(ctx, cli, containerID, timeout); err != nil {
+			return fmt.Errorf("failed to stop container: %w", err)
+		}
+
+		// Then start it again
+		return cli.ContainerStart(ctx, containerID, containertypes.StartOptions{})
 	})
 }
 
 // performDockerBulkAction is a helper function for Docker bulk operations
-func (h *Handler) performDockerBulkAction(c echo.Context, containerIDs []string, actionName string, actionFunc func(interface{}, string) error) error {
+func (h *Handler) performDockerBulkAction(c echo.Context, containerIDs []string, actionName string, actionFunc func(string, string) error) error {
 	if len(containerIDs) == 0 {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"success": false,
@@ -804,15 +830,18 @@ func (h *Handler) performDockerBulkAction(c echo.Context, containerIDs []string,
 	// Perform action on each container
 	for _, id := range containerIDs {
 		// Get container info to find host
-		_, err := h.storage.GetContainer(id)
+		container, err := h.storage.GetContainer(id)
 		if err != nil {
 			errors = append(errors, fmt.Sprintf("%s: not found", id[:12]))
 			failedCount++
 			continue
 		}
 
+		// Determine Docker socket for this container's host
+		dockerSocket := h.getDockerSocketForContainer(container)
+
 		// Perform Docker action
-		err = actionFunc(nil, id) // Docker client would be passed here
+		err = actionFunc(dockerSocket, id)
 		if err != nil {
 			errors = append(errors, fmt.Sprintf("%s: %v", id[:12], err))
 			failedCount++
@@ -841,6 +870,41 @@ func (h *Handler) performDockerBulkAction(c echo.Context, containerIDs []string,
 	}
 
 	return c.JSON(http.StatusOK, response)
+}
+
+// getDockerSocketForContainer determines the Docker socket URL for a container's host
+func (h *Handler) getDockerSocketForContainer(container *models.Container) string {
+	// If no host is specified or it's the local host, use local socket
+	if container.HostedOn == "" || container.HostedOn == "localhost-docker" {
+		dockerSocket := h.config.Agent.DockerSocket
+		if dockerSocket == "" {
+			dockerSocket = "/var/run/docker.sock"
+		}
+		return "unix://" + dockerSocket
+	}
+
+	// Get host information
+	host, err := h.storage.GetHost(container.HostedOn)
+	if err != nil {
+		// Fallback to local socket if host not found
+		dockerSocket := h.config.Agent.DockerSocket
+		if dockerSocket == "" {
+			dockerSocket = "/var/run/docker.sock"
+		}
+		return "unix://" + dockerSocket
+	}
+
+	// Determine socket based on host IP
+	if host.IPAddress == "localhost" || host.IPAddress == "127.0.0.1" || host.IPAddress == "" {
+		dockerSocket := h.config.Agent.DockerSocket
+		if dockerSocket == "" {
+			dockerSocket = "/var/run/docker.sock"
+		}
+		return "unix://" + dockerSocket
+	}
+
+	// Remote host - use TCP connection
+	return fmt.Sprintf("tcp://%s:2375", host.IPAddress)
 }
 
 // DeleteHost handles host deletion.
