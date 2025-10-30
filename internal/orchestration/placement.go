@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/system"
@@ -26,9 +27,15 @@ type PlacementStrategy interface {
 
 // AutoPlacementStrategy places containers based on available resources.
 // It scores each host and selects the best fit for each container.
+//
+// Enhanced features:
+//   - Port conflict detection
+//   - Container dependency awareness (places dependent containers closer)
+//   - Resource reservation tracking during placement
+//   - Multi-factor scoring (CPU, memory, network, load, affinity)
 type AutoPlacementStrategy struct{}
 
-// PlaceContainers implements automatic resource-based placement.
+// PlaceContainers implements automatic resource-based placement with intelligent container placement.
 func (s *AutoPlacementStrategy) PlaceContainers(
 	ctx context.Context,
 	stack *models.Stack,
@@ -41,12 +48,28 @@ func (s *AutoPlacementStrategy) PlaceContainers(
 
 	placement := make(map[string]string)
 
-	// Place each container
-	for _, item := range definition.ItemListElement {
+	// Track resource reservations as we place containers
+	reservations := make(map[string]*resourceReservation)
+	for _, host := range hosts {
+		reservations[host.Host.ID] = &resourceReservation{
+			reservedPorts:   make(map[int]bool),
+			reservedMemory:  0,
+			containerCount:  host.CurrentLoad.ContainerCount,
+		}
+	}
+
+	// Build dependency graph for intelligent placement
+	dependencies := s.buildDependencyGraph(definition)
+
+	// Place each container with intelligent ordering
+	// Process containers in dependency order (dependencies first)
+	orderedContainers := s.orderContainersByDependencies(definition.ItemListElement, dependencies)
+
+	for _, item := range orderedContainers {
 		containerName := item.Name
 
-		// Score each host for this container
-		scores := s.scoreHosts(ctx, item, hosts, stack)
+		// Score each host for this container considering all factors
+		scores := s.scoreHostsEnhanced(ctx, item, hosts, stack, placement, dependencies, reservations)
 
 		// Select host with highest score
 		if len(scores) == 0 {
@@ -61,8 +84,14 @@ func (s *AutoPlacementStrategy) PlaceContainers(
 		bestHost := scores[0].HostID
 		placement[containerName] = bestHost
 
-		// Update host's theoretical load for next placement
-		// (This is a simplified approach; real implementation would track resource reservations)
+		// Update resource reservations for next placement
+		reservation := reservations[bestHost]
+		for _, port := range item.Ports {
+			reservation.reservedPorts[port.HostPort] = true
+		}
+		// Estimate memory usage (1GB default if not specified)
+		reservation.reservedMemory += 1073741824 // 1GB in bytes
+		reservation.containerCount++
 	}
 
 	return placement, nil
@@ -134,6 +163,230 @@ func (s *AutoPlacementStrategy) scoreHost(
 	}
 
 	return score
+}
+
+// resourceReservation tracks resources reserved on a host during placement.
+type resourceReservation struct {
+	reservedPorts  map[int]bool
+	reservedMemory int64
+	containerCount int
+}
+
+// buildDependencyGraph analyzes container dependencies based on environment variables
+// and service references. Containers that reference other services are dependent on them.
+func (s *AutoPlacementStrategy) buildDependencyGraph(definition *stacks.Stack) map[string][]string {
+	dependencies := make(map[string][]string)
+
+	// Build map of service names
+	serviceNames := make(map[string]bool)
+	for _, item := range definition.ItemListElement {
+		serviceNames[item.Name] = true
+	}
+
+	// Analyze each container for dependencies
+	for _, item := range definition.ItemListElement {
+		deps := []string{}
+
+		// Check environment variables for service references
+		for key, value := range item.Environment {
+			// Look for references to other services
+			// Common patterns: SERVICE_HOST, SERVICE_URL, etc.
+			for serviceName := range serviceNames {
+				if serviceName != item.Name && strings.Contains(value, serviceName) {
+					deps = append(deps, serviceName)
+				}
+				// Check key names like POSTGRES_HOST, REDIS_HOST, etc.
+				serviceUpper := strings.ToUpper(strings.ReplaceAll(serviceName, "-", "_"))
+				keyUpper := strings.ToUpper(key)
+				if strings.Contains(keyUpper, serviceUpper) {
+					deps = append(deps, serviceName)
+				}
+			}
+		}
+
+		// Remove duplicates
+		seen := make(map[string]bool)
+		uniqueDeps := []string{}
+		for _, dep := range deps {
+			if !seen[dep] {
+				seen[dep] = true
+				uniqueDeps = append(uniqueDeps, dep)
+			}
+		}
+
+		if len(uniqueDeps) > 0 {
+			dependencies[item.Name] = uniqueDeps
+		}
+	}
+
+	return dependencies
+}
+
+// orderContainersByDependencies orders containers so dependencies are placed first.
+// This ensures that when we place a container, its dependencies are already placed,
+// allowing us to optimize for locality.
+func (s *AutoPlacementStrategy) orderContainersByDependencies(
+	containers []stacks.StackItemElement,
+	dependencies map[string][]string,
+) []stacks.StackItemElement {
+	// Build reverse dependency map (who depends on me)
+	dependents := make(map[string][]string)
+	for container, deps := range dependencies {
+		for _, dep := range deps {
+			dependents[dep] = append(dependents[dep], container)
+		}
+	}
+
+	// Topological sort using Khan's algorithm
+	inDegree := make(map[string]int)
+	for _, container := range containers {
+		inDegree[container.Name] = 0
+	}
+	for _, deps := range dependencies {
+		for _, dep := range deps {
+			inDegree[dep]++
+		}
+	}
+
+	// Start with containers that have no dependencies
+	queue := []string{}
+	for _, container := range containers {
+		if len(dependencies[container.Name]) == 0 {
+			queue = append(queue, container.Name)
+		}
+	}
+
+	// Process queue
+	ordered := []string{}
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+		ordered = append(ordered, current)
+
+		// Process dependents
+		for _, dependent := range dependents[current] {
+			deps := dependencies[dependent]
+			// Remove current from dependent's dependencies
+			newDeps := []string{}
+			for _, dep := range deps {
+				if dep != current {
+					newDeps = append(newDeps, dep)
+				}
+			}
+			dependencies[dependent] = newDeps
+
+			// If dependent has no more dependencies, add to queue
+			if len(newDeps) == 0 {
+				queue = append(queue, dependent)
+			}
+		}
+	}
+
+	// Build result maintaining original container objects
+	containerMap := make(map[string]stacks.StackItemElement)
+	for _, container := range containers {
+		containerMap[container.Name] = container
+	}
+
+	result := make([]stacks.StackItemElement, 0, len(ordered))
+	for _, name := range ordered {
+		result = append(result, containerMap[name])
+	}
+
+	// Add any remaining containers (in case of cycles)
+	if len(result) < len(containers) {
+		for _, container := range containers {
+			found := false
+			for _, name := range ordered {
+				if name == container.Name {
+					found = true
+					break
+				}
+			}
+			if !found {
+				result = append(result, container)
+			}
+		}
+	}
+
+	return result
+}
+
+// scoreHostsEnhanced scores hosts with enhanced logic considering dependencies,
+// port conflicts, and resource reservations.
+func (s *AutoPlacementStrategy) scoreHostsEnhanced(
+	ctx context.Context,
+	item stacks.StackItemElement,
+	hosts []*models.HostInfo,
+	stack *models.Stack,
+	currentPlacements map[string]string,
+	dependencies map[string][]string,
+	reservations map[string]*resourceReservation,
+) []hostScore {
+	scores := make([]hostScore, 0, len(hosts))
+
+	for _, host := range hosts {
+		score := s.scoreHost(item, host, stack)
+		if score == 0 {
+			continue // Skip unsuitable hosts
+		}
+
+		reservation := reservations[host.Host.ID]
+
+		// Check port conflicts (critical - must have available ports)
+		hasPortConflict := false
+		for _, port := range item.Ports {
+			if reservation.reservedPorts[port.HostPort] {
+				hasPortConflict = true
+				break
+			}
+		}
+		if hasPortConflict {
+			continue // Skip this host entirely
+		}
+
+		// Adjust score based on available memory after reservations
+		availableMemory := host.AvailableResources.Memory - reservation.reservedMemory
+		if availableMemory < 536870912 { // Less than 512MB available
+			score -= 30 // Significant penalty for low memory
+		} else if availableMemory < 1073741824 { // Less than 1GB
+			score -= 15
+		}
+
+		// Bonus for co-locating dependent containers (locality)
+		affinityBonus := 0.0
+		containerDeps := dependencies[item.Name]
+		for _, dep := range containerDeps {
+			if depHost, exists := currentPlacements[dep]; exists {
+				if depHost == host.Host.ID {
+					affinityBonus += 25.0 // Strong bonus for same host
+				} else if depHost != "" {
+					// Check if hosts are in same datacenter
+					for _, h := range hosts {
+						if h.Host.ID == depHost && h.Host.Datacenter == host.Host.Datacenter {
+							affinityBonus += 10.0 // Moderate bonus for same datacenter
+							break
+						}
+					}
+				}
+			}
+		}
+		score += affinityBonus
+
+		// Penalty for overloading a single host (encourage spread)
+		if reservation.containerCount >= 8 {
+			score -= 20
+		} else if reservation.containerCount >= 5 {
+			score -= 10
+		}
+
+		scores = append(scores, hostScore{
+			HostID: host.Host.ID,
+			Score:  score,
+		})
+	}
+
+	return scores
 }
 
 // ManualPlacementStrategy uses user-defined host constraints.
