@@ -1,7 +1,7 @@
 server:
   host: 0.0.0.0
   port: 8095
-  debug: false
+  debug: true
 
   # TLS/HTTPS configuration
   tls_enabled: false  # Set to true to enable HTTPS
@@ -25,7 +25,7 @@ agent:
   datacenter: local
   docker_socket: /var/run/docker.sock
   sync_interval: 30s
-  agent_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYWdlbnQ6bG9jYWxob3N0LWRvY2tlciIsInVzZXJuYW1lIjoiYWdlbnQtbG9jYWxob3N0LWRvY2tlciIsInJvbGVzIjpbImFnZW50Il0sImlzcyI6ImdyYXBoaXVtLWFnZW50Iiwic3ViIjoibG9jYWxob3N0LWRvY2tlciIsImV4cCI6MTc5MzMzMTMwNiwibmJmIjoxNzYxNzk1MzA2LCJpYXQiOjE3NjE3OTUzMDZ9.UScHHB_OXAF0sKT6dh3QrjnTaD5jEWxZC76fLxzyAfI
+  agent_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYWdlbnQ6bG9jYWxob3N0LWRvY2tlciIsInVzZXJuYW1lIjoiYWdlbnQtbG9jYWxob3N0LWRvY2tlciIsInJvbGVzIjpbImFnZW50Il0sImlzcyI6ImdyYXBoaXVtLWFnZW50Iiwic3ViIjoibG9jYWxob3N0LWRvY2tlciIsImV4cCI6MTc5MzM0NTYyMiwibmJmIjoxNzYxODA5NjIyLCJpYXQiOjE3NjE4MDk2MjJ9.KtlVAj5soqGCzhBKTh3YWXkuq89TSb3tPLfbnxjxxhA
 
 security:
   # Authentication settings
@@ -34,8 +34,8 @@ security:
   jwt_expiration: 24h
   refresh_token_expiration: 168h  # 7 days
 
-  # Agent authentication
-  agent_token_secret: change-me-in-production-use-different-secret-for-agents
+  # Agent authentication (uses jwt_secret by default, or override with agent_token_secret)
+  # agent_token_secret: optional-separate-secret-for-agents
 
   # API Keys (for service-to-service authentication)
   # Generate with: openssl rand -base64 32

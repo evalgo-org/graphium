@@ -118,6 +118,8 @@ func (s *JWTService) GenerateToken(user *models.User) (string, error) {
 }
 
 // ValidateToken validates a JWT token and returns the claims
+// It tries to validate with the primary secret, and if that fails and an agent_token_secret
+// is configured, it will try that as well (for backward compatibility)
 func (s *JWTService) ValidateToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		// Verify signing method

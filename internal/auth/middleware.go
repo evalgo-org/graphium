@@ -331,17 +331,17 @@ func (m *Middleware) RequireAgentOrWrite(next echo.HandlerFunc) echo.HandlerFunc
 			return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 		}
 
-		// Check if user has write permissions (admin or user role)
+		// Check if user has write permissions (admin, user, or agent role)
 		hasWrite := false
 		for _, role := range claims.Roles {
-			if role == models.RoleAdmin || role == models.RoleUser {
+			if role == models.RoleAdmin || role == models.RoleUser || role == models.RoleAgent {
 				hasWrite = true
 				break
 			}
 		}
 
 		if !hasWrite {
-			return echo.NewHTTPError(http.StatusForbidden, "insufficient permissions - requires admin or user role")
+			return echo.NewHTTPError(http.StatusForbidden, "insufficient permissions - requires admin, user, or agent role")
 		}
 
 		// Store claims in context

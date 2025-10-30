@@ -48,10 +48,16 @@ func runAgent(cmd *cobra.Command, args []string) error {
 	if cfg.Agent.AgentToken != "" {
 		// Use pre-configured token from config file
 		agentToken = cfg.Agent.AgentToken
-	} else if cfg.Security.AgentTokenSecret != "" && cfg.Security.AuthEnabled {
+	} else if cfg.Security.AuthEnabled {
+		// Use agent_token_secret if provided, otherwise fall back to jwt_secret
+		secret := cfg.Security.AgentTokenSecret
+		if secret == "" {
+			secret = cfg.Security.JWTSecret
+		}
+
 		// Generate a long-lived token (7 days) if no token configured
 		token, err := auth.GenerateAgentToken(
-			cfg.Security.AgentTokenSecret,
+			secret,
 			cfg.Agent.HostID,
 			7*24*time.Hour,
 		)
