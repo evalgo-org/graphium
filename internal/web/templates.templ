@@ -360,9 +360,9 @@ templ ContainersListWithUser(containers []*models.Container, stackMap map[string
 				{ errorMsg }
 			</div>
 		}
-		<div class="page-header-with-actions">
+		<div class="page-header">
 			<h2>Containers</h2>
-			<div class="bulk-actions-toolbar">
+			<div class="filters">
 				<div class="bulk-actions-left">
 					<span id="selected-count" class="selected-count">0 selected</span>
 					<select id="bulk-action-select" class="action-select">
@@ -882,8 +882,8 @@ templ HostsListWithUser(hosts []*models.Host, pagination PaginationInfo, user *m
 	@LayoutWithUser("Hosts", user) {
 		<div class="page-header">
 			<h2>Hosts</h2>
-			<a href="/web/hosts/new" class="btn btn-primary">+ Create Host</a>
 			<div class="filters">
+				<a href="/web/hosts/new" class="btn btn-primary">+ Create Host</a>
 				<input
 					type="text"
 					name="search"
@@ -3067,11 +3067,8 @@ templ ContainerLogsView(container *models.Container, host *models.Host, user *mo
 templ StacksListWithUser(stacks []*models.Stack, pagination PaginationInfo, user *models.User) {
 	@LayoutWithUser("Stacks", user) {
 		<div class="page-header">
-			<div>
-				<h2>Stacks</h2>
-				<p>Multi-container distributed stack deployments</p>
-			</div>
-			<div>
+			<h2>Stacks</h2>
+			<div class="filters">
 				<a href="/web/stacks/new" class="btn btn-primary">+ Deploy Stack</a>
 			</div>
 		</div>
