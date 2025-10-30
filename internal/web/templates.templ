@@ -3969,7 +3969,10 @@ templ JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *mode
 					<h1>Deployment: { deployment.StackID }</h1>
 					<p>ID: { deployment.ID }</p>
 				</div>
-				<a href="/web/stacks/jsonld/deployments" class="btn btn-secondary">Back to List</a>
+				<div style="display: flex; gap: 10px;">
+					<a href={ templ.URL(fmt.Sprintf("/web/stacks/%s", deployment.StackID)) } class="btn btn-primary">Manage Stack</a>
+					<a href="/web/stacks/jsonld/deployments" class="btn btn-secondary">Back to List</a>
+				</div>
 			</div>
 			<div class="card">
 				<h2>Status</h2>
