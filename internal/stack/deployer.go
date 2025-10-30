@@ -690,3 +690,141 @@ func (d *Deployer) rollback(ctx context.Context, state *models.DeploymentState) 
 	d.addEvent(state, "info", "rollback", "", "Rollback completed")
 	d.DB.Update(ctx, state)
 }
+
+// Stop stops all containers in a deployment.
+func (d *Deployer) Stop(ctx context.Context, state *models.DeploymentState) error {
+	if state == nil {
+		return fmt.Errorf("deployment state is nil")
+	}
+
+	d.addEvent(state, "info", "stopping", "", "Stopping all containers")
+
+	// Stop all containers
+	for name, placement := range state.Placements {
+		if placement == nil || placement.ContainerID == "" {
+			continue
+		}
+
+		client, err := d.DockerClientFactory.GetClient(ctx, placement.HostID)
+		if err != nil {
+			d.addEvent(state, "error", "stopping", name,
+				fmt.Sprintf("Failed to get client: %v", err))
+			continue
+		}
+
+		timeout := 10 // 10 seconds
+		if err := client.ContainerStop(ctx, placement.ContainerID, container.StopOptions{Timeout: &timeout}); err != nil {
+			d.addEvent(state, "error", "stopping", name,
+				fmt.Sprintf("Failed to stop container: %v", err))
+		} else {
+			d.addEvent(state, "info", "stopping", name, "Container stopped")
+		}
+	}
+
+	state.Status = "stopped"
+	d.addEvent(state, "info", "stopping", "", "All containers stopped")
+	d.DB.Update(ctx, state)
+
+	return nil
+}
+
+// Remove removes all containers, networks, and volumes from a deployment.
+func (d *Deployer) Remove(ctx context.Context, state *models.DeploymentState, removeVolumes bool) error {
+	if state == nil {
+		return fmt.Errorf("deployment state is nil")
+	}
+
+	d.addEvent(state, "info", "removing", "", "Removing all containers")
+
+	// Remove all containers
+	for name, placement := range state.Placements {
+		if placement == nil || placement.ContainerID == "" {
+			continue
+		}
+
+		client, err := d.DockerClientFactory.GetClient(ctx, placement.HostID)
+		if err != nil {
+			d.addEvent(state, "error", "removing", name,
+				fmt.Sprintf("Failed to get client: %v", err))
+			continue
+		}
+
+		removeOpts := container.RemoveOptions{
+			Force:         true,
+			RemoveVolumes: removeVolumes,
+		}
+
+		if err := client.ContainerRemove(ctx, placement.ContainerID, removeOpts); err != nil {
+			d.addEvent(state, "error", "removing", name,
+				fmt.Sprintf("Failed to remove container: %v", err))
+		} else {
+			d.addEvent(state, "info", "removing", name, "Container removed")
+		}
+	}
+
+	// Remove network if it was created
+	if state.NetworkInfo != nil && state.NetworkInfo.NetworkID != "" {
+		// Get the primary host (first host with a container)
+		var primaryHostID string
+		for _, placement := range state.Placements {
+			if placement != nil && placement.HostID != "" {
+				primaryHostID = placement.HostID
+				break
+			}
+		}
+
+		if primaryHostID != "" {
+			client, err := d.DockerClientFactory.GetClient(ctx, primaryHostID)
+			if err == nil {
+				if err := client.NetworkRemove(ctx, state.NetworkInfo.NetworkID); err != nil {
+					d.addEvent(state, "error", "removing", "",
+						fmt.Sprintf("Failed to remove network: %v", err))
+				} else {
+					d.addEvent(state, "info", "removing", "", "Network removed")
+				}
+			}
+		}
+	}
+
+	state.Status = "removed"
+	d.addEvent(state, "info", "removing", "", "All resources removed")
+	d.DB.Update(ctx, state)
+
+	return nil
+}
+
+// Start starts all stopped containers in a deployment.
+func (d *Deployer) Start(ctx context.Context, state *models.DeploymentState) error {
+	if state == nil {
+		return fmt.Errorf("deployment state is nil")
+	}
+
+	d.addEvent(state, "info", "starting", "", "Starting all containers")
+
+	// Start all containers
+	for name, placement := range state.Placements {
+		if placement == nil || placement.ContainerID == "" {
+			continue
+		}
+
+		client, err := d.DockerClientFactory.GetClient(ctx, placement.HostID)
+		if err != nil {
+			d.addEvent(state, "error", "starting", name,
+				fmt.Sprintf("Failed to get client: %v", err))
+			continue
+		}
+
+		if err := client.ContainerStart(ctx, placement.ContainerID, container.StartOptions{}); err != nil {
+			d.addEvent(state, "error", "starting", name,
+				fmt.Sprintf("Failed to start container: %v", err))
+		} else {
+			d.addEvent(state, "info", "starting", name, "Container started")
+		}
+	}
+
+	state.Status = "running"
+	d.addEvent(state, "info", "starting", "", "All containers started")
+	d.DB.Update(ctx, state)
+
+	return nil
+}
