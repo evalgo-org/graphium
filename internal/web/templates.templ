@@ -384,10 +384,17 @@ templ ContainersListWithUser(containers []*models.Container, stackMap map[string
 		</div>
 
 		<!-- Bulk actions toolbar -->
-		<div id="bulk-actions" class="bulk-actions" style="display: none; margin: 20px; padding: 15px; background: #f5f5f5; border-radius: 4px; display: flex; align-items: center; gap: 10px;">
-			<span id="selected-count" class="selected-count" style="font-weight: bold;">0 selected</span>
-			<button onclick="bulkDeleteContainers()" class="btn btn-danger" style="background: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Delete Selected</button>
-			<button onclick="clearSelection()" class="btn btn-secondary" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Clear Selection</button>
+		<div id="bulk-actions" style="display: none; margin: 20px; padding: 12px 20px; background: #2d3748; border-radius: 6px; align-items: center; gap: 15px;">
+			<span id="selected-count" style="color: #fff; font-weight: 500; margin-right: 10px;">0 selected</span>
+			<select id="bulk-action-select" style="padding: 8px 12px; border: 1px solid #4a5568; border-radius: 4px; background: #1a202c; color: #fff; font-size: 14px;">
+				<option value="">Select action...</option>
+				<option value="delete">🗑️ Delete</option>
+				<option value="stop">⏹️ Stop</option>
+				<option value="start">▶️ Start</option>
+				<option value="restart">🔄 Restart</option>
+			</select>
+			<button onclick="executeBulkAction()" style="padding: 8px 16px; background: #4299e1; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Execute</button>
+			<button onclick="clearSelection()" style="padding: 8px 16px; background: #718096; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Clear</button>
 		</div>
 
 		<div id="containers-table">
@@ -414,6 +421,11 @@ templ ContainersListWithUser(containers []*models.Container, stackMap map[string
 					selectedCount.textContent = `${checkboxes.length} selected`;
 				} else {
 					bulkActions.style.display = 'none';
+					// Reset dropdown
+					const actionSelect = document.getElementById('bulk-action-select');
+					if (actionSelect) {
+						actionSelect.value = '';
+					}
 				}
 
 				// Update "select all" checkbox state
@@ -441,12 +453,40 @@ templ ContainersListWithUser(containers []*models.Container, stackMap map[string
 				return Array.from(checkboxes).map(cb => cb.dataset.containerId);
 			}
 
-			function bulkDeleteContainers() {
+			function executeBulkAction() {
+				const actionSelect = document.getElementById('bulk-action-select');
+				const action = actionSelect.value;
+
+				if (!action) {
+					alert('Please select an action from the dropdown');
+					return;
+				}
+
 				const containerIds = getSelectedContainerIds();
 				if (containerIds.length === 0) {
 					return;
 				}
 
+				// Route to appropriate action handler
+				switch (action) {
+					case 'delete':
+						bulkDeleteContainers(containerIds);
+						break;
+					case 'stop':
+						bulkStopContainers(containerIds);
+						break;
+					case 'start':
+						bulkStartContainers(containerIds);
+						break;
+					case 'restart':
+						bulkRestartContainers(containerIds);
+						break;
+					default:
+						alert('Unknown action: ' + action);
+				}
+			}
+
+			function bulkDeleteContainers(containerIds) {
 				const count = containerIds.length;
 				const message = `Are you sure you want to delete ${count} container${count > 1 ? 's' : ''}?\n\nThis will:\n- Remove the container(s) from Docker\n- Remove the container(s) from the database\n\nThis action cannot be undone.`;
 
@@ -454,40 +494,63 @@ templ ContainersListWithUser(containers []*models.Container, stackMap map[string
 					return;
 				}
 
-				// Disable buttons to prevent double-click
-				const deleteBtn = event.target;
-				deleteBtn.disabled = true;
-				deleteBtn.textContent = 'Deleting...';
+				performBulkAction('/web/containers/bulk/delete', { container_ids: containerIds }, 'Deleting', 'deleted');
+			}
 
-				// Send bulk delete request
-				fetch('/web/containers/bulk/delete', {
+			function bulkStopContainers(containerIds) {
+				const count = containerIds.length;
+				if (!confirm(`Stop ${count} container${count > 1 ? 's' : ''}?`)) {
+					return;
+				}
+				performBulkAction('/web/containers/bulk/stop', { container_ids: containerIds }, 'Stopping', 'stopped');
+			}
+
+			function bulkStartContainers(containerIds) {
+				const count = containerIds.length;
+				if (!confirm(`Start ${count} container${count > 1 ? 's' : ''}?`)) {
+					return;
+				}
+				performBulkAction('/web/containers/bulk/start', { container_ids: containerIds }, 'Starting', 'started');
+			}
+
+			function bulkRestartContainers(containerIds) {
+				const count = containerIds.length;
+				if (!confirm(`Restart ${count} container${count > 1 ? 's' : ''}?`)) {
+					return;
+				}
+				performBulkAction('/web/containers/bulk/restart', { container_ids: containerIds }, 'Restarting', 'restarted');
+			}
+
+			function performBulkAction(url, body, actioningText, actionedText) {
+				// Disable execute button to prevent double-click
+				const executeBtn = event.target;
+				const originalText = executeBtn.textContent;
+				executeBtn.disabled = true;
+				executeBtn.textContent = actioningText + '...';
+
+				// Send request
+				fetch(url, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
 					},
-					body: JSON.stringify({ container_ids: containerIds }),
+					body: JSON.stringify(body),
 					credentials: 'same-origin'
 				})
 				.then(response => response.json())
 				.then(data => {
 					if (data.success) {
-						// Show success message
-						alert(`Successfully deleted ${data.deleted_count} container(s)`);
-
-						// Reload the page to refresh the container list
+						alert(`Successfully ${actionedText} ${data.success_count || data.deleted_count || body.container_ids.length} container(s)`);
 						window.location.reload();
 					} else {
-						// Show error message
-						alert(`Error: ${data.error}\n\nDeleted: ${data.deleted_count || 0}\nFailed: ${data.failed_count || 0}`);
-
-						// Reload anyway to show updated state
+						alert(`Error: ${data.error}\n\nSuccess: ${data.success_count || data.deleted_count || 0}\nFailed: ${data.failed_count || 0}`);
 						window.location.reload();
 					}
 				})
 				.catch(error => {
-					alert(`Failed to delete containers: ${error.message}`);
-					deleteBtn.disabled = false;
-					deleteBtn.textContent = 'Delete Selected';
+					alert(`Failed to ${actionedText.replace('ed', '')} containers: ${error.message}`);
+					executeBtn.disabled = false;
+					executeBtn.textContent = originalText;
 				});
 			}
 
@@ -509,7 +572,7 @@ templ ContainersTable(containers []*models.Container, stackMap map[string]*model
 			<thead>
 				<tr>
 					<th style="width: 40px;">
-						<input type="checkbox" id="select-all" onclick="toggleSelectAll(this)" title="Select all"/>
+						<input type="checkbox" id="select-all" onclick="toggleSelectAll(this)" title="Select all" style="cursor: pointer; width: 16px; height: 16px;"/>
 					</th>
 					<th>Name</th>
 					<th>Image</th>
@@ -517,13 +580,12 @@ templ ContainersTable(containers []*models.Container, stackMap map[string]*model
 					<th>Stack</th>
 					<th>Host</th>
 					<th>Created</th>
-					<th>Actions</th>
 				</tr>
 			</thead>
 			<tbody>
 				if len(containers) == 0 {
 					<tr>
-						<td colspan="8" class="no-data">No containers found</td>
+						<td colspan="7" class="no-data">No containers found</td>
 					</tr>
 				}
 				for _, container := range containers {
@@ -534,11 +596,15 @@ templ ContainersTable(containers []*models.Container, stackMap map[string]*model
 								class="container-checkbox"
 								data-container-id={ container.ID }
 								data-container-name={ container.Name }
+								data-container-status={ container.Status }
 								onclick="updateBulkActions()"
+								style="cursor: pointer; width: 16px; height: 16px;"
 							/>
 						</td>
 						<td>
-							<strong>{ container.Name }</strong>
+							<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)) } style="text-decoration: none; color: inherit;">
+								<strong>{ container.Name }</strong>
+							</a>
 							<br/>
 							<small class="text-muted">{ container.ID[:12] }</small>
 						</td>
@@ -563,12 +629,6 @@ templ ContainersTable(containers []*models.Container, stackMap map[string]*model
 						</td>
 						<td>{ container.HostedOn }</td>
 						<td>{ container.Created }</td>
-						<td>
-							<div class="action-buttons">
-								<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)) } class="btn-icon" title="View Details">👁️</a>
-								<a href={ templ.URL(fmt.Sprintf("/web/containers/%s/logs", container.ID)) } class="btn-icon" title="View Logs">📄</a>
-							</div>
-						</td>
 					</tr>
 				}
 			</tbody>

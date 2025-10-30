@@ -729,6 +729,118 @@ func (h *Handler) BulkDeleteContainers(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+// BulkStopContainers handles bulk stopping of multiple containers
+func (h *Handler) BulkStopContainers(c echo.Context) error {
+	var req struct {
+		ContainerIDs []string `json:"container_ids"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "Invalid request body",
+		})
+	}
+
+	return h.performDockerBulkAction(c, req.ContainerIDs, "stop", func(dockerClient interface{}, containerID string) error {
+		// TODO: Use EVE Docker client to stop container
+		return fmt.Errorf("stop action not yet implemented")
+	})
+}
+
+// BulkStartContainers handles bulk starting of multiple containers
+func (h *Handler) BulkStartContainers(c echo.Context) error {
+	var req struct {
+		ContainerIDs []string `json:"container_ids"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "Invalid request body",
+		})
+	}
+
+	return h.performDockerBulkAction(c, req.ContainerIDs, "start", func(dockerClient interface{}, containerID string) error {
+		// TODO: Use EVE Docker client to start container
+		return fmt.Errorf("start action not yet implemented")
+	})
+}
+
+// BulkRestartContainers handles bulk restarting of multiple containers
+func (h *Handler) BulkRestartContainers(c echo.Context) error {
+	var req struct {
+		ContainerIDs []string `json:"container_ids"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "Invalid request body",
+		})
+	}
+
+	return h.performDockerBulkAction(c, req.ContainerIDs, "restart", func(dockerClient interface{}, containerID string) error {
+		// TODO: Use EVE Docker client to restart container
+		return fmt.Errorf("restart action not yet implemented")
+	})
+}
+
+// performDockerBulkAction is a helper function for Docker bulk operations
+func (h *Handler) performDockerBulkAction(c echo.Context, containerIDs []string, actionName string, actionFunc func(interface{}, string) error) error {
+	if len(containerIDs) == 0 {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "No container IDs provided",
+		})
+	}
+
+	successCount := 0
+	failedCount := 0
+	var errors []string
+
+	// Perform action on each container
+	for _, id := range containerIDs {
+		// Get container info to find host
+		_, err := h.storage.GetContainer(id)
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("%s: not found", id[:12]))
+			failedCount++
+			continue
+		}
+
+		// Perform Docker action
+		err = actionFunc(nil, id) // Docker client would be passed here
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("%s: %v", id[:12], err))
+			failedCount++
+			continue
+		}
+
+		// Broadcast WebSocket event
+		if h.broadcaster != nil {
+			h.broadcaster.BroadcastGraphEvent("container_updated", map[string]string{"id": id, "action": actionName})
+		}
+
+		successCount++
+	}
+
+	// Return result
+	success := failedCount == 0
+	response := map[string]interface{}{
+		"success":       success,
+		"success_count": successCount,
+		"failed_count":  failedCount,
+	}
+
+	if len(errors) > 0 {
+		response["error"] = fmt.Sprintf("Failed to %s %d container(s)", actionName, failedCount)
+		response["details"] = errors
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
 // DeleteHost handles host deletion.
 func (h *Handler) DeleteHost(c echo.Context) error {
 	id := c.Param("id")
