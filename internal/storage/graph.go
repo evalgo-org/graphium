@@ -309,17 +309,32 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 		stats.RunningStacks = runningCount
 	}
 
+	// Count deployments by status
+	allDeployments, err := s.ListDeployments(nil)
+	if err == nil {
+		stats.TotalDeployments = len(allDeployments)
+		stats.DeploymentStatusCounts = make(map[string]int)
+		for _, deployment := range allDeployments {
+			if deployment.Status != "" {
+				stats.DeploymentStatusCounts[deployment.Status]++
+			}
+		}
+		s.debugLog("STATS DEBUG: Deployment status counts: %v", stats.DeploymentStatusCounts)
+	}
+
 	return stats, nil
 }
 
 // Statistics contains aggregated infrastructure statistics.
 type Statistics struct {
-	TotalContainers     int
-	RunningContainers   int
-	TotalHosts          int
-	TotalStacks         int
-	RunningStacks       int
-	HostContainerCounts map[string]int
+	TotalContainers        int
+	RunningContainers      int
+	TotalHosts             int
+	TotalStacks            int
+	RunningStacks          int
+	HostContainerCounts    map[string]int
+	TotalDeployments       int
+	DeploymentStatusCounts map[string]int
 }
 
 // String returns a formatted string representation of the statistics.

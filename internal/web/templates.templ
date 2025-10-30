@@ -215,12 +215,30 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 				</div>
 			}
 
+			if len(stats.DeploymentStatusCounts) > 0 {
+				<div class="section">
+					<h3>JSON-LD Deployment Distribution</h3>
+					<div class="distribution-grid">
+						for status, count := range stats.DeploymentStatusCounts {
+							<div class="distribution-item">
+								<span class="host-id">{ status }</span>
+								<div class="distribution-bar">
+									<div class="distribution-fill" style={ fmt.Sprintf("width: %d%%", (count * 100) / stats.TotalDeployments) }></div>
+								</div>
+								<span class="container-count">{ fmt.Sprintf("%d", count) }</span>
+							</div>
+						}
+					</div>
+				</div>
+			}
+
 			<div class="quick-actions">
 				<h3>Quick Actions</h3>
 				<div class="action-buttons">
 					<a href="/web/containers" class="btn btn-primary">View All Containers</a>
 					<a href="/web/hosts" class="btn btn-secondary">View All Hosts</a>
 					<a href="/web/stacks" class="btn btn-primary">View All Stacks</a>
+					<a href="/web/stacks/jsonld/deployments" class="btn btn-primary">JSON-LD Deployments</a>
 					<a href="/web/topology" class="btn btn-info">View Topology</a>
 				</div>
 			</div>
