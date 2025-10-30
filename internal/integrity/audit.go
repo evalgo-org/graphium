@@ -311,14 +311,134 @@ func (a *AuditLogger) Rotate() error {
 }
 
 // Query searches audit logs for entries matching criteria.
+// It efficiently reads log files within the date range and applies filters.
 func (a *AuditLogger) Query(criteria AuditQuery) ([]AuditEntry, error) {
 	if !a.config.Enabled {
 		return nil, fmt.Errorf("audit logging is not enabled")
 	}
 
-	// TODO: Implement efficient audit log querying
-	// For now, return empty results
-	return []AuditEntry{}, nil
+	// Set default limit if not specified
+	limit := criteria.Limit
+	if limit <= 0 {
+		limit = 100
+	}
+
+	results := make([]AuditEntry, 0, limit)
+
+	// Get list of log files within date range
+	files, err := a.getLogFilesInRange(criteria.StartTime, criteria.EndTime)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list log files: %w", err)
+	}
+
+	// Read files in reverse chronological order (most recent first)
+	for i := len(files) - 1; i >= 0 && len(results) < limit; i-- {
+		entries, err := a.readLogFile(files[i], criteria, limit-len(results))
+		if err != nil {
+			// Log error but continue processing other files
+			continue
+		}
+		results = append(results, entries...)
+	}
+
+	return results, nil
+}
+
+// getLogFilesInRange returns log files that fall within the specified date range.
+func (a *AuditLogger) getLogFilesInRange(start, end time.Time) ([]string, error) {
+	entries, err := os.ReadDir(a.config.LogPath)
+	if err != nil {
+		return nil, err
+	}
+
+	files := make([]string, 0)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		// Parse date from filename: integrity-audit-2006-01-02.jsonl
+		name := entry.Name()
+		if len(name) < 30 || filepath.Ext(name) != ".jsonl" {
+			continue
+		}
+
+		// Extract date portion
+		dateStr := name[17:27] // integrity-audit-YYYY-MM-DD.jsonl
+		fileDate, err := time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			continue
+		}
+
+		// Check if file date is within range
+		if !start.IsZero() && fileDate.Before(start) {
+			continue
+		}
+		if !end.IsZero() && fileDate.After(end) {
+			continue
+		}
+
+		files = append(files, filepath.Join(a.config.LogPath, name))
+	}
+
+	return files, nil
+}
+
+// readLogFile reads entries from a log file and applies filters.
+func (a *AuditLogger) readLogFile(filename string, criteria AuditQuery, maxEntries int) ([]AuditEntry, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	entries := make([]AuditEntry, 0, maxEntries)
+	decoder := json.NewDecoder(file)
+
+	for decoder.More() && len(entries) < maxEntries {
+		var entry AuditEntry
+		if err := decoder.Decode(&entry); err != nil {
+			// Skip malformed entries
+			continue
+		}
+
+		// Apply filters
+		if !a.matchesCriteria(entry, criteria) {
+			continue
+		}
+
+		entries = append(entries, entry)
+	}
+
+	return entries, nil
+}
+
+// matchesCriteria checks if an audit entry matches the query criteria.
+func (a *AuditLogger) matchesCriteria(entry AuditEntry, criteria AuditQuery) bool {
+	// Time range filter
+	if !criteria.StartTime.IsZero() && entry.Timestamp.Before(criteria.StartTime) {
+		return false
+	}
+	if !criteria.EndTime.IsZero() && entry.Timestamp.After(criteria.EndTime) {
+		return false
+	}
+
+	// Operation type filter
+	if criteria.OperationType != "" && entry.OperationType != criteria.OperationType {
+		return false
+	}
+
+	// User filter
+	if criteria.User != "" && entry.User != criteria.User {
+		return false
+	}
+
+	// Success filter
+	if criteria.Success != nil && entry.Success != *criteria.Success {
+		return false
+	}
+
+	return true
 }
 
 // AuditQuery defines search criteria for audit logs.

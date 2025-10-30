@@ -459,3 +459,11 @@ func (s *Service) Close() error {
 	}
 	return nil
 }
+
+// QueryAuditLog searches audit logs for entries matching the criteria.
+func (s *Service) QueryAuditLog(ctx context.Context, query AuditQuery) ([]AuditEntry, error) {
+	if s.audit == nil {
+		return nil, fmt.Errorf("audit logger not initialized")
+	}
+	return s.audit.Query(query)
+}

@@ -2,11 +2,17 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 
 	"evalgo.org/graphium/internal/integrity"
 )
+
+// parseRFC3339Time parses an RFC3339 formatted time string.
+func parseRFC3339Time(timeStr string) (time.Time, error) {
+	return time.Parse(time.RFC3339, timeStr)
+}
 
 // IntegrityScanRequest contains options for scanning.
 type IntegrityScanRequest struct {
@@ -244,30 +250,66 @@ func (s *Server) executeRepairPlan(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param limit query int false "Maximum number of entries to return" default(100)
-// @Param offset query int false "Number of entries to skip" default(0)
+// @Param start_time query string false "Start time (RFC3339 format)"
+// @Param end_time query string false "End time (RFC3339 format)"
 // @Param operation_type query string false "Filter by operation type"
+// @Param user query string false "Filter by user"
+// @Param success query boolean false "Filter by success status"
 // @Success 200 {object} object
+// @Failure 400 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
 // @Router /integrity/audit [get]
 func (s *Server) getAuditLog(c echo.Context) error {
-	limit, offset := parsePagination(c)
+	limit, _ := parsePagination(c)
 	if limit > 100 {
 		limit = 100 // Cap at 100 for audit logs
 	}
-
-	operationType := c.QueryParam("operation_type")
 
 	integrityService := s.getIntegrityService()
 	if integrityService == nil {
 		return InternalError("Integrity service not available", "Service not initialized")
 	}
 
-	// TODO: Implement GetAuditLog in integrity service
-	return c.JSON(http.StatusNotImplemented, map[string]interface{}{
-		"message":        "Audit log retrieval not yet implemented",
-		"limit":          limit,
-		"offset":         offset,
-		"operation_type": operationType,
+	// Build query criteria
+	criteria := integrity.AuditQuery{
+		Limit:         limit,
+		OperationType: c.QueryParam("operation_type"),
+		User:          c.QueryParam("user"),
+	}
+
+	// Parse start_time
+	if startTimeStr := c.QueryParam("start_time"); startTimeStr != "" {
+		startTime, err := parseRFC3339Time(startTimeStr)
+		if err != nil {
+			return BadRequestError("Invalid start_time", err.Error())
+		}
+		criteria.StartTime = startTime
+	}
+
+	// Parse end_time
+	if endTimeStr := c.QueryParam("end_time"); endTimeStr != "" {
+		endTime, err := parseRFC3339Time(endTimeStr)
+		if err != nil {
+			return BadRequestError("Invalid end_time", err.Error())
+		}
+		criteria.EndTime = endTime
+	}
+
+	// Parse success filter
+	if successStr := c.QueryParam("success"); successStr != "" {
+		success := successStr == "true"
+		criteria.Success = &success
+	}
+
+	// Query audit log
+	entries, err := integrityService.QueryAuditLog(c.Request().Context(), criteria)
+	if err != nil {
+		return InternalError("Failed to query audit log", err.Error())
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"count":   len(entries),
+		"entries": entries,
 	})
 }
 
