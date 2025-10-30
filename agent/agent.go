@@ -54,6 +54,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -671,14 +672,36 @@ func (a *Agent) dockerToGraphium(inspect types.ContainerJSON) *models.Container 
 }
 
 // getHostIP attempts to determine the host's IP address.
+// For local Docker socket connections, returns "localhost" to enable Unix socket usage.
+// For remote connections, returns the first non-loopback IPv4 address.
 func (a *Agent) getHostIP() string {
-	// Try to get IP from hostname
-	hostname, err := os.Hostname()
+	// Check if using local Docker socket
+	dockerSocket := a.dockerSocket
+	if dockerSocket == "" {
+		dockerSocket = "/var/run/docker.sock"
+	}
+
+	// If using Unix socket, this is localhost
+	if strings.HasPrefix(dockerSocket, "unix://") || strings.HasPrefix(dockerSocket, "/") {
+		return "localhost"
+	}
+
+	// Try to get actual IP address from network interfaces
+	addrs, err := net.InterfaceAddrs()
 	if err != nil {
+		log.Printf("Warning: Failed to get network interfaces: %v", err)
 		return "127.0.0.1"
 	}
 
-	// For now, just return a placeholder
-	// In production, you might want to query network interfaces
-	return fmt.Sprintf("host-%s", hostname)
+	// Find first non-loopback IPv4 address
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+
+	// Fallback to localhost if no external IP found
+	return "localhost"
 }
