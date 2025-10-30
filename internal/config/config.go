@@ -32,7 +32,9 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -208,8 +210,19 @@ func Load(cfgFile string) (*Config, error) {
 	}
 
 	if err := v.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return nil, fmt.Errorf("error reading config file: %w", err)
+		// If config file was explicitly specified, fail on any error
+		// If searching multiple paths, only fail on errors other than ConfigFileNotFoundError
+		if cfgFile != "" {
+			// For explicit file path, check if it's a "file not found" type error
+			// In this case, we want to proceed with defaults
+			if !isFileNotFoundError(err) {
+				return nil, fmt.Errorf("error reading config file: %w", err)
+			}
+		} else {
+			// For auto-discovery, only fail on non-NotFound errors
+			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+				return nil, fmt.Errorf("error reading config file: %w", err)
+			}
 		}
 	}
 
@@ -296,4 +309,13 @@ func (c *CouchDBConfig) BuildURL() string {
 		return url
 	}
 	return c.URL
+}
+
+// isFileNotFoundError checks if an error is a file not found error.
+func isFileNotFoundError(err error) bool {
+	var pathErr *os.PathError
+	if errors.As(err, &pathErr) {
+		return errors.Is(pathErr, os.ErrNotExist)
+	}
+	return false
 }
