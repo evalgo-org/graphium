@@ -3177,7 +3177,7 @@ templ StackDetailWithUser(stack *models.Stack, deployment *models.StackDeploymen
 							for _, container := range containers {
 								<tr>
 									<td>
-										<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)) }>{ container.Name }</a>
+										<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)) } style="text-decoration: none; color: inherit;">{ container.Name }</a>
 									</td>
 									<td>{ container.Image }</td>
 									<td>
