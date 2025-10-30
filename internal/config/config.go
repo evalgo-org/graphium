@@ -128,6 +128,9 @@ type AgentConfig struct {
 
 	// DockerSocket is the path to the Docker socket
 	DockerSocket string `mapstructure:"docker_socket"`
+
+	// AgentToken is the JWT token for agent authentication
+	AgentToken string `mapstructure:"agent_token"`
 }
 
 // LoggingConfig contains logging configuration.

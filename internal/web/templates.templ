@@ -57,11 +57,60 @@ templ LayoutWithUser(title string, user *models.User) {
 		<footer class="footer">
 			<p>Graphium - Semantic Container Orchestration</p>
 		</footer>
+
+		<!-- Confirmation Modal -->
+		<div id="confirmModal" class="modal" style="display: none;">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3 id="confirmModalTitle">Confirm Action</h3>
+				</div>
+				<div class="modal-body">
+					<p id="confirmModalMessage"></p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+					<button type="button" class="btn btn-danger" id="confirmModalButton">Delete</button>
+				</div>
+			</div>
+		</div>
+
 		<!-- Theme Toggle Button -->
 		<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
 			<span class="sun-icon">☀️</span>
 			<span class="moon-icon">🌙</span>
 		</button>
+
+		<script>
+			// Confirmation Modal Functions
+			let confirmCallback = null;
+
+			function showConfirmModal(title, message, buttonText, callback) {
+				document.getElementById('confirmModalTitle').textContent = title;
+				document.getElementById('confirmModalMessage').textContent = message;
+				document.getElementById('confirmModalButton').textContent = buttonText || 'Delete';
+				confirmCallback = callback;
+				document.getElementById('confirmModal').style.display = 'flex';
+			}
+
+			function closeConfirmModal() {
+				document.getElementById('confirmModal').style.display = 'none';
+				confirmCallback = null;
+			}
+
+			document.getElementById('confirmModalButton').addEventListener('click', function() {
+				if (confirmCallback) {
+					confirmCallback();
+				}
+				closeConfirmModal();
+			});
+
+			// Close modal on background click
+			document.getElementById('confirmModal').addEventListener('click', function(e) {
+				if (e.target === this) {
+					closeConfirmModal();
+				}
+			});
+		</script>
 
 		<script>
 			// Theme toggle functionality
@@ -123,6 +172,22 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 					</div>
 				</div>
 
+				<div class="stat-card">
+					<div class="stat-icon">📚</div>
+					<div class="stat-content">
+						<h3>Total Stacks</h3>
+						<p class="stat-value">{ fmt.Sprintf("%d", stats.TotalStacks) }</p>
+					</div>
+				</div>
+
+				<div class="stat-card stat-success">
+					<div class="stat-icon">🚀</div>
+					<div class="stat-content">
+						<h3>Running Stacks</h3>
+						<p class="stat-value">{ fmt.Sprintf("%d", stats.RunningStacks) }</p>
+					</div>
+				</div>
+
 				<div class="stat-card stat-info">
 					<div class="stat-icon">📊</div>
 					<div class="stat-content">
@@ -154,6 +219,7 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 				<div class="action-buttons">
 					<a href="/web/containers" class="btn btn-primary">View All Containers</a>
 					<a href="/web/hosts" class="btn btn-secondary">View All Hosts</a>
+					<a href="/web/stacks" class="btn btn-primary">View All Stacks</a>
 					<a href="/web/topology" class="btn btn-info">View Topology</a>
 				</div>
 			</div>
@@ -192,7 +258,7 @@ templ Pagination(pagination PaginationInfo, baseURL string, queryParams string) 
 }
 
 // Containers list template (with user)
-templ ContainersListWithUser(containers []*models.Container, pagination PaginationInfo, user *models.User) {
+templ ContainersListWithUser(containers []*models.Container, stackMap map[string]*models.Stack, pagination PaginationInfo, user *models.User) {
 	@LayoutWithUser("Containers", user) {
 		<div class="page-header">
 			<h2>Containers</h2>
@@ -218,13 +284,13 @@ templ ContainersListWithUser(containers []*models.Container, pagination Paginati
 		</div>
 
 		<div id="containers-table">
-			@ContainersTableWithPagination(containers, pagination, "")
+			@ContainersTableWithPagination(containers, stackMap, pagination, "")
 		</div>
 	}
 }
 
 // Containers table component (for HTMX updates)
-templ ContainersTable(containers []*models.Container) {
+templ ContainersTable(containers []*models.Container, stackMap map[string]*models.Stack) {
 	<div class="table-container">
 		<table class="data-table">
 			<thead>
@@ -232,6 +298,7 @@ templ ContainersTable(containers []*models.Container) {
 					<th>Name</th>
 					<th>Image</th>
 					<th>Status</th>
+					<th>Stack</th>
 					<th>Host</th>
 					<th>Created</th>
 					<th>Actions</th>
@@ -240,7 +307,7 @@ templ ContainersTable(containers []*models.Container) {
 			<tbody>
 				if len(containers) == 0 {
 					<tr>
-						<td colspan="6" class="no-data">No containers found</td>
+						<td colspan="7" class="no-data">No containers found</td>
 					</tr>
 				}
 				for _, container := range containers {
@@ -255,6 +322,19 @@ templ ContainersTable(containers []*models.Container) {
 							<span class={ fmt.Sprintf("badge badge-%s", container.Status) }>
 								{ container.Status }
 							</span>
+						</td>
+						<td>
+							if stackMap != nil {
+								if stack, ok := stackMap[container.ID]; ok {
+									<a href={ templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)) } title={ fmt.Sprintf("Part of stack: %s", stack.Name) }>
+										📦 { stack.Name }
+									</a>
+								} else {
+									<span class="text-muted">-</span>
+								}
+							} else {
+								<span class="text-muted">-</span>
+							}
 						</td>
 						<td>{ container.HostedOn }</td>
 						<td>{ container.Created }</td>
@@ -275,7 +355,7 @@ templ ContainersTable(containers []*models.Container) {
 }
 
 // Containers table with pagination (for HTMX updates)
-templ ContainersTableWithPagination(containers []*models.Container, pagination PaginationInfo, queryParams string) {
+templ ContainersTableWithPagination(containers []*models.Container, stackMap map[string]*models.Stack, pagination PaginationInfo, queryParams string) {
 	<div class="table-container">
 		<table class="data-table">
 			<thead>
@@ -283,6 +363,7 @@ templ ContainersTableWithPagination(containers []*models.Container, pagination P
 					<th>Name</th>
 					<th>Image</th>
 					<th>Status</th>
+					<th>Stack</th>
 					<th>Host</th>
 					<th>Created</th>
 					<th>Actions</th>
@@ -291,7 +372,7 @@ templ ContainersTableWithPagination(containers []*models.Container, pagination P
 			<tbody>
 				if len(containers) == 0 {
 					<tr>
-						<td colspan="6" class="no-data">No containers found</td>
+						<td colspan="7" class="no-data">No containers found</td>
 					</tr>
 				}
 				for _, container := range containers {
@@ -306,6 +387,19 @@ templ ContainersTableWithPagination(containers []*models.Container, pagination P
 							<span class={ fmt.Sprintf("badge badge-%s", container.Status) }>
 								{ container.Status }
 							</span>
+						</td>
+						<td>
+							if stackMap != nil {
+								if stack, ok := stackMap[container.ID]; ok {
+									<a href={ templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)) } title={ fmt.Sprintf("Part of stack: %s", stack.Name) }>
+										📦 { stack.Name }
+									</a>
+								} else {
+									<span class="text-muted">-</span>
+								}
+							} else {
+								<span class="text-muted">-</span>
+							}
 						</td>
 						<td>{ container.HostedOn }</td>
 						<td>{ container.Created }</td>
@@ -328,6 +422,7 @@ templ HostsListWithUser(hosts []*models.Host, pagination PaginationInfo, user *m
 	@LayoutWithUser("Hosts", user) {
 		<div class="page-header">
 			<h2>Hosts</h2>
+			<a href="/web/hosts/new" class="btn btn-primary">+ Create Host</a>
 			<div class="filters">
 				<input
 					type="text"
@@ -1603,12 +1698,23 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 }
 
 // Container detail view template (with user)
-templ ContainerDetailWithUser(container *models.Container, host *models.Host, user *models.User) {
+templ ContainerDetailWithUser(container *models.Container, host *models.Host, stack *models.Stack, belongsToStack bool, user *models.User) {
 	@LayoutWithUser("Container Details", user) {
 		<div class="page-header">
 			<div>
 				<a href="/web/containers" class="btn btn-secondary">← Back to Containers</a>
 				<h2>Container Details</h2>
+			</div>
+			<div class="action-buttons">
+				if belongsToStack && stack != nil {
+					<div class="alert alert-info" style="margin: 0; padding: 8px 12px; display: inline-block;">
+						📦 Part of stack: <a href={ templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)) } style="color: inherit; font-weight: bold;">{ stack.Name }</a>
+					</div>
+				} else {
+					<form method="POST" action={ templ.URL(fmt.Sprintf("/web/containers/%s/delete", container.ID)) } id="delete-container-form" style="display: inline;">
+						<button type="button" class="btn btn-danger" data-container-name={ container.Name } onclick="showConfirmModal('Delete Container', 'Are you sure you want to delete container &quot;' + this.dataset.containerName + '&quot;? This action cannot be undone.', 'Delete', function() { document.getElementById('delete-container-form').submit(); })">🗑️ Delete Container</button>
+					</form>
+				}
 			</div>
 		</div>
 
@@ -1749,6 +1855,12 @@ templ HostDetailWithUser(host *models.Host, containers []*models.Container, user
 			<div>
 				<a href="/web/hosts" class="btn btn-secondary">← Back to Hosts</a>
 				<h2>Host Details</h2>
+			</div>
+			<div class="action-buttons">
+				<a href={ templ.URL(fmt.Sprintf("/web/hosts/%s/edit", host.ID)) } class="btn btn-primary">✏️ Edit Host</a>
+				<form method="POST" action={ templ.URL(fmt.Sprintf("/web/hosts/%s/delete", host.ID)) } id="delete-host-form" style="display: inline;">
+					<button type="button" class="btn btn-danger" data-host-name={ host.Name } onclick="showConfirmModal('Delete Host', 'Are you sure you want to delete host &quot;' + this.dataset.hostName + '&quot;? This action cannot be undone.', 'Delete', function() { document.getElementById('delete-host-form').submit(); })">🗑️ Delete Host</button>
+				</form>
 			</div>
 		</div>
 
@@ -2495,8 +2607,13 @@ templ ContainerLogsView(container *models.Container, host *models.Host, user *mo
 templ StacksListWithUser(stacks []*models.Stack, pagination PaginationInfo, user *models.User) {
 	@LayoutWithUser("Stacks", user) {
 		<div class="page-header">
-			<h2>Stacks</h2>
-			<p>Multi-container distributed stack deployments</p>
+			<div>
+				<h2>Stacks</h2>
+				<p>Multi-container distributed stack deployments</p>
+			</div>
+			<div>
+				<a href="/web/stacks/new" class="btn btn-primary">+ Deploy Stack</a>
+			</div>
 		</div>
 		<div class="table-container" id="stacks-table" hx-get="/web/stacks/table" hx-trigger="load" hx-swap="innerHTML">
 			<div class="loading">Loading stacks...</div>
@@ -2508,7 +2625,7 @@ templ StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInf
 	if len(stacks) == 0 {
 		<div class="empty-state">
 			<p>No stacks deployed yet</p>
-			<p>Use the CLI to deploy your first stack</p>
+			<p><a href="/web/stacks/new" class="btn btn-primary">Deploy Your First Stack</a></p>
 		</div>
 	} else {
 		<table class="data-table">
@@ -2565,8 +2682,24 @@ templ StackDetailWithUser(stack *models.Stack, deployment *models.StackDeploymen
 					<p>{ stack.Description }</p>
 				}
 			</div>
-			<div>
+			<div class="page-actions">
 				<span class={ "badge badge-" + stack.Status }>{ stack.Status }</span>
+				<a href={ templ.URL(fmt.Sprintf("/web/stacks/%s/edit", stack.ID)) } class="btn btn-secondary">Edit</a>
+				if stack.Status == "running" {
+					<form method="POST" action={ templ.URL(fmt.Sprintf("/web/stacks/%s/stop", stack.ID)) } id="stop-stack-form" style="display: inline;">
+						<button type="button" class="btn btn-warning" data-stack-name={ stack.Name } onclick="showConfirmModal('Stop Stack', 'Are you sure you want to stop stack &quot;' + this.dataset.stackName + '&quot;?', 'Stop', function() { document.getElementById('stop-stack-form').submit(); })">Stop</button>
+					</form>
+					<form method="POST" action={ templ.URL(fmt.Sprintf("/web/stacks/%s/restart", stack.ID)) } id="restart-stack-form" style="display: inline;">
+						<button type="button" class="btn btn-warning" data-stack-name={ stack.Name } onclick="showConfirmModal('Restart Stack', 'Are you sure you want to restart stack &quot;' + this.dataset.stackName + '&quot;?', 'Restart', function() { document.getElementById('restart-stack-form').submit(); })">Restart</button>
+					</form>
+				} else if stack.Status == "stopped" {
+					<form method="POST" action={ templ.URL(fmt.Sprintf("/web/stacks/%s/start", stack.ID)) } style="display: inline;">
+						<button type="submit" class="btn btn-success">Start</button>
+					</form>
+				}
+				<form method="POST" action={ templ.URL(fmt.Sprintf("/web/stacks/%s/delete", stack.ID)) } id="delete-stack-form" style="display: inline;">
+					<button type="button" class="btn btn-danger" data-stack-name={ stack.Name } onclick="showConfirmModal('Delete Stack', 'Are you sure you want to delete stack &quot;' + this.dataset.stackName + '&quot;? This will delete all containers in the stack. This action cannot be undone.', 'Delete', function() { document.getElementById('delete-stack-form').submit(); })">Delete</button>
+				</form>
 			</div>
 		</div>
 		<div class="detail-container">
@@ -2604,6 +2737,7 @@ templ StackDetailWithUser(stack *models.Stack, deployment *models.StackDeploymen
 								<th>IP Address</th>
 								<th>Ports</th>
 								<th>Status</th>
+								<th>Actions</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -2619,6 +2753,12 @@ templ StackDetailWithUser(stack *models.Stack, deployment *models.StackDeploymen
 									</td>
 									<td>
 										<span class={ "badge badge-" + placement.Status }>{ placement.Status }</span>
+									</td>
+									<td>
+										<div class="action-buttons">
+											<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", placement.ContainerID)) } class="btn-icon" title="View Details">👁️</a>
+											<a href={ templ.URL(fmt.Sprintf("/web/containers/%s/logs", placement.ContainerID)) } class="btn-icon" title="View Logs">📄</a>
+										</div>
 									</td>
 								</tr>
 							}
@@ -2643,6 +2783,469 @@ templ StackDetailWithUser(stack *models.Stack, deployment *models.StackDeploymen
 					<p>{ stack.ErrorMessage }</p>
 				</div>
 			}
+		</div>
+	}
+}
+
+// Deploy stack form template
+templ DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, datacenters map[string]bool, errorMsg string, user *models.User) {
+	@LayoutWithUser("Deploy Stack", user) {
+		<div class="page-header">
+			<div>
+				<a href="/web/stacks" class="btn btn-secondary">← Back to Stacks</a>
+				<h2>Deploy New Stack</h2>
+				<p>Deploy a multi-container stack from a JSON-LD definition</p>
+			</div>
+		</div>
+		if errorMsg != "" {
+			<div class="alert alert-error">
+				{ errorMsg }
+			</div>
+		}
+		<div class="form-container">
+			<form method="POST" action="/web/stacks/deploy" class="stack-form">
+				<div class="form-section">
+					<h3>Stack Template</h3>
+					<p class="form-help">Select a predefined template or write your own JSON-LD definition</p>
+					if len(templates) > 0 {
+						<div class="form-group">
+							<label for="template-selector">Choose Template (Optional)</label>
+							<select id="template-selector" class="form-select">
+								<option value="">-- Custom Definition --</option>
+								for _, tmpl := range templates {
+									<option value={ tmpl.Content }>{ tmpl.Name } - { tmpl.Description }</option>
+								}
+							</select>
+							<small class="form-text">Select a template to auto-fill the JSON editor below</small>
+						</div>
+					}
+					<div class="form-group">
+						<label for="stack_json">Stack Definition (JSON-LD) *</label>
+						<textarea
+							id="stack_json"
+							name="stack_json"
+							rows="20"
+							class="form-textarea code-editor"
+							required
+							placeholder={`{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "my-stack",
+  "description": "My application stack",
+  "network": {
+    "name": "my-network",
+    "driver": "bridge"
+  },
+  "itemListElement": [
+    {
+      "@type": "SoftwareApplication",
+      "position": 1,
+      "name": "nginx",
+      "image": "nginx:latest",
+      "ports": [
+        {"containerPort": 80, "hostPort": 8080}
+      ]
+    }
+  ]
+}`}></textarea>
+						<small class="form-text">JSON-LD format using Schema.org vocabulary</small>
+					</div>
+				</div>
+				<div class="form-section">
+					<h3>Deployment Configuration</h3>
+					<div class="form-group">
+						<label for="deployment-mode">Deployment Mode</label>
+						<select id="deployment-mode" name="deployment_mode" class="form-select">
+							<option value="distributed" selected>Distributed - Deploy across multiple hosts</option>
+							<option value="single-host">Single Host - Deploy on one host</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label for="placement-strategy">Placement Strategy</label>
+						<select id="placement-strategy" name="placement_strategy" class="form-select">
+							<option value="auto" selected>Auto - Graphium decides based on resources</option>
+							<option value="spread">Spread - Distribute evenly across hosts</option>
+							<option value="datacenter">Datacenter - Keep in same datacenter</option>
+							<option value="manual">Manual - Specify host per container</option>
+						</select>
+					</div>
+					if len(datacenters) > 0 {
+						<div class="form-group">
+							<label for="datacenter">Target Datacenter (Optional)</label>
+							<select id="datacenter" name="datacenter" class="form-select">
+								<option value="">-- Any Datacenter --</option>
+								for dc := range datacenters {
+									<option value={ dc }>{ dc }</option>
+								}
+							</select>
+						</div>
+					}
+					if len(hosts) > 0 {
+						<div class="form-group">
+							<label>Target Hosts (Optional)</label>
+							<small class="form-text">Select specific hosts for deployment. If none selected, will use all active hosts in selected datacenter (or all active hosts if no datacenter selected).</small>
+							<div class="host-selection" style="margin-top: 10px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; padding: 10px;">
+								for _, host := range hosts {
+									<label class="checkbox-label" style="display: block; padding: 5px 0;">
+										<input type="checkbox" name="target_hosts[]" value={ host.ID }/>
+										<span>
+											<strong>{ host.Name }</strong> ({ host.ID })
+											if host.Datacenter != "" {
+												<span class="text-muted"> - { host.Datacenter }</span>
+											}
+											<span class="text-muted"> - { host.IPAddress }</span>
+											<span class={ "badge badge-" + host.Status } style="margin-left: 10px;">{ host.Status }</span>
+										</span>
+									</label>
+								}
+							</div>
+						</div>
+					} else {
+						<div class="alert alert-warning">
+							<strong>No Active Hosts Available!</strong> You need to register and activate at least one host before deploying stacks.
+						</div>
+					}
+				</div>
+				<div class="form-actions">
+					<button type="submit" class="btn btn-primary">Deploy Stack</button>
+					<a href="/web/stacks" class="btn btn-secondary">Cancel</a>
+				</div>
+			</form>
+		</div>
+		<script>
+			// Template selector functionality
+			const templateSelector = document.getElementById('template-selector');
+			const jsonTextarea = document.getElementById('stack_json');
+			let validationTimeout;
+
+			if (templateSelector && jsonTextarea) {
+				templateSelector.addEventListener('change', function() {
+					if (this.value) {
+						// Pretty print the JSON
+						try {
+							const formatted = JSON.stringify(JSON.parse(this.value), null, 2);
+							jsonTextarea.value = formatted;
+							validateJSON();
+						} catch (e) {
+							jsonTextarea.value = this.value;
+						}
+					}
+				});
+
+				// Real-time JSON validation
+				jsonTextarea.addEventListener('input', function() {
+					clearTimeout(validationTimeout);
+					validationTimeout = setTimeout(validateJSON, 500);
+				});
+
+				// Initial validation
+				if (jsonTextarea.value.trim()) {
+					validateJSON();
+				}
+			}
+
+			function validateJSON() {
+				const jsonStr = jsonTextarea.value.trim();
+
+				// Remove any existing validation messages
+				const existingMsg = document.getElementById('json-validation');
+				if (existingMsg) {
+					existingMsg.remove();
+				}
+
+				if (!jsonStr) {
+					return;
+				}
+
+				const validationDiv = document.createElement('div');
+				validationDiv.id = 'json-validation';
+				validationDiv.style.marginTop = '10px';
+				validationDiv.style.padding = '10px';
+				validationDiv.style.borderRadius = '4px';
+
+				try {
+					const parsed = JSON.parse(jsonStr);
+
+					// Check required fields
+					const errors = [];
+					if (!parsed.name) {
+						errors.push('Missing required field: "name"');
+					}
+					if (!parsed.itemListElement || !Array.isArray(parsed.itemListElement)) {
+						errors.push('Missing or invalid "itemListElement" array');
+					} else if (parsed.itemListElement.length === 0) {
+						errors.push('Stack must contain at least one container');
+					}
+
+					if (errors.length > 0) {
+						validationDiv.className = 'alert alert-warning';
+						validationDiv.innerHTML = '<strong>Validation Warnings:</strong><ul style="margin: 5px 0 0 20px;">' +
+							errors.map(e => '<li>' + e + '</li>').join('') + '</ul>';
+					} else {
+						validationDiv.className = 'alert alert-success';
+						validationDiv.innerHTML = '✓ Valid stack definition (' + parsed.itemListElement.length + ' container(s))';
+					}
+				} catch (e) {
+					validationDiv.className = 'alert alert-error';
+					validationDiv.innerHTML = '<strong>JSON Syntax Error:</strong> ' + e.message;
+				}
+
+				jsonTextarea.parentNode.appendChild(validationDiv);
+			}
+		</script>
+	}
+}
+
+// Edit stack form template
+templ EditStackFormWithUser(stack *models.Stack, stackJSON string, errorMsg string, user *models.User) {
+	@LayoutWithUser("Edit Stack", user) {
+		<div class="page-header">
+			<div>
+				<a href={ templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)) } class="btn btn-secondary">← Back to Stack</a>
+				<h2>Edit Stack: { stack.Name }</h2>
+				<p>Update stack metadata (name and description only)</p>
+			</div>
+		</div>
+		if errorMsg != "" {
+			<div class="alert alert-error">
+				{ errorMsg }
+			</div>
+		}
+		<div class="form-container">
+			<form method="POST" action={ templ.URL(fmt.Sprintf("/web/stacks/%s/update", stack.ID)) } class="stack-form">
+				<div class="form-section">
+					<h3>Stack Information</h3>
+					<div class="form-group">
+						<label for="name">Stack Name *</label>
+						<input type="text" id="name" name="name" value={ stack.Name } required/>
+						<small class="form-text">Display name for this stack</small>
+					</div>
+					<div class="form-group">
+						<label for="description">Description</label>
+						<textarea id="description" name="description" rows="3" class="form-textarea">{ stack.Description }</textarea>
+						<small class="form-text">Brief description of this stack's purpose</small>
+					</div>
+				</div>
+				<div class="form-section">
+					<h3>Current Configuration (Read-only)</h3>
+					<div class="form-group">
+						<label>Stack ID</label>
+						<input type="text" value={ stack.ID } disabled/>
+					</div>
+					<div class="form-group">
+						<label>Status</label>
+						<input type="text" value={ stack.Status } disabled/>
+					</div>
+					<div class="form-group">
+						<label>Placement Strategy</label>
+						<input type="text" value={ stack.Deployment.PlacementStrategy } disabled/>
+					</div>
+					<div class="alert alert-info">
+						<strong>Note:</strong> To change deployment configuration, you must redeploy the stack.
+					</div>
+				</div>
+				<div class="form-actions">
+					<button type="submit" class="btn btn-primary">Update Stack</button>
+					<a href={ templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)) } class="btn btn-secondary">Cancel</a>
+				</div>
+			</form>
+		</div>
+	}
+}
+
+// Stack logs aggregation view
+templ StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, containerIDs []string, user *models.User) {
+	@LayoutWithUser("Stack Logs", user) {
+		<div class="page-header">
+			<div>
+				<a href={ templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)) } class="btn btn-secondary">← Back to Stack</a>
+				<h2>Logs: { stack.Name }</h2>
+				<p>Aggregated logs from all containers in this stack</p>
+			</div>
+			<div>
+				<span class={ "badge badge-" + stack.Status }>{ stack.Status }</span>
+			</div>
+		</div>
+		<div class="logs-container">
+			if len(deployment.Placements) == 0 {
+				<div class="empty-state">
+					<p>No containers deployed in this stack</p>
+				</div>
+			} else {
+				for _, placement := range deployment.Placements {
+					<div class="log-section">
+						<div class="log-header">
+							<h3>{ placement.ContainerName }</h3>
+							<div class="log-meta">
+								<span class="log-host">Host: { placement.HostID }</span>
+								<span class={ "badge badge-" + placement.Status }>{ placement.Status }</span>
+							</div>
+						</div>
+						if placement.ContainerID != "" {
+							<div class="log-content" id={ "logs-" + placement.ContainerID }>
+								<div
+									hx-get={ fmt.Sprintf("/web/containers/%s/logs?tail=100", placement.ContainerID) }
+									hx-trigger="load"
+									hx-swap="innerHTML">
+									<div class="loading">Loading logs...</div>
+								</div>
+							</div>
+						} else {
+							<div class="log-content">
+								<p class="text-muted">Container not yet created</p>
+							</div>
+						}
+					</div>
+				}
+			}
+		</div>
+	}
+}
+
+// Create host form template
+templ CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.User) {
+	@LayoutWithUser("Create Host", user) {
+		<div class="page-header">
+			<div>
+				<a href="/web/hosts" class="btn btn-secondary">← Back to Hosts</a>
+				<h2>Register New Host</h2>
+				<p>Add a new Docker host to your infrastructure</p>
+			</div>
+		</div>
+		if errorMsg != "" {
+			<div class="alert alert-error">
+				{ errorMsg }
+			</div>
+		}
+		<div class="form-container">
+			<form method="POST" action="/web/hosts/create" class="host-form">
+				<div class="form-section">
+					<h3>Host Information</h3>
+					<div class="form-group">
+						<label for="id">Host ID *</label>
+						<input type="text" id="id" name="id" value={ host.ID } required placeholder="host-001"/>
+						<small class="form-text">Unique identifier (e.g., host-001, web-server-01)</small>
+					</div>
+					<div class="form-group">
+						<label for="name">Host Name *</label>
+						<input type="text" id="name" name="name" value={ host.Name } required placeholder="localhost-docker"/>
+						<small class="form-text">Friendly display name</small>
+					</div>
+					<div class="form-group">
+						<label for="ipAddress">IP Address *</label>
+						<input type="text" id="ipAddress" name="ipAddress" value={ host.IPAddress } required placeholder="localhost or 192.168.1.100"/>
+						<small class="form-text">Use "localhost" for local Docker, or IP address for remote hosts</small>
+					</div>
+					<div class="form-group">
+						<label for="datacenter">Datacenter / Location</label>
+						<input type="text" id="datacenter" name="datacenter" value={ host.Datacenter } placeholder="us-west, europe, etc."/>
+						<small class="form-text">Optional: Group hosts by location</small>
+					</div>
+				</div>
+				<div class="form-section">
+					<h3>Resources</h3>
+					<div class="form-group">
+						<label for="cpu">CPU Cores</label>
+						<input type="number" id="cpu" name="cpu" value={ fmt.Sprintf("%d", host.CPU) } min="1" placeholder="4"/>
+						<small class="form-text">Number of CPU cores available</small>
+					</div>
+					<div class="form-group">
+						<label for="memory">Memory (bytes)</label>
+						<input type="number" id="memory" name="memory" value={ fmt.Sprintf("%d", host.Memory) } min="0" placeholder="8589934592"/>
+						<small class="form-text">Total memory in bytes (8589934592 = 8GB)</small>
+					</div>
+				</div>
+				<div class="form-section">
+					<h3>Status</h3>
+					<div class="form-group">
+						<label for="status">Status *</label>
+						<select id="status" name="status" class="form-select" required>
+							<option value="active" selected?={ host.Status == "active" }>Active - Ready for deployments</option>
+							<option value="maintenance" selected?={ host.Status == "maintenance" }>Maintenance - Temporarily unavailable</option>
+							<option value="offline" selected?={ host.Status == "offline" }>Offline - Not accessible</option>
+						</select>
+					</div>
+				</div>
+				<div class="alert alert-info">
+					<strong>Docker Connection:</strong> Ensure Docker is running and accessible on this host.
+					<ul style="margin: 10px 0 0 20px;">
+						<li><strong>localhost</strong>: Will use unix:///var/run/docker.sock</li>
+						<li><strong>Remote IP</strong>: Will use tcp://IP:2375 (ensure Docker API is exposed)</li>
+					</ul>
+				</div>
+				<div class="form-actions">
+					<button type="submit" class="btn btn-primary">Create Host</button>
+					<a href="/web/hosts" class="btn btn-secondary">Cancel</a>
+				</div>
+			</form>
+		</div>
+	}
+}
+
+// Edit host form template
+templ EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User) {
+	@LayoutWithUser("Edit Host", user) {
+		<div class="page-header">
+			<div>
+				<a href={ templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)) } class="btn btn-secondary">← Back to Host</a>
+				<h2>Edit Host: { host.Name }</h2>
+			</div>
+		</div>
+		if errorMsg != "" {
+			<div class="alert alert-error">
+				{ errorMsg }
+			</div>
+		}
+		<div class="form-container">
+			<form method="POST" action={ templ.URL(fmt.Sprintf("/web/hosts/%s/update", host.ID)) } class="host-form">
+				<div class="form-section">
+					<h3>Host Information</h3>
+					<div class="form-group">
+						<label>Host ID</label>
+						<input type="text" value={ host.ID } disabled/>
+						<small class="form-text">Cannot be changed</small>
+					</div>
+					<div class="form-group">
+						<label for="name">Host Name *</label>
+						<input type="text" id="name" name="name" value={ host.Name } required/>
+					</div>
+					<div class="form-group">
+						<label for="ipAddress">IP Address *</label>
+						<input type="text" id="ipAddress" name="ipAddress" value={ host.IPAddress } required/>
+						<small class="form-text">Use "localhost" for local, or IP for remote</small>
+					</div>
+					<div class="form-group">
+						<label for="datacenter">Datacenter / Location</label>
+						<input type="text" id="datacenter" name="datacenter" value={ host.Datacenter }/>
+					</div>
+				</div>
+				<div class="form-section">
+					<h3>Resources</h3>
+					<div class="form-group">
+						<label for="cpu">CPU Cores</label>
+						<input type="number" id="cpu" name="cpu" value={ fmt.Sprintf("%d", host.CPU) } min="1"/>
+					</div>
+					<div class="form-group">
+						<label for="memory">Memory (bytes)</label>
+						<input type="number" id="memory" name="memory" value={ fmt.Sprintf("%d", host.Memory) } min="0"/>
+					</div>
+				</div>
+				<div class="form-section">
+					<h3>Status</h3>
+					<div class="form-group">
+						<label for="status">Status *</label>
+						<select id="status" name="status" class="form-select" required>
+							<option value="active" selected?={ host.Status == "active" }>Active</option>
+							<option value="maintenance" selected?={ host.Status == "maintenance" }>Maintenance</option>
+							<option value="offline" selected?={ host.Status == "offline" }>Offline</option>
+						</select>
+					</div>
+				</div>
+				<div class="form-actions">
+					<button type="submit" class="btn btn-primary">Update Host</button>
+					<a href={ templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)) } class="btn btn-secondary">Cancel</a>
+				</div>
+			</form>
 		</div>
 	}
 }

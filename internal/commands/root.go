@@ -45,6 +45,7 @@ func init() {
 	rootCmd.AddCommand(serverCmd)
 	rootCmd.AddCommand(agentCmd)
 	rootCmd.AddCommand(stackCmd)
+	rootCmd.AddCommand(integrityCmd)
 	rootCmd.AddCommand(versionCmd)
 
 	rootCmd.SetVersionTemplate(`{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s" .Version}}

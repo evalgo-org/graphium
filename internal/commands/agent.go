@@ -43,10 +43,13 @@ func runAgent(cmd *cobra.Command, args []string) error {
 	fmt.Printf("   API URL: %s\n", cfg.Agent.APIURL)
 	fmt.Println()
 
-	// Generate agent authentication token if agent secret is configured
+	// Get agent authentication token
 	var agentToken string
-	if cfg.Security.AgentTokenSecret != "" && cfg.Security.AuthEnabled {
-		// Generate a long-lived token (7 days)
+	if cfg.Agent.AgentToken != "" {
+		// Use pre-configured token from config file
+		agentToken = cfg.Agent.AgentToken
+	} else if cfg.Security.AgentTokenSecret != "" && cfg.Security.AuthEnabled {
+		// Generate a long-lived token (7 days) if no token configured
 		token, err := auth.GenerateAgentToken(
 			cfg.Security.AgentTokenSecret,
 			cfg.Agent.HostID,

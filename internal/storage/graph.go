@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"eve.evalgo.org/db"
 
@@ -236,32 +237,25 @@ type HostFilter struct {
 
 // CountContainers returns the total number of containers matching the filter.
 func (s *Storage) CountContainers(filter map[string]interface{}) (int, error) {
-	// Add type filter
-	selector := map[string]interface{}{
-		"@type": "SoftwareApplication",
+	// We can't use Count() directly because CouchDB may have duplicate documents
+	// for the same container ID (from sync conflicts or agent restarts).
+	// ListContainers has deduplication logic, so use that instead.
+	containers, err := s.ListContainers(filter)
+	if err != nil {
+		return 0, err
 	}
-
-	// Merge additional filters
-	for k, v := range filter {
-		selector[k] = v
-	}
-
-	return s.service.Count(selector)
+	return len(containers), nil
 }
 
 // CountHosts returns the total number of hosts matching the filter.
 func (s *Storage) CountHosts(filter map[string]interface{}) (int, error) {
-	// Add type filter
-	selector := map[string]interface{}{
-		"@type": "ComputerServer",
+	// We can't use Count() directly because CouchDB may have duplicate documents.
+	// ListHosts doesn't have explicit deduplication but it's less critical for hosts.
+	hosts, err := s.ListHosts(filter)
+	if err != nil {
+		return 0, err
 	}
-
-	// Merge additional filters
-	for k, v := range filter {
-		selector[k] = v
-	}
-
-	return s.service.Count(selector)
+	return len(hosts), nil
 }
 
 // GetStatistics returns aggregated statistics about the infrastructure.
@@ -272,6 +266,8 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 	totalContainers, err := s.CountContainers(nil)
 	if err == nil {
 		stats.TotalContainers = totalContainers
+	} else {
+		log.Printf("Error counting total containers: %v", err)
 	}
 
 	// Count running containers
@@ -280,7 +276,11 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 	})
 	if err == nil {
 		stats.RunningContainers = runningContainers
+	} else {
+		log.Printf("Error counting running containers: %v", err)
 	}
+
+	log.Printf("STATS DEBUG: Total containers: %d, Running containers: %d", stats.TotalContainers, stats.RunningContainers)
 
 	// Count total hosts
 	totalHosts, err := s.CountHosts(nil)
@@ -292,6 +292,21 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 	hostCounts, err := s.GetHostContainerCount()
 	if err == nil {
 		stats.HostContainerCounts = hostCounts
+		log.Printf("STATS DEBUG: Host container counts: %v", hostCounts)
+	}
+
+	// Count total stacks
+	allStacks, err := s.ListStacks(nil)
+	if err == nil {
+		stats.TotalStacks = len(allStacks)
+		// Count running stacks
+		runningCount := 0
+		for _, stack := range allStacks {
+			if stack.Status == "running" {
+				runningCount++
+			}
+		}
+		stats.RunningStacks = runningCount
 	}
 
 	return stats, nil
@@ -302,6 +317,8 @@ type Statistics struct {
 	TotalContainers     int
 	RunningContainers   int
 	TotalHosts          int
+	TotalStacks         int
+	RunningStacks       int
 	HostContainerCounts map[string]int
 }
 
@@ -312,10 +329,14 @@ func (s *Statistics) String() string {
 			"  Total Containers: %d\n"+
 			"  Running Containers: %d\n"+
 			"  Total Hosts: %d\n"+
+			"  Total Stacks: %d\n"+
+			"  Running Stacks: %d\n"+
 			"  Hosts with Containers: %d\n",
 		s.TotalContainers,
 		s.RunningContainers,
 		s.TotalHosts,
+		s.TotalStacks,
+		s.RunningStacks,
 		len(s.HostContainerCounts),
 	)
 }

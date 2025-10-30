@@ -1811,3 +1811,345 @@ body {
     justify-content: center;
   }
 }
+
+/* Stack Form Styles */
+.code-editor {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 12px;
+  resize: vertical;
+  min-height: 400px;
+}
+
+.code-editor:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(95, 158, 160, 0.2);
+}
+
+.form-help {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 15px;
+}
+
+.form-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-select:hover {
+  border-color: var(--primary-color);
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(95, 158, 160, 0.2);
+}
+
+/* Page Actions */
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-actions form {
+  margin: 0;
+}
+
+.page-actions .btn {
+  margin: 0;
+}
+
+/* Alert Styles */
+.alert {
+  padding: 15px 20px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border-left: 4px solid;
+}
+
+.alert-error {
+  background-color: rgba(199, 130, 131, 0.1);
+  border-left-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+.alert-success {
+  background-color: rgba(156, 175, 136, 0.1);
+  border-left-color: var(--success-color);
+  color: var(--success-color);
+}
+
+.alert-warning {
+  background-color: rgba(212, 165, 116, 0.1);
+  border-left-color: var(--warning-color);
+  color: var(--warning-color);
+}
+
+.alert-info {
+  background-color: rgba(95, 158, 160, 0.1);
+  border-left-color: var(--info-color);
+  color: var(--info-color);
+}
+
+/* Stack Form Specific */
+.stack-form {
+  max-width: 1200px;
+}
+
+.stack-form .form-section {
+  margin-bottom: 30px;
+}
+
+.stack-form .form-section h3 {
+  margin-bottom: 15px;
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 10px;
+}
+
+/* Button enhancements */
+.btn-warning {
+  background-color: var(--warning-color);
+  color: var(--surface-color);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.btn-warning:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
+}
+
+.btn-warning:active {
+  transform: translateY(0);
+}
+
+/* Page header improvements for action buttons */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+}
+
+.page-header > div:first-child {
+  flex: 1;
+}
+
+.page-header > div:last-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Logs Container Styles */
+.logs-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.log-section {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.log-header {
+  padding: 15px 20px;
+  background: var(--surface-light);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.log-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--primary-color);
+}
+
+.log-meta {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.log-host {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.log-content {
+  padding: 15px 20px;
+  background: var(--bg-color);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  max-height: 400px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.log-content .loading {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted);
+}
+
+.log-content .text-muted {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Success button */
+.btn-success {
+  background-color: var(--success-color);
+  color: var(--surface-color);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.btn-success:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(156, 175, 136, 0.3);
+}
+
+.btn-success:active {
+  transform: translateY(0);
+}
+
+/* Info alert improvements */
+.alert-info strong {
+  font-weight: 600;
+}
+
+/* Disabled input styling */
+input:disabled,
+textarea:disabled {
+  background-color: var(--surface-light);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Additional alert style */
+.alert-warning {
+  background-color: rgba(212, 165, 116, 0.15);
+  border-left-color: var(--warning-color);
+  color: var(--text-color);
+}
+
+.alert-warning strong {
+  color: var(--warning-color);
+  font-weight: 600;
+}
+
+.alert-warning ul {
+  color: var(--text-color);
+}
+
+/* Loading states */
+.btn.loading {
+  position: relative;
+  color: transparent;
+  pointer-events: none;
+}
+
+.btn.loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid var(--text-color);
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spinner 0.6s linear infinite;
+}
+
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Success message flash */
+.flash-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.flash-message.success {
+  background-color: var(--success-color);
+  color: var(--surface-color);
+}
+
+.flash-message.error {
+  background-color: var(--danger-color);
+  color: var(--surface-color);
+}
+
+/* Form improvements */
+.form-group.has-error input,
+.form-group.has-error textarea {
+  border-color: var(--danger-color);
+}
+
+.form-group.has-error .form-text {
+  color: var(--danger-color);
+}
+
+.form-group.has-success input,
+.form-group.has-success textarea {
+  border-color: var(--success-color);
+}

@@ -432,10 +432,55 @@ func (s *Storage) GetHostContainerCount() (map[string]int, error) {
 	for _, container := range containers {
 		if container.HostedOn != "" {
 			counts[container.HostedOn]++
+		} else {
+			// Count containers without a host assignment
+			counts["unassigned"]++
 		}
 	}
 
 	return counts, nil
+}
+
+// GetContainerStack returns the stack that owns this container, if any.
+// Returns the stack and true if the container belongs to a stack, nil and false otherwise.
+func (s *Storage) GetContainerStack(containerID string) (*models.Stack, bool, error) {
+	// Get all stacks
+	stacks, err := s.ListStacks(nil)
+	if err != nil {
+		return nil, false, err
+	}
+
+	// Check each stack's containers list
+	for _, stack := range stacks {
+		for _, cID := range stack.Containers {
+			if cID == containerID {
+				return stack, true, nil
+			}
+		}
+	}
+
+	return nil, false, nil
+}
+
+// GetContainerStackMap returns a map of container ID to stack info for all containers.
+// This is more efficient than calling GetContainerStack for each container individually.
+func (s *Storage) GetContainerStackMap() (map[string]*models.Stack, error) {
+	stackMap := make(map[string]*models.Stack)
+
+	// Get all stacks
+	stacks, err := s.ListStacks(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build map of containerID -> stack
+	for _, stack := range stacks {
+		for _, containerID := range stack.Containers {
+			stackMap[containerID] = stack
+		}
+	}
+
+	return stackMap, nil
 }
 
 // GetDatabaseInfo returns database statistics.

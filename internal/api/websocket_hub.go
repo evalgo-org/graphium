@@ -19,6 +19,12 @@ const (
 	EventHostAdded        GraphEventType = "host_added"
 	EventHostUpdated      GraphEventType = "host_updated"
 	EventHostRemoved      GraphEventType = "host_removed"
+	EventStackAdded       GraphEventType = "stack_added"
+	EventStackUpdated     GraphEventType = "stack_updated"
+	EventStackRemoved     GraphEventType = "stack_removed"
+	EventStackDeploying   GraphEventType = "stack_deploying"
+	EventStackDeployed    GraphEventType = "stack_deployed"
+	EventStackError       GraphEventType = "stack_error"
 	EventGraphRefresh     GraphEventType = "graph_refresh"
 )
 

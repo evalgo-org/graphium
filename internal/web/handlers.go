@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,6 +22,13 @@ type PaginationInfo struct {
 	TotalPages int
 	HasPrev    bool
 	HasNext    bool
+}
+
+// ContainerWithStack holds a container and its optional stack membership
+type ContainerWithStack struct {
+	Container *models.Container
+	StackName string // Empty if not part of a stack
+	StackID   string // Empty if not part of a stack
 }
 
 // Handler handles web UI requests.
@@ -134,12 +142,16 @@ func (h *Handler) ContainersList(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "Failed to load containers")
 	}
 
+	// Get stack map for all containers
+	stackMap, _ := h.storage.GetContainerStackMap()
+	// Ignore error - if we can't get stack info, just show containers without stack names
+
 	// Calculate pagination
 	pageSize := 10
 	pagination := calculatePagination(len(allContainers), page, pageSize)
 	containers := paginateContainers(allContainers, page, pageSize)
 
-	return Render(c, ContainersListWithUser(containers, pagination, user))
+	return Render(c, ContainersListWithUser(containers, stackMap, pagination, user))
 }
 
 // ContainersTable renders just the containers table (for HTMX).
@@ -195,12 +207,16 @@ func (h *Handler) ContainersTable(c echo.Context) error {
 		allContainers = filteredContainers
 	}
 
+	// Get stack map for all containers
+	stackMap, _ := h.storage.GetContainerStackMap()
+	// Ignore error - if we can't get stack info, just show containers without stack names
+
 	// Calculate pagination
 	pageSize := 10
 	pagination := calculatePagination(len(allContainers), page, pageSize)
 	containers := paginateContainers(allContainers, page, pageSize)
 
-	return Render(c, ContainersTableWithPagination(containers, pagination, queryString))
+	return Render(c, ContainersTableWithPagination(containers, stackMap, pagination, queryString))
 }
 
 // HostsList renders the hosts list page.
@@ -392,7 +408,11 @@ func (h *Handler) ContainerDetail(c echo.Context) error {
 		// Ignore error - host might not exist (orphaned reference)
 	}
 
-	return Render(c, ContainerDetailWithUser(container, host, user))
+	// Check if container belongs to a stack
+	stack, belongsToStack, _ := h.storage.GetContainerStack(id)
+	// Ignore error - if we can't determine stack membership, treat as standalone
+
+	return Render(c, ContainerDetailWithUser(container, host, stack, belongsToStack, user))
 }
 
 // HostDetail renders the host detail page.
@@ -422,6 +442,171 @@ func (h *Handler) HostDetail(c echo.Context) error {
 	}
 
 	return Render(c, HostDetailWithUser(host, containers, user))
+}
+
+// CreateHostForm renders the host creation form.
+func (h *Handler) CreateHostForm(c echo.Context) error {
+	var user *models.User
+	if claims, ok := c.Get("claims").(*auth.Claims); ok {
+		user, _ = h.storage.GetUser(claims.UserID)
+	}
+
+	return Render(c, CreateHostFormWithUser(&models.Host{}, "", user))
+}
+
+// CreateHost handles host creation form submission.
+func (h *Handler) CreateHost(c echo.Context) error {
+	var user *models.User
+	if claims, ok := c.Get("claims").(*auth.Claims); ok {
+		user, _ = h.storage.GetUser(claims.UserID)
+	}
+
+	// Parse form
+	host := &models.Host{
+		Context:    "https://schema.org",
+		Type:       "ComputerSystem",
+		ID:         c.FormValue("id"),
+		Name:       c.FormValue("name"),
+		IPAddress:  c.FormValue("ipAddress"),
+		Status:     c.FormValue("status"),
+		Datacenter: c.FormValue("datacenter"),
+	}
+
+	// Parse CPU and Memory
+	if cpuStr := c.FormValue("cpu"); cpuStr != "" {
+		if cpu, err := strconv.Atoi(cpuStr); err == nil {
+			host.CPU = cpu
+		}
+	}
+	if memStr := c.FormValue("memory"); memStr != "" {
+		if mem, err := strconv.ParseInt(memStr, 10, 64); err == nil {
+			host.Memory = mem
+		}
+	}
+
+	// Validate
+	if host.ID == "" || host.Name == "" || host.IPAddress == "" {
+		return Render(c, CreateHostFormWithUser(host, "Host ID, Name, and IP Address are required", user))
+	}
+
+	// Save to database
+	if err := h.storage.SaveHost(host); err != nil {
+		return Render(c, CreateHostFormWithUser(host, "Failed to create host: "+err.Error(), user))
+	}
+
+	return c.Redirect(http.StatusSeeOther, "/web/hosts")
+}
+
+// EditHostForm renders the host edit form.
+func (h *Handler) EditHostForm(c echo.Context) error {
+	var user *models.User
+	if claims, ok := c.Get("claims").(*auth.Claims); ok {
+		user, _ = h.storage.GetUser(claims.UserID)
+	}
+
+	id := c.Param("id")
+	host, err := h.storage.GetHost(id)
+	if err != nil {
+		return c.String(http.StatusNotFound, "Host not found")
+	}
+
+	return Render(c, EditHostFormWithUser(host, "", user))
+}
+
+// UpdateHost handles host update form submission.
+func (h *Handler) UpdateHost(c echo.Context) error {
+	var user *models.User
+	if claims, ok := c.Get("claims").(*auth.Claims); ok {
+		user, _ = h.storage.GetUser(claims.UserID)
+	}
+
+	id := c.Param("id")
+	host, err := h.storage.GetHost(id)
+	if err != nil {
+		return c.String(http.StatusNotFound, "Host not found")
+	}
+
+	// Update fields
+	host.Name = c.FormValue("name")
+	host.IPAddress = c.FormValue("ipAddress")
+	host.Status = c.FormValue("status")
+	host.Datacenter = c.FormValue("datacenter")
+
+	if cpuStr := c.FormValue("cpu"); cpuStr != "" {
+		if cpu, err := strconv.Atoi(cpuStr); err == nil {
+			host.CPU = cpu
+		}
+	}
+	if memStr := c.FormValue("memory"); memStr != "" {
+		if mem, err := strconv.ParseInt(memStr, 10, 64); err == nil {
+			host.Memory = mem
+		}
+	}
+
+	// Validate
+	if host.Name == "" || host.IPAddress == "" {
+		return Render(c, EditHostFormWithUser(host, "Name and IP Address are required", user))
+	}
+
+	// Update (SaveHost handles both create and update)
+	if err := h.storage.SaveHost(host); err != nil {
+		return Render(c, EditHostFormWithUser(host, "Failed to update host: "+err.Error(), user))
+	}
+
+	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/web/hosts/%s", id))
+}
+
+// DeleteContainer handles container deletion (only for standalone containers).
+func (h *Handler) DeleteContainer(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.String(http.StatusBadRequest, "Container ID is required")
+	}
+
+	// Check if container belongs to a stack
+	stack, belongsToStack, err := h.storage.GetContainerStack(id)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to check container stack membership: "+err.Error())
+	}
+
+	if belongsToStack {
+		return c.String(http.StatusForbidden,
+			fmt.Sprintf("Cannot delete container: it belongs to stack '%s'. Delete the stack instead.", stack.Name))
+	}
+
+	// Get the container to retrieve its revision
+	container, err := h.storage.GetContainer(id)
+	if err != nil {
+		return c.String(http.StatusNotFound, "Container not found")
+	}
+
+	// Delete with revision
+	if err := h.storage.DeleteContainer(id, container.Rev); err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to delete container: "+err.Error())
+	}
+
+	return c.Redirect(http.StatusSeeOther, "/web/containers")
+}
+
+// DeleteHost handles host deletion.
+func (h *Handler) DeleteHost(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.String(http.StatusBadRequest, "Host ID is required")
+	}
+
+	// Get the host to retrieve its revision
+	host, err := h.storage.GetHost(id)
+	if err != nil {
+		return c.String(http.StatusNotFound, "Host not found")
+	}
+
+	// Delete with revision
+	if err := h.storage.DeleteHost(id, host.Rev); err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to delete host: "+err.Error())
+	}
+
+	return c.Redirect(http.StatusSeeOther, "/web/hosts")
 }
 
 // ContainerLogs renders the container logs page.

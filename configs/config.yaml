@@ -25,6 +25,7 @@ agent:
   datacenter: local
   docker_socket: /var/run/docker.sock
   sync_interval: 30s
+  agent_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYWdlbnQ6bG9jYWxob3N0LWRvY2tlciIsInVzZXJuYW1lIjoiYWdlbnQtbG9jYWxob3N0LWRvY2tlciIsInJvbGVzIjpbImFnZW50Il0sImlzcyI6ImdyYXBoaXVtLWFnZW50Iiwic3ViIjoibG9jYWxob3N0LWRvY2tlciIsImV4cCI6MTc5MzMzMTMwNiwibmJmIjoxNzYxNzk1MzA2LCJpYXQiOjE3NjE3OTUzMDZ9.UScHHB_OXAF0sKT6dh3QrjnTaD5jEWxZC76fLxzyAfI
 
 security:
   # Authentication settings
@@ -54,3 +55,49 @@ logging:
   level: info
   format: json
   output: stdout
+
+integrity:
+  # Enable database integrity checking
+  enabled: true
+
+  # Scan schedule (cron format) - daily at 2 AM
+  scan_schedule: "0 2 * * *"
+
+  # Automatic repair configuration
+  auto_repair:
+    enabled: false  # Require manual approval by default
+    max_risk: low   # Only auto-repair low-risk issues
+    strategies:
+      - latest_wins
+
+  # Resolution strategies by document type
+  resolution:
+    default_strategy: latest_wins
+    strategy_by_type:
+      SoftwareApplication: merge  # Containers: try to merge changes
+      ComputerServer: latest_wins  # Hosts: use latest version
+      Stack: manual                # Stacks: require manual review
+
+  # Validation settings
+  validation:
+    check_references: true  # Validate referential integrity
+    check_schemas: true     # Validate against schemas
+    strict_mode: false      # Don't block operations on validation failures
+
+  # Health monitoring
+  monitoring:
+    health_check_interval: 5m  # Check health every 5 minutes
+    alert_threshold: 80        # Alert if health score < 80
+    metrics_retention: 720h    # Keep metrics for 30 days
+
+  # Audit logging
+  audit:
+    enabled: true
+    retention: 2160h  # Keep audit logs for 90 days
+    log_path: ./logs/integrity/
+
+  # Performance tuning
+  performance:
+    max_concurrent_operations: 5
+    batch_size: 100
+    timeout: 30s
