@@ -280,7 +280,7 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 		log.Printf("Error counting running containers: %v", err)
 	}
 
-	log.Printf("STATS DEBUG: Total containers: %d, Running containers: %d", stats.TotalContainers, stats.RunningContainers)
+	s.debugLog("STATS DEBUG: Total containers: %d, Running containers: %d", stats.TotalContainers, stats.RunningContainers)
 
 	// Count total hosts
 	totalHosts, err := s.CountHosts(nil)
@@ -292,7 +292,7 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 	hostCounts, err := s.GetHostContainerCount()
 	if err == nil {
 		stats.HostContainerCounts = hostCounts
-		log.Printf("STATS DEBUG: Host container counts: %v", hostCounts)
+		s.debugLog("STATS DEBUG: Host container counts: %v", hostCounts)
 	}
 
 	// Count total stacks

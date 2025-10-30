@@ -23,6 +23,13 @@ type Storage struct {
 	config  *config.Config
 }
 
+// debugLog logs a message only if debug mode is enabled in config
+func (s *Storage) debugLog(format string, args ...interface{}) {
+	if s.config.Server.Debug {
+		log.Printf(format, args...)
+	}
+}
+
 // New creates a new Storage instance from the application configuration.
 // It initializes the CouchDB connection and ensures the database exists.
 func New(cfg *config.Config) (*Storage, error) {
@@ -211,14 +218,14 @@ func (s *Storage) DeleteContainer(containerID, rev string) error {
 	// If it's a duplicate, the next query won't find the others anyway
 	// because deduplication keeps "last one wins"
 
-	log.Printf("DEBUG: Deleting container %s (rev: %s)", containerID[:12], rev)
+	s.debugLog("DEBUG: Deleting container %s (rev: %s)", containerID[:12], rev)
 	err := s.service.DeleteDocument(containerID, rev)
 	if err != nil {
 		log.Printf("ERROR: Failed to delete container %s: %v", containerID[:12], err)
 		return fmt.Errorf("failed to delete container: %w", err)
 	}
 
-	log.Printf("DEBUG: Successfully deleted container %s", containerID[:12])
+	s.debugLog("DEBUG: Successfully deleted container %s", containerID[:12])
 	return nil
 }
 
@@ -235,7 +242,7 @@ func (s *Storage) ListContainers(filters map[string]interface{}) ([]*models.Cont
 
 	query := qb.Build()
 
-	log.Printf("DEBUG: ListContainers query selector: %+v", query.Selector)
+	s.debugLog("DEBUG: ListContainers query selector: %+v", query.Selector)
 
 	// Execute query
 	containers, err := db.FindTyped[models.Container](s.service, query)
@@ -243,7 +250,7 @@ func (s *Storage) ListContainers(filters map[string]interface{}) ([]*models.Cont
 		return nil, err
 	}
 
-	log.Printf("DEBUG: ListContainers returned %d documents before dedup", len(containers))
+	s.debugLog("DEBUG: ListContainers returned %d documents before dedup", len(containers))
 
 	// Deduplicate containers by @id (Docker container ID)
 	// CouchDB may have multiple documents for the same container due to sync issues
@@ -259,7 +266,7 @@ func (s *Storage) ListContainers(filters map[string]interface{}) ([]*models.Cont
 		result = append(result, container)
 	}
 
-	log.Printf("DEBUG: ListContainers returning %d containers after dedup", len(result))
+	s.debugLog("DEBUG: ListContainers returning %d containers after dedup", len(result))
 
 	return result, nil
 }

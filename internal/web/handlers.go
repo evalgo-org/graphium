@@ -44,6 +44,13 @@ type Handler struct {
 	broadcaster EventBroadcaster
 }
 
+// debugLog logs a message only if debug mode is enabled in config
+func (h *Handler) debugLog(format string, args ...interface{}) {
+	if h.config.Server.Debug {
+		fmt.Printf(format, args...)
+	}
+}
+
 // NewHandler creates a new web handler.
 func NewHandler(store *storage.Storage, cfg *config.Config, broadcaster EventBroadcaster) *Handler {
 	return &Handler{
@@ -616,20 +623,20 @@ func (h *Handler) DeleteContainer(c echo.Context) error {
 	}
 
 	// Delete from database
-	fmt.Printf("DEBUG: About to delete container %s from database (rev: %s)\n", id[:12], container.Rev)
+	h.debugLog("DEBUG: About to delete container %s from database (rev: %s)\n", id[:12], container.Rev)
 	if err := h.storage.DeleteContainer(id, container.Rev); err != nil {
-		fmt.Printf("DEBUG: Database deletion FAILED for %s: %v\n", id[:12], err)
+		h.debugLog("DEBUG: Database deletion FAILED for %s: %v\n", id[:12], err)
 		return c.String(http.StatusInternalServerError, "Failed to delete container from database: "+err.Error())
 	}
-	fmt.Printf("DEBUG: Successfully deleted container %s from database\n", id[:12])
+	h.debugLog("DEBUG: Successfully deleted container %s from database\n", id[:12])
 
 	// Broadcast WebSocket event for real-time dashboard updates
 	if h.broadcaster == nil {
-		fmt.Printf("DEBUG: WARNING - broadcaster is nil, cannot broadcast deletion event\n")
+		h.debugLog("DEBUG: WARNING - broadcaster is nil, cannot broadcast deletion event\n")
 	} else {
-		fmt.Printf("DEBUG: Broadcasting container_removed event for %s\n", id[:12])
+		h.debugLog("DEBUG: Broadcasting container_removed event for %s\n", id[:12])
 		h.broadcaster.BroadcastGraphEvent("container_removed", map[string]string{"id": id})
-		fmt.Printf("DEBUG: Broadcast call completed for %s\n", id[:12])
+		h.debugLog("DEBUG: Broadcast call completed for %s\n", id[:12])
 	}
 
 	// Only add to ignore list if Docker deletion failed

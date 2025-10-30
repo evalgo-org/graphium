@@ -30,6 +30,13 @@ type Server struct {
 	authMiddle *auth.Middleware
 }
 
+// debugLog logs a message only if debug mode is enabled in config
+func (s *Server) debugLog(format string, args ...interface{}) {
+	if s.config.Server.Debug {
+		log.Printf(format, args...)
+	}
+}
+
 // New creates a new API server instance.
 func New(cfg *config.Config, store *storage.Storage) *Server {
 	e := echo.New()
@@ -348,16 +355,16 @@ func (s *Server) healthCheck(c echo.Context) error {
 
 // BroadcastGraphEvent broadcasts a graph event to all WebSocket clients
 func (s *Server) BroadcastGraphEvent(eventType GraphEventType, data interface{}) {
-	log.Printf("DEBUG: BroadcastGraphEvent called with type=%s, data=%+v", eventType, data)
+	s.debugLog("DEBUG: BroadcastGraphEvent called with type=%s, data=%+v", eventType, data)
 	event := GraphEvent{
 		Type: eventType,
 		Data: data,
 	}
-	log.Printf("DEBUG: Broadcasting to %d WebSocket clients", s.wsHub.ClientCount())
+	s.debugLog("DEBUG: Broadcasting to %d WebSocket clients", s.wsHub.ClientCount())
 	if err := s.wsHub.BroadcastEvent(event); err != nil {
 		log.Printf("ERROR: Failed to broadcast event: %v", err)
 	} else {
-		log.Printf("DEBUG: Successfully broadcast %s event to hub", eventType)
+		s.debugLog("DEBUG: Successfully broadcast %s event to hub", eventType)
 	}
 }
 
