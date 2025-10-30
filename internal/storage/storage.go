@@ -7,8 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
+	"eve.evalgo.org/common"
 	"eve.evalgo.org/db"
 
 	"evalgo.org/graphium/internal/config"
@@ -541,6 +543,127 @@ func (s *Storage) GetContainerStackMap() (map[string]*models.Stack, error) {
 	}
 
 	return stackMap, nil
+}
+
+// RemoveContainerFromStacks removes a container from all stacks that reference it.
+// This should be called when a container is deleted to maintain data consistency.
+func (s *Storage) RemoveContainerFromStacks(containerID string) error {
+	// Get all stacks
+	stacks, err := s.ListStacks(nil)
+	if err != nil {
+		return fmt.Errorf("failed to list stacks: %w", err)
+	}
+
+	// Check each stack and remove the container if present
+	for _, stack := range stacks {
+		modified := false
+		newContainers := make([]string, 0, len(stack.Containers))
+
+		for _, cID := range stack.Containers {
+			if cID != containerID {
+				newContainers = append(newContainers, cID)
+			} else {
+				modified = true
+			}
+		}
+
+		// If we removed the container, update the stack
+		if modified {
+			stack.Containers = newContainers
+			if err := s.UpdateStack(stack); err != nil {
+				return fmt.Errorf("failed to update stack %s: %w", stack.ID, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// AutoAssignContainerToStack automatically assigns a container to a stack based on naming convention.
+// Container names are expected to follow the pattern: {stack-name}-{service-name}
+// For example: "5-graphium-dev-5-couchdb" belongs to stack "5-graphium-dev"
+func (s *Storage) AutoAssignContainerToStack(containerID, containerName string) error {
+	// Get all stacks
+	stacks, err := s.ListStacks(nil)
+	if err != nil {
+		return fmt.Errorf("failed to list stacks: %w", err)
+	}
+
+	// Try to find a stack where the container name starts with the stack name
+	for _, stack := range stacks {
+		if strings.HasPrefix(containerName, stack.Name+"-") {
+			// Check if container is already in the stack
+			found := false
+			for _, cID := range stack.Containers {
+				if cID == containerID {
+					found = true
+					break
+				}
+			}
+
+			// If not found, add it
+			if !found {
+				stack.Containers = append(stack.Containers, containerID)
+				if err := s.UpdateStack(stack); err != nil {
+					return fmt.Errorf("failed to update stack %s: %w", stack.ID, err)
+				}
+			}
+			return nil
+		}
+	}
+
+	// No matching stack found - this is fine, not all containers belong to stacks
+	return nil
+}
+
+// RenameContainerForStack renames a container to follow stack naming convention.
+// If the container doesn't already follow the pattern {stack-name}-{service-name},
+// it will be renamed to {stack-name}-{original-name} in Docker and the database.
+//
+// Parameters:
+//   - containerID: The ID of the container to rename
+//   - stackName: The name of the stack the container belongs to
+//   - dockerSocket: Docker socket to use for the rename operation (e.g., "unix:///var/run/docker.sock")
+//
+// Returns error if rename fails. No-op if container already follows naming convention.
+func (s *Storage) RenameContainerForStack(containerID, stackName, dockerSocket string) error {
+	// Get container details
+	container, err := s.GetContainer(containerID)
+	if err != nil {
+		return fmt.Errorf("failed to get container: %w", err)
+	}
+
+	// Check if container name already starts with stack name
+	if strings.HasPrefix(container.Name, stackName+"-") {
+		// Already follows naming convention, no need to rename
+		return nil
+	}
+
+	// Construct new name: {stack-name}-{original-container-name}
+	newName := fmt.Sprintf("%s-%s", stackName, container.Name)
+
+	// Create Docker client for the host
+	ctx, cli, err := common.CtxCli(dockerSocket)
+	if err != nil {
+		return fmt.Errorf("failed to create Docker client: %w", err)
+	}
+	defer cli.Close()
+
+	// Rename container in Docker
+	err = common.ContainerRename(ctx, cli, containerID, newName)
+	if err != nil {
+		return fmt.Errorf("failed to rename container in Docker: %w", err)
+	}
+
+	// Update container name in database
+	container.Name = newName
+	if err := s.SaveContainer(container); err != nil {
+		// Attempt to rename back in Docker if database update fails
+		_ = common.ContainerRename(ctx, cli, containerID, container.Name)
+		return fmt.Errorf("failed to update container name in database: %w", err)
+	}
+
+	return nil
 }
 
 // GetDatabaseInfo returns database statistics.

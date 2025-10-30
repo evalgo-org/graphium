@@ -583,7 +583,10 @@ func (h *Handler) removeContainerFromDocker(containerID string) error {
 	}
 
 	// Use EVE's CtxCli to create Docker client
-	ctx, cli := evecommon.CtxCli("unix://" + dockerSocket)
+	ctx, cli, err := evecommon.CtxCli("unix://" + dockerSocket)
+	if err != nil {
+		return err
+	}
 	defer cli.Close()
 
 	// Use EVE's ContainerStopAndRemove function
@@ -598,21 +601,15 @@ func (h *Handler) DeleteContainer(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Container ID is required")
 	}
 
-	// Check if container belongs to a stack
-	stack, belongsToStack, err := h.storage.GetContainerStack(id)
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to check container stack membership: "+err.Error())
-	}
-
-	if belongsToStack {
-		return c.String(http.StatusForbidden,
-			fmt.Sprintf("Cannot delete container: it belongs to stack '%s'. Delete the stack instead.", stack.Name))
-	}
-
 	// Get the container to retrieve its revision
 	container, err := h.storage.GetContainer(id)
 	if err != nil {
 		return c.String(http.StatusNotFound, "Container not found")
+	}
+
+	// Remove container from any stacks it belongs to
+	if err := h.storage.RemoveContainerFromStacks(id); err != nil {
+		h.debugLog("Warning: Failed to remove container %s from stacks: %v\n", id[:12], err)
 	}
 
 	// Try to remove from Docker first
@@ -683,6 +680,11 @@ func (h *Handler) BulkDeleteContainers(c echo.Context) error {
 			errors = append(errors, fmt.Sprintf("%s: not found", id[:12]))
 			failedCount++
 			continue
+		}
+
+		// Remove container from any stacks it belongs to
+		if err := h.storage.RemoveContainerFromStacks(id); err != nil {
+			h.debugLog("Warning: Failed to remove container %s from stacks: %v\n", id[:12], err)
 		}
 
 		// Try to remove from Docker
@@ -888,4 +890,98 @@ func (h *Handler) ContainerLogs(c echo.Context) error {
 	}
 
 	return Render(c, ContainerLogsView(container, host, user))
+}
+
+// AssignContainersToStack assigns multiple containers to a stack.
+func (h *Handler) AssignContainersToStack(c echo.Context) error {
+	stackID := c.Param("id")
+	if stackID == "" {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "Stack ID is required",
+		})
+	}
+
+	var req struct {
+		ContainerIDs []string `json:"container_ids"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "Invalid request body",
+		})
+	}
+
+	if len(req.ContainerIDs) == 0 {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "No container IDs provided",
+		})
+	}
+
+	// Get the stack
+	stack, err := h.storage.GetStack(stackID)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]interface{}{
+			"success": false,
+			"error":   "Stack not found",
+		})
+	}
+
+	// Add containers to stack if not already present
+	containerMap := make(map[string]bool)
+	for _, id := range stack.Containers {
+		containerMap[id] = true
+	}
+
+	addedCount := 0
+	for _, containerID := range req.ContainerIDs {
+		if !containerMap[containerID] {
+			stack.Containers = append(stack.Containers, containerID)
+			containerMap[containerID] = true
+			addedCount++
+		}
+	}
+
+	// Update the stack
+	if addedCount > 0 {
+		if err := h.storage.UpdateStack(stack); err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"success": false,
+				"error":   "Failed to update stack: " + err.Error(),
+			})
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"success": true,
+		"count":   addedCount,
+	})
+}
+
+// GetStacksJSON returns all stacks as JSON (for web UI dropdowns).
+func (h *Handler) GetStacksJSON(c echo.Context) error {
+	stacks, err := h.storage.ListStacks(nil)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+			"error": "Failed to load stacks",
+		})
+	}
+
+	// Convert to simple format
+	type StackItem struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	}
+
+	items := make([]StackItem, len(stacks))
+	for i, stack := range stacks {
+		items[i] = StackItem{
+			ID:   stack.ID,
+			Name: stack.Name,
+		}
+	}
+
+	return c.JSON(http.StatusOK, items)
 }

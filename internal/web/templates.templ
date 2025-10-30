@@ -360,48 +360,137 @@ templ ContainersListWithUser(containers []*models.Container, stackMap map[string
 				{ errorMsg }
 			</div>
 		}
-		<div class="page-header">
+		<div class="page-header-with-actions">
 			<h2>Containers</h2>
-			<div class="filters">
-				<input
-					type="text"
-					name="search"
-					class="search-input"
-					placeholder="Search by name..."
-					hx-get="/web/containers/table"
-					hx-target="#containers-table"
-					hx-trigger="keyup changed delay:300ms"
-					hx-include="[name='status']"
-				/>
-				<select name="status" hx-get="/web/containers/table" hx-target="#containers-table" hx-trigger="change" hx-include="[name='search']">
-					<option value="">All Statuses</option>
-					<option value="running">Running</option>
-					<option value="stopped">Stopped</option>
-					<option value="paused">Paused</option>
-					<option value="exited">Exited</option>
-				</select>
+			<div class="bulk-actions-toolbar">
+				<div class="bulk-actions-left">
+					<span id="selected-count" class="selected-count">0 selected</span>
+					<select id="bulk-action-select" class="action-select">
+						<option value="">Select action...</option>
+						<option value="assign-stack">Assign to Stack</option>
+						<option value="delete">Delete</option>
+						<option value="stop">Stop</option>
+						<option value="start">Start</option>
+						<option value="restart">Restart</option>
+					</select>
+					<button onclick="executeBulkAction()" class="btn btn-primary">Execute</button>
+					<button onclick="clearSelection()" class="btn btn-secondary">Clear</button>
+				</div>
+				<div class="bulk-actions-right">
+					<input
+						type="text"
+						name="search"
+						class="search-input"
+						placeholder="Search by name..."
+						hx-get="/web/containers/table"
+						hx-target="#containers-table"
+						hx-trigger="keyup changed delay:300ms"
+						hx-include="[name='status']"
+					/>
+					<select name="status" class="status-select" hx-get="/web/containers/table" hx-target="#containers-table" hx-trigger="change" hx-include="[name='search']">
+						<option value="">All Statuses</option>
+						<option value="running">Running</option>
+						<option value="stopped">Stopped</option>
+						<option value="paused">Paused</option>
+						<option value="exited">Exited</option>
+					</select>
+				</div>
 			</div>
-		</div>
-
-		<!-- Bulk actions toolbar -->
-		<div id="bulk-actions" style="display: none; margin: 20px; padding: 12px 20px; background: #2d3748; border-radius: 6px; align-items: center; gap: 15px;">
-			<span id="selected-count" style="color: #fff; font-weight: 500; margin-right: 10px;">0 selected</span>
-			<select id="bulk-action-select" style="padding: 8px 12px; border: 1px solid #4a5568; border-radius: 4px; background: #1a202c; color: #fff; font-size: 14px;">
-				<option value="">Select action...</option>
-				<option value="delete">🗑️ Delete</option>
-				<option value="stop">⏹️ Stop</option>
-				<option value="start">▶️ Start</option>
-				<option value="restart">🔄 Restart</option>
-			</select>
-			<button onclick="executeBulkAction()" style="padding: 8px 16px; background: #4299e1; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Execute</button>
-			<button onclick="clearSelection()" style="padding: 8px 16px; background: #718096; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Clear</button>
 		</div>
 
 		<div id="containers-table">
 			@ContainersTableWithPagination(containers, stackMap, pagination, "")
 		</div>
 
+		<!-- Confirmation Modal -->
+		<div id="confirmModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3 class="modal-title" id="confirmModalTitle">Confirm Action</h3>
+					<button class="modal-close" onclick="closeModal('confirmModal')">&times;</button>
+				</div>
+				<div class="modal-body" id="confirmModalBody"></div>
+				<div class="modal-footer">
+					<button class="btn btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
+					<button class="btn btn-primary" id="confirmModalConfirm">Confirm</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Alert Modal -->
+		<div id="alertModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3 class="modal-title" id="alertModalTitle">Notice</h3>
+					<button class="modal-close" onclick="closeModal('alertModal')">&times;</button>
+				</div>
+				<div class="modal-body" id="alertModalBody"></div>
+				<div class="modal-footer">
+					<button class="btn btn-primary" onclick="closeModal('alertModal')">OK</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Assign to Stack Modal -->
+		<div id="assignStackModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3 class="modal-title">Assign to Stack</h3>
+					<button class="modal-close" onclick="closeModal('assignStackModal')">&times;</button>
+				</div>
+				<div class="modal-body">
+					<p id="assign-stack-message"></p>
+					<select id="stack-selector" class="action-select" style="width: 100%; margin-top: 1rem;">
+						<option value="">Select a stack...</option>
+					</select>
+				</div>
+				<div class="modal-footer">
+					<button class="btn btn-secondary" onclick="closeModal('assignStackModal')">Cancel</button>
+					<button class="btn btn-primary" id="assignStackConfirm">Assign</button>
+				</div>
+			</div>
+		</div>
+
 		<script>
+			// Modal helper functions
+			function showModal(modalId) {
+				const modal = document.getElementById(modalId);
+				if (modal) modal.classList.add('active');
+			}
+
+			function closeModal(modalId) {
+				const modal = document.getElementById(modalId);
+				if (modal) modal.classList.remove('active');
+			}
+
+			function showAlert(title, message, callback) {
+				document.getElementById('alertModalTitle').textContent = title;
+				document.getElementById('alertModalBody').innerHTML = message.replace(/\\n/g, '<br>');
+				showModal('alertModal');
+				const okBtn = document.querySelector('#alertModal .btn-primary');
+				okBtn.onclick = function() {
+					closeModal('alertModal');
+					if (callback) callback();
+				};
+			}
+
+			function showConfirm(title, message, onConfirm) {
+				document.getElementById('confirmModalTitle').textContent = title;
+				document.getElementById('confirmModalBody').innerHTML = message.replace(/\\n/g, '<br>');
+				showModal('confirmModal');
+				const confirmBtn = document.getElementById('confirmModalConfirm');
+				confirmBtn.onclick = function() {
+					closeModal('confirmModal');
+					if (onConfirm) onConfirm();
+				};
+			}
+
+			window.onclick = function(event) {
+				if (event.target.classList.contains('modal')) {
+					event.target.classList.remove('active');
+				}
+			};
+
 			// Multi-select functionality for containers
 			function toggleSelectAll(checkbox) {
 				const checkboxes = document.querySelectorAll('.container-checkbox');
@@ -413,14 +502,12 @@ templ ContainersListWithUser(containers []*models.Container, stackMap map[string
 
 			function updateBulkActions() {
 				const checkboxes = document.querySelectorAll('.container-checkbox:checked');
-				const bulkActions = document.getElementById('bulk-actions');
 				const selectedCount = document.getElementById('selected-count');
 
 				if (checkboxes.length > 0) {
-					bulkActions.style.display = 'flex';
 					selectedCount.textContent = `${checkboxes.length} selected`;
 				} else {
-					bulkActions.style.display = 'none';
+					selectedCount.textContent = '0 selected';
 					// Reset dropdown
 					const actionSelect = document.getElementById('bulk-action-select');
 					if (actionSelect) {
@@ -458,17 +545,21 @@ templ ContainersListWithUser(containers []*models.Container, stackMap map[string
 				const action = actionSelect.value;
 
 				if (!action) {
-					alert('Please select an action from the dropdown');
+					showAlert('No Action Selected', 'Please select an action from the dropdown');
 					return;
 				}
 
 				const containerIds = getSelectedContainerIds();
 				if (containerIds.length === 0) {
+					showAlert('No Containers Selected', 'Please select at least one container');
 					return;
 				}
 
 				// Route to appropriate action handler
 				switch (action) {
+					case 'assign-stack':
+						showAssignStackModal(containerIds);
+						break;
 					case 'delete':
 						bulkDeleteContainers(containerIds);
 						break;
@@ -482,53 +573,122 @@ templ ContainersListWithUser(containers []*models.Container, stackMap map[string
 						bulkRestartContainers(containerIds);
 						break;
 					default:
-						alert('Unknown action: ' + action);
+						showAlert('Unknown Action', 'Unknown action: ' + action);
 				}
+			}
+
+			function showAssignStackModal(containerIds) {
+				const count = containerIds.length;
+				document.getElementById('assign-stack-message').textContent = `Assign ${count} container${count > 1 ? 's' : ''} to a stack:`;
+
+				// Fetch available stacks
+				fetch('/web/stacks/json', {
+					credentials: 'same-origin'
+				})
+				.then(response => {
+					if (!response.ok) {
+						throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+					}
+					return response.json();
+				})
+				.then(stacks => {
+					if (!Array.isArray(stacks)) {
+						throw new Error('Invalid response format');
+					}
+
+					const selector = document.getElementById('stack-selector');
+					selector.innerHTML = '<option value="">Select a stack...</option>';
+
+					if (stacks.length === 0) {
+						showAlert('No Stacks Available', 'Please create a stack first before assigning containers');
+						return;
+					}
+
+					stacks.forEach(stack => {
+						const option = document.createElement('option');
+						option.value = stack.id;
+						option.textContent = stack.name;
+						selector.appendChild(option);
+					});
+
+					showModal('assignStackModal');
+
+					document.getElementById('assignStackConfirm').onclick = function() {
+						const stackId = selector.value;
+						if (!stackId) {
+							showAlert('No Stack Selected', 'Please select a stack');
+							return;
+						}
+						assignContainersToStack(containerIds, stackId);
+					};
+				})
+				.catch(error => {
+					showAlert('Error', 'Failed to load stacks: ' + error.message);
+				});
+			}
+
+			function assignContainersToStack(containerIds, stackId) {
+				closeModal('assignStackModal');
+
+				fetch(`/web/stacks/${stackId}/containers/assign`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ container_ids: containerIds }),
+					credentials: 'same-origin'
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.success) {
+						showAlert('Success', `Successfully assigned ${data.count} container(s) to stack`, function() {
+							window.location.reload();
+						});
+					} else {
+						showAlert('Error', data.error || 'Failed to assign containers to stack');
+					}
+				})
+				.catch(error => {
+					showAlert('Error', 'Failed to assign containers: ' + error.message);
+				});
 			}
 
 			function bulkDeleteContainers(containerIds) {
 				const count = containerIds.length;
-				const message = `Are you sure you want to delete ${count} container${count > 1 ? 's' : ''}?\n\nThis will:\n- Remove the container(s) from Docker\n- Remove the container(s) from the database\n\nThis action cannot be undone.`;
+				const message = `Are you sure you want to delete ${count} container${count > 1 ? 's' : ''}?<br><br>This will:<br>- Remove the container(s) from Docker<br>- Remove the container(s) from the database<br><br>This action cannot be undone.`;
 
-				if (!confirm(message)) {
-					return;
-				}
-
-				performBulkAction('/web/containers/bulk/delete', { container_ids: containerIds }, 'Deleting', 'deleted');
+				showConfirm('Confirm Deletion', message, function() {
+					performBulkAction('/web/containers/bulk/delete', { container_ids: containerIds }, 'Deleting', 'deleted');
+				});
 			}
 
 			function bulkStopContainers(containerIds) {
 				const count = containerIds.length;
-				if (!confirm(`Stop ${count} container${count > 1 ? 's' : ''}?`)) {
-					return;
-				}
-				performBulkAction('/web/containers/bulk/stop', { container_ids: containerIds }, 'Stopping', 'stopped');
+				showConfirm('Confirm Stop', `Stop ${count} container${count > 1 ? 's' : ''}?`, function() {
+					performBulkAction('/web/containers/bulk/stop', { container_ids: containerIds }, 'Stopping', 'stopped');
+				});
 			}
 
 			function bulkStartContainers(containerIds) {
 				const count = containerIds.length;
-				if (!confirm(`Start ${count} container${count > 1 ? 's' : ''}?`)) {
-					return;
-				}
-				performBulkAction('/web/containers/bulk/start', { container_ids: containerIds }, 'Starting', 'started');
+				showConfirm('Confirm Start', `Start ${count} container${count > 1 ? 's' : ''}?`, function() {
+					performBulkAction('/web/containers/bulk/start', { container_ids: containerIds }, 'Starting', 'started');
+				});
 			}
 
 			function bulkRestartContainers(containerIds) {
 				const count = containerIds.length;
-				if (!confirm(`Restart ${count} container${count > 1 ? 's' : ''}?`)) {
-					return;
-				}
-				performBulkAction('/web/containers/bulk/restart', { container_ids: containerIds }, 'Restarting', 'restarted');
+				showConfirm('Confirm Restart', `Restart ${count} container${count > 1 ? 's' : ''}?`, function() {
+					performBulkAction('/web/containers/bulk/restart', { container_ids: containerIds }, 'Restarting', 'restarted');
+				});
 			}
 
 			function performBulkAction(url, body, actioningText, actionedText) {
-				// Disable execute button to prevent double-click
-				const executeBtn = event.target;
+				const executeBtn = document.querySelector('.bulk-actions-left .btn-primary');
 				const originalText = executeBtn.textContent;
 				executeBtn.disabled = true;
 				executeBtn.textContent = actioningText + '...';
 
-				// Send request
 				fetch(url, {
 					method: 'POST',
 					headers: {
@@ -539,18 +699,24 @@ templ ContainersListWithUser(containers []*models.Container, stackMap map[string
 				})
 				.then(response => response.json())
 				.then(data => {
+					executeBtn.disabled = false;
+					executeBtn.textContent = originalText;
+
 					if (data.success) {
-						alert(`Successfully ${actionedText} ${data.success_count || data.deleted_count || body.container_ids.length} container(s)`);
-						window.location.reload();
+						showAlert('Success', `Successfully ${actionedText} ${data.success_count || data.deleted_count || body.container_ids.length} container(s)`, function() {
+							window.location.reload();
+						});
 					} else {
-						alert(`Error: ${data.error}\n\nSuccess: ${data.success_count || data.deleted_count || 0}\nFailed: ${data.failed_count || 0}`);
-						window.location.reload();
+						const errorMsg = `Error: ${data.error}<br><br>Success: ${data.success_count || data.deleted_count || 0}<br>Failed: ${data.failed_count || 0}`;
+						showAlert('Error', errorMsg, function() {
+							window.location.reload();
+						});
 					}
 				})
 				.catch(error => {
-					alert(`Failed to ${actionedText.replace('ed', '')} containers: ${error.message}`);
 					executeBtn.disabled = false;
 					executeBtn.textContent = originalText;
+					showAlert('Error', `Failed to ${actionedText.replace('ed', '')} containers: ${error.message}`);
 				});
 			}
 
@@ -618,7 +784,7 @@ templ ContainersTable(containers []*models.Container, stackMap map[string]*model
 							if stackMap != nil {
 								if stack, ok := stackMap[container.ID]; ok {
 									<a href={ templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)) } title={ fmt.Sprintf("Part of stack: %s", stack.Name) }>
-										📦 { stack.Name }
+										📦
 									</a>
 								} else {
 									<span class="text-muted">-</span>
@@ -645,13 +811,15 @@ templ ContainersTableWithPagination(containers []*models.Container, stackMap map
 		<table class="data-table">
 			<thead>
 				<tr>
+					<th style="width: 40px;">
+						<input type="checkbox" id="select-all" onclick="toggleSelectAll(this)" title="Select all" style="cursor: pointer; width: 16px; height: 16px;"/>
+					</th>
 					<th>Name</th>
 					<th>Image</th>
 					<th>Status</th>
 					<th>Stack</th>
 					<th>Host</th>
 					<th>Created</th>
-					<th>Actions</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -663,7 +831,20 @@ templ ContainersTableWithPagination(containers []*models.Container, stackMap map
 				for _, container := range containers {
 					<tr>
 						<td>
-							<strong>{ container.Name }</strong>
+							<input
+								type="checkbox"
+								class="container-checkbox"
+								data-container-id={ container.ID }
+								data-container-name={ container.Name }
+								data-container-status={ container.Status }
+								onclick="updateBulkActions()"
+								style="cursor: pointer; width: 16px; height: 16px;"
+							/>
+						</td>
+						<td>
+							<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)) } style="text-decoration: none; color: inherit;">
+								<strong>{ container.Name }</strong>
+							</a>
 							<br/>
 							<small class="text-muted">{ container.ID[:12] }</small>
 						</td>
@@ -677,7 +858,7 @@ templ ContainersTableWithPagination(containers []*models.Container, stackMap map
 							if stackMap != nil {
 								if stack, ok := stackMap[container.ID]; ok {
 									<a href={ templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)) } title={ fmt.Sprintf("Part of stack: %s", stack.Name) }>
-										📦 { stack.Name }
+										📦
 									</a>
 								} else {
 									<span class="text-muted">-</span>
@@ -688,12 +869,6 @@ templ ContainersTableWithPagination(containers []*models.Container, stackMap map
 						</td>
 						<td>{ container.HostedOn }</td>
 						<td>{ container.Created }</td>
-						<td>
-							<div class="action-buttons">
-								<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)) } class="btn-icon" title="View Details">👁️</a>
-								<a href={ templ.URL(fmt.Sprintf("/web/containers/%s/logs", container.ID)) } class="btn-icon" title="View Logs">📄</a>
-							</div>
-						</td>
 					</tr>
 				}
 			</tbody>
@@ -2957,7 +3132,7 @@ templ StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInf
 	}
 }
 
-templ StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment, user *models.User) {
+templ StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment, containers []*models.Container, user *models.User) {
 	@LayoutWithUser("Stack Detail", user) {
 		<div class="page-header">
 			<div>
@@ -3011,6 +3186,42 @@ templ StackDetailWithUser(stack *models.Stack, deployment *models.StackDeploymen
 					}
 				</dl>
 			</div>
+			if len(containers) > 0 {
+				<div class="detail-section">
+					<h3>Assigned Containers ({ fmt.Sprintf("%d", len(containers)) })</h3>
+					<table class="data-table">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Image</th>
+								<th>Status</th>
+								<th>Host</th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, container := range containers {
+								<tr>
+									<td>
+										<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)) }>{ container.Name }</a>
+									</td>
+									<td>{ container.Image }</td>
+									<td>
+										<span class={ "badge badge-" + container.Status }>{ container.Status }</span>
+									</td>
+									<td>{ container.HostedOn }</td>
+									<td>
+										<div class="action-buttons">
+											<a href={ templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)) } class="btn-icon" title="View Details">👁️</a>
+											<a href={ templ.URL(fmt.Sprintf("/web/containers/%s/logs", container.ID)) } class="btn-icon" title="View Logs">📄</a>
+										</div>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
 			if deployment != nil && len(deployment.Placements) > 0 {
 				<div class="detail-section">
 					<h3>Container Placements</h3>
@@ -3073,7 +3284,7 @@ templ StackDetailWithUser(stack *models.Stack, deployment *models.StackDeploymen
 }
 
 // Deploy stack form template
-templ DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, datacenters map[string]bool, errorMsg string, user *models.User) {
+templ DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, containers []*models.Container, datacenters map[string]bool, errorMsg string, user *models.User) {
 	@LayoutWithUser("Deploy Stack", user) {
 		<div class="page-header">
 			<div>
@@ -3190,6 +3401,26 @@ templ DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, d
 							<strong>No Active Hosts Available!</strong> You need to register and activate at least one host before deploying stacks.
 						</div>
 					}
+					if len(containers) > 0 {
+						<div class="form-group">
+							<label>Existing Containers (Optional)</label>
+							<small class="form-text">Select existing containers to include in this stack. This allows you to group running containers into a logical stack without redeploying them.</small>
+							<div class="container-selection" style="margin-top: 10px; max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; padding: 10px;">
+								for _, container := range containers {
+									<label class="checkbox-label" style="display: block; padding: 5px 0;">
+										<input type="checkbox" name="existing_containers[]" value={ container.ID }/>
+										<span>
+											<strong>{ container.Name }</strong>
+											<span class="text-muted"> - { container.Image }</span>
+											<span class={ "badge badge-" + container.Status } style="margin-left: 10px;">{ container.Status }</span>
+											<br/>
+											<small class="text-muted">{ container.ID[:12] } on { container.HostedOn }</small>
+										</span>
+									</label>
+								}
+							</div>
+						</div>
+					}
 				</div>
 				<div class="form-actions">
 					<button type="submit" class="btn btn-primary">Deploy Stack</button>
@@ -3282,7 +3513,7 @@ templ DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, d
 }
 
 // Edit stack form template
-templ EditStackFormWithUser(stack *models.Stack, stackJSON string, errorMsg string, user *models.User) {
+templ EditStackFormWithUser(stack *models.Stack, containers []*models.Container, stackJSON string, errorMsg string, user *models.User) {
 	@LayoutWithUser("Edit Stack", user) {
 		<div class="page-header">
 			<div>
@@ -3329,6 +3560,34 @@ templ EditStackFormWithUser(stack *models.Stack, stackJSON string, errorMsg stri
 						<strong>Note:</strong> To change deployment configuration, you must redeploy the stack.
 					</div>
 				</div>
+				if len(containers) > 0 {
+					<div class="form-section">
+						<h3>Manage Containers</h3>
+						<p class="form-help">Select existing containers to assign to this stack</p>
+						<div class="container-selection" style="margin-top: 10px; max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; padding: 10px;">
+							for _, container := range containers {
+								<label class="checkbox-label" style="display: block; padding: 5px 0;">
+									<input
+										type="checkbox"
+										name="stack_containers[]"
+										value={ container.ID }
+										if contains(stack.Containers, container.ID) {
+											checked
+										}
+									/>
+									<span>
+										<strong>{ container.Name }</strong>
+										<span class="text-muted"> - { container.Image }</span>
+										<span class={ "badge badge-" + container.Status } style="margin-left: 10px;">{ container.Status }</span>
+										<br/>
+										<small class="text-muted">{ container.ID[:12] } on { container.HostedOn }</small>
+									</span>
+								</label>
+							}
+						</div>
+						<small class="form-text">Check containers to add them to this stack, uncheck to remove them</small>
+					</div>
+				}
 				<div class="form-actions">
 					<button type="submit" class="btn btn-primary">Update Stack</button>
 					<a href={ templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)) } class="btn btn-secondary">Cancel</a>

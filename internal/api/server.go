@@ -278,6 +278,7 @@ func (s *Server) setupRoutes() {
 	webGroup.POST("/hosts/:id/delete", webHandler.DeleteHost)
 	webGroup.GET("/stacks", webHandler.StacksList)
 	webGroup.GET("/stacks/table", webHandler.StacksTable)
+	webGroup.GET("/stacks/json", webHandler.GetStacksJSON)
 	webGroup.GET("/stacks/new", webHandler.DeployStackForm)
 	webGroup.POST("/stacks/deploy", webHandler.DeployStack)
 	webGroup.GET("/stacks/:id", webHandler.StackDetail)
@@ -288,6 +289,7 @@ func (s *Server) setupRoutes() {
 	webGroup.POST("/stacks/:id/stop", webHandler.StopStack)
 	webGroup.POST("/stacks/:id/restart", webHandler.RestartStack)
 	webGroup.POST("/stacks/:id/delete", webHandler.DeleteStack)
+	webGroup.POST("/stacks/:id/containers/assign", webHandler.AssignContainersToStack)
 	webGroup.GET("/topology", webHandler.TopologyView)
 	webGroup.GET("/graph", webHandler.GraphView)
 }

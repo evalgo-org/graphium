@@ -132,6 +132,12 @@ func (s *Server) createContainer(c echo.Context) error {
 		return InternalError("Failed to create container", err.Error())
 	}
 
+	// Auto-assign to stack based on naming convention
+	if err := s.storage.AutoAssignContainerToStack(container.ID, container.Name); err != nil {
+		// Log error but don't fail the request
+		fmt.Printf("Warning: Failed to auto-assign container %s to stack: %v\n", container.ID, err)
+	}
+
 	// Broadcast WebSocket event
 	s.BroadcastGraphEvent(EventContainerAdded, container)
 
@@ -190,6 +196,12 @@ func (s *Server) updateContainer(c echo.Context) error {
 		return InternalError("Failed to update container", err.Error())
 	}
 
+	// Auto-assign to stack based on naming convention
+	if err := s.storage.AutoAssignContainerToStack(container.ID, container.Name); err != nil {
+		// Log error but don't fail the request
+		fmt.Printf("Warning: Failed to auto-assign container %s to stack: %v\n", container.ID, err)
+	}
+
 	// Broadcast WebSocket event
 	s.BroadcastGraphEvent(EventContainerUpdated, container)
 
@@ -219,6 +231,12 @@ func (s *Server) deleteContainer(c echo.Context) error {
 	container, err := s.storage.GetContainer(id)
 	if err != nil {
 		return NotFoundError("Container", id)
+	}
+
+	// Remove container from any stacks it belongs to
+	if err := s.storage.RemoveContainerFromStacks(id); err != nil {
+		// Log the error but don't fail the delete operation
+		fmt.Printf("Warning: Failed to remove container %s from stacks: %v\n", id, err)
 	}
 
 	// Add container to ignore list to prevent agent from re-syncing it
@@ -284,6 +302,16 @@ func (s *Server) bulkCreateContainers(c echo.Context) error {
 	results, err := s.storage.BulkSaveContainers(containers)
 	if err != nil {
 		return InternalError("Failed to bulk create containers", err.Error())
+	}
+
+	// Auto-assign containers to stacks based on naming convention
+	for i, result := range results {
+		if result.OK && i < len(containers) {
+			if err := s.storage.AutoAssignContainerToStack(containers[i].ID, containers[i].Name); err != nil {
+				// Log error but don't fail the request
+				fmt.Printf("Warning: Failed to auto-assign container %s to stack: %v\n", containers[i].ID, err)
+			}
+		}
 	}
 
 	// Count successes and failures and convert to API type

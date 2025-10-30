@@ -156,7 +156,18 @@ func (h *Handler) StackDetail(c echo.Context) error {
 		// Ignore error - deployment might not exist
 	}
 
-	return Render(c, StackDetailWithUser(stack, deployment, user))
+	// Load container details for all containers assigned to this stack
+	var containers []*models.Container
+	if len(stack.Containers) > 0 {
+		for _, containerID := range stack.Containers {
+			container, err := h.storage.GetContainer(containerID)
+			if err == nil {
+				containers = append(containers, container)
+			}
+		}
+	}
+
+	return Render(c, StackDetailWithUser(stack, deployment, containers, user))
 }
 
 // DeployStackForm renders the stack deployment form.
@@ -181,6 +192,12 @@ func (h *Handler) DeployStackForm(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "Failed to load hosts")
 	}
 
+	// Get list of available containers
+	containers, err := h.storage.ListContainers(nil)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to load containers")
+	}
+
 	// Extract unique datacenters
 	datacenters := make(map[string]bool)
 	for _, host := range hosts {
@@ -189,7 +206,7 @@ func (h *Handler) DeployStackForm(c echo.Context) error {
 		}
 	}
 
-	return Render(c, DeployStackFormWithUser(templates, hosts, datacenters, "", user))
+	return Render(c, DeployStackFormWithUser(templates, hosts, containers, datacenters, "", user))
 }
 
 // DeployStack handles the stack deployment form submission.
@@ -209,31 +226,34 @@ func (h *Handler) DeployStack(c echo.Context) error {
 	// Parse form data
 	stackJSON := c.FormValue("stack_json")
 	selectedHostIDs := c.Request().Form["target_hosts[]"]
+	selectedContainerIDs := c.Request().Form["existing_containers[]"]
 	datacenter := c.FormValue("datacenter")
 
 	if stackJSON == "" {
 		templates, _ := h.listStackTemplates()
 		hosts, _ := h.storage.ListHosts(map[string]interface{}{"status": "active"})
+		containers, _ := h.storage.ListContainers(nil)
 		datacenters := make(map[string]bool)
 		for _, host := range hosts {
 			if host.Datacenter != "" {
 				datacenters[host.Datacenter] = true
 			}
 		}
-		return Render(c, DeployStackFormWithUser(templates, hosts, datacenters, "Stack definition is required", user))
+		return Render(c, DeployStackFormWithUser(templates, hosts, containers, datacenters, "Stack definition is required", user))
 	}
 
 	// Helper function to render error with form data
 	renderError := func(errorMsg string) error {
 		templates, _ := h.listStackTemplates()
 		hosts, _ := h.storage.ListHosts(map[string]interface{}{"status": "active"})
+		containers, _ := h.storage.ListContainers(nil)
 		datacenters := make(map[string]bool)
 		for _, host := range hosts {
 			if host.Datacenter != "" {
 				datacenters[host.Datacenter] = true
 			}
 		}
-		return Render(c, DeployStackFormWithUser(templates, hosts, datacenters, errorMsg, user))
+		return Render(c, DeployStackFormWithUser(templates, hosts, containers, datacenters, errorMsg, user))
 	}
 
 	// Parse the JSON-LD stack definition to validate it
@@ -272,9 +292,10 @@ func (h *Handler) DeployStack(c echo.Context) error {
 			PlacementStrategy: "auto",
 			NetworkMode:       "host-port",
 		},
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Owner:     username,
+		Containers: selectedContainerIDs, // Add existing containers to the stack
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+		Owner:      username,
 	}
 
 	// Save stack to database
@@ -546,13 +567,19 @@ func (h *Handler) EditStackForm(c echo.Context) error {
 		return c.String(http.StatusNotFound, "Stack not found")
 	}
 
+	// Get list of available containers
+	containers, err := h.storage.ListContainers(nil)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to load containers")
+	}
+
 	// Convert stack back to JSON for editing
 	stackJSON, err := json.MarshalIndent(stack, "", "  ")
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Failed to serialize stack")
 	}
 
-	return Render(c, EditStackFormWithUser(stack, string(stackJSON), "", user))
+	return Render(c, EditStackFormWithUser(stack, containers, string(stackJSON), "", user))
 }
 
 // UpdateStack handles the stack update form submission.
@@ -577,21 +604,70 @@ func (h *Handler) UpdateStack(c echo.Context) error {
 	// Parse form data
 	name := c.FormValue("name")
 	description := c.FormValue("description")
+	selectedContainerIDs := c.Request().Form["stack_containers[]"]
+
+	// Get containers for error rendering
+	containers, _ := h.storage.ListContainers(nil)
 
 	if name == "" {
 		stackJSON, _ := json.MarshalIndent(stack, "", "  ")
-		return Render(c, EditStackFormWithUser(stack, string(stackJSON), "Stack name is required", user))
+		return Render(c, EditStackFormWithUser(stack, containers, string(stackJSON), "Stack name is required", user))
+	}
+
+	// Find newly assigned containers (in selectedContainerIDs but not in old stack.Containers)
+	oldContainerSet := make(map[string]bool)
+	for _, cID := range stack.Containers {
+		oldContainerSet[cID] = true
+	}
+
+	var newlyAssignedContainers []string
+	for _, cID := range selectedContainerIDs {
+		if !oldContainerSet[cID] {
+			newlyAssignedContainers = append(newlyAssignedContainers, cID)
+		}
 	}
 
 	// Update stack fields
 	stack.Name = name
 	stack.Description = description
+	stack.Containers = selectedContainerIDs // Update container assignments
 	stack.UpdatedAt = time.Now()
 
 	// Save updated stack
 	if err := h.storage.UpdateStack(stack); err != nil {
 		stackJSON, _ := json.MarshalIndent(stack, "", "  ")
-		return Render(c, EditStackFormWithUser(stack, string(stackJSON), "Failed to update stack: "+err.Error(), user))
+		return Render(c, EditStackFormWithUser(stack, containers, string(stackJSON), "Failed to update stack: "+err.Error(), user))
+	}
+
+	// Rename newly assigned containers to follow stack naming convention
+	for _, containerID := range newlyAssignedContainers {
+		// Get container to find its host
+		container, err := h.storage.GetContainer(containerID)
+		if err != nil {
+			h.debugLog("Warning: Could not get container %s: %v\n", containerID, err)
+			continue
+		}
+
+		// Get host to determine Docker socket
+		host, err := h.storage.GetHost(container.HostedOn)
+		if err != nil {
+			h.debugLog("Warning: Could not get host %s for container %s: %v\n", container.HostedOn, containerID, err)
+			continue
+		}
+
+		// Determine Docker socket based on host IP
+		var dockerSocket string
+		if host.IPAddress == "localhost" || host.IPAddress == "127.0.0.1" || host.IPAddress == "" {
+			dockerSocket = "unix:///var/run/docker.sock"
+		} else {
+			dockerSocket = "tcp://" + host.IPAddress + ":2375"
+		}
+
+		// Rename container to follow stack naming convention
+		if err := h.storage.RenameContainerForStack(containerID, stack.Name, dockerSocket); err != nil {
+			h.debugLog("Warning: Failed to rename container %s for stack %s: %v\n", containerID, stack.Name, err)
+			// Don't fail the whole operation, just log the warning
+		}
 	}
 
 	// Redirect to stack detail
