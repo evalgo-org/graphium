@@ -115,11 +115,16 @@ func (s *Server) getScanReport(c echo.Context) error {
 		return InternalError("Integrity service not available", "Service not initialized")
 	}
 
-	// TODO: Implement GetScanReport in integrity service
-	return c.JSON(http.StatusNotImplemented, map[string]string{
-		"message": "Scan report retrieval not yet implemented",
-		"scan_id": scanID,
-	})
+	// Get scan report
+	report, err := integrityService.GetScanReport(c.Request().Context(), scanID)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, ErrorResponse{
+			Error: "Scan report not found",
+			Details: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, report)
 }
 
 // listScans handles GET /api/v1/integrity/scans
@@ -130,7 +135,7 @@ func (s *Server) getScanReport(c echo.Context) error {
 // @Produce json
 // @Param limit query int false "Maximum number of scans to return" default(10)
 // @Param offset query int false "Number of scans to skip" default(0)
-// @Success 200 {object} object
+// @Success 200 {object} integrity.ScanListResult
 // @Failure 500 {object} ErrorResponse
 // @Router /integrity/scans [get]
 func (s *Server) listScans(c echo.Context) error {
@@ -141,12 +146,16 @@ func (s *Server) listScans(c echo.Context) error {
 		return InternalError("Integrity service not available", "Service not initialized")
 	}
 
-	// TODO: Implement ListScans in integrity service
-	return c.JSON(http.StatusNotImplemented, map[string]interface{}{
-		"message": "Scan listing not yet implemented",
-		"limit":   limit,
-		"offset":  offset,
+	// List scans
+	result, err := integrityService.ListScans(c.Request().Context(), integrity.ScanListOptions{
+		Limit:  limit,
+		Offset: offset,
 	})
+	if err != nil {
+		return InternalError("Failed to list scans", err.Error())
+	}
+
+	return c.JSON(http.StatusOK, result)
 }
 
 // CreateRepairPlanRequest contains options for creating a repair plan.

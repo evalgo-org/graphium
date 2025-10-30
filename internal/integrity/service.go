@@ -72,6 +72,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -88,6 +89,10 @@ type Service struct {
 	config *Config
 	logger *log.Logger
 	audit  *AuditLogger
+
+	// scanStore holds completed scan reports in memory
+	scanStore map[string]*ScanReport
+	scanMutex sync.RWMutex
 }
 
 // Config contains configuration for the integrity service.
@@ -206,10 +211,11 @@ func NewService(dbService *db.CouchDBService, appConfig *config.Config, logger *
 	}
 
 	service := &Service{
-		db:     dbService,
-		config: cfg,
-		logger: logger,
-		audit:  audit,
+		db:        dbService,
+		config:    cfg,
+		logger:    logger,
+		audit:     audit,
+		scanStore: make(map[string]*ScanReport),
 	}
 
 	return service, nil
@@ -322,6 +328,11 @@ func (s *Service) Scan(ctx context.Context, options ScanOptions) (*ScanReport, e
 
 	// Log to audit
 	s.audit.LogScan(report)
+
+	// Store scan report
+	s.scanMutex.Lock()
+	s.scanStore[report.ID] = report
+	s.scanMutex.Unlock()
 
 	s.logger.Printf("Scan completed: found %d issues in %v", report.Summary.TotalIssues, report.Duration)
 
@@ -466,4 +477,91 @@ func (s *Service) QueryAuditLog(ctx context.Context, query AuditQuery) ([]AuditE
 		return nil, fmt.Errorf("audit logger not initialized")
 	}
 	return s.audit.Query(query)
+}
+
+// GetScanReport retrieves a scan report by its ID.
+func (s *Service) GetScanReport(ctx context.Context, scanID string) (*ScanReport, error) {
+	s.scanMutex.RLock()
+	defer s.scanMutex.RUnlock()
+
+	report, exists := s.scanStore[scanID]
+	if !exists {
+		return nil, fmt.Errorf("scan report not found: %s", scanID)
+	}
+
+	return report, nil
+}
+
+// ScanListOptions configures how to list scans.
+type ScanListOptions struct {
+	// Limit maximum number of scans to return
+	Limit int
+
+	// Offset number of scans to skip
+	Offset int
+}
+
+// ScanListResult contains the result of listing scans.
+type ScanListResult struct {
+	// Scans is the list of scan reports
+	Scans []*ScanReport `json:"scans"`
+
+	// Total is the total number of scans available
+	Total int `json:"total"`
+
+	// Limit is the maximum number of scans returned
+	Limit int `json:"limit"`
+
+	// Offset is the number of scans skipped
+	Offset int `json:"offset"`
+}
+
+// ListScans returns a list of all scan reports.
+func (s *Service) ListScans(ctx context.Context, options ScanListOptions) (*ScanListResult, error) {
+	s.scanMutex.RLock()
+	defer s.scanMutex.RUnlock()
+
+	// Set defaults
+	if options.Limit <= 0 {
+		options.Limit = 10
+	}
+	if options.Limit > 100 {
+		options.Limit = 100 // Cap at 100
+	}
+
+	// Get all scans and sort by timestamp (newest first)
+	allScans := make([]*ScanReport, 0, len(s.scanStore))
+	for _, scan := range s.scanStore {
+		allScans = append(allScans, scan)
+	}
+
+	// Sort by timestamp descending (newest first)
+	for i := 0; i < len(allScans)-1; i++ {
+		for j := i + 1; j < len(allScans); j++ {
+			if allScans[i].Timestamp.Before(allScans[j].Timestamp) {
+				allScans[i], allScans[j] = allScans[j], allScans[i]
+			}
+		}
+	}
+
+	// Apply pagination
+	total := len(allScans)
+	start := options.Offset
+	if start > total {
+		start = total
+	}
+
+	end := start + options.Limit
+	if end > total {
+		end = total
+	}
+
+	scans := allScans[start:end]
+
+	return &ScanListResult{
+		Scans:  scans,
+		Total:  total,
+		Limit:  options.Limit,
+		Offset: options.Offset,
+	}, nil
 }
