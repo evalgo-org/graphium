@@ -35,7 +35,7 @@ templ LayoutWithUser(title string, user *models.User) {
 				<li><a href="/web/containers" class="nav-link">Containers</a></li>
 				<li><a href="/web/hosts" class="nav-link">Hosts</a></li>
 				<li><a href="/web/stacks" class="nav-link">Stacks</a></li>
-				<li><a href="/web/stacks/jsonld/deployments" class="nav-link">JSON-LD Deployments</a></li>
+				<li><a href="/web/stacks" class="nav-link">JSON-LD Deployments</a></li>
 				<li><a href="/web/graph" class="nav-link">Graph</a></li>
 				<li><a href="/web/topology" class="nav-link">Topology</a></li>
 			</ul>
@@ -238,7 +238,7 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 					<a href="/web/containers" class="btn btn-primary">View All Containers</a>
 					<a href="/web/hosts" class="btn btn-secondary">View All Hosts</a>
 					<a href="/web/stacks" class="btn btn-primary">View All Stacks</a>
-					<a href="/web/stacks/jsonld/deployments" class="btn btn-primary">JSON-LD Deployments</a>
+					<a href="/web/stacks" class="btn btn-primary">JSON-LD Deployments</a>
 					<a href="/web/topology" class="btn btn-info">View Topology</a>
 				</div>
 			</div>
@@ -3089,6 +3089,7 @@ templ StacksListWithUser(stacks []*models.Stack, pagination PaginationInfo, user
 			<h2>Stacks</h2>
 			<div class="filters">
 				<a href="/web/stacks/new" class="btn btn-primary">+ Deploy Stack</a>
+				<a href="/web/stacks/jsonld/deploy" class="btn btn-primary">+ Deploy New Stack</a>
 			</div>
 		</div>
 		<div class="table-container" id="stacks-table" hx-get="/web/stacks/table" hx-trigger="load" hx-swap="innerHTML">
@@ -3889,7 +3890,7 @@ templ JSONLDDeployPage(user *models.User, validationResult *parseResultResponse,
 							Validate
 						</button>
 						<button type="submit" class="btn btn-primary">Deploy Stack</button>
-						<a href="/web/stacks/jsonld/deployments" class="btn btn-secondary">View Deployments</a>
+						<a href="/web/stacks" class="btn btn-secondary">View Deployments</a>
 					</div>
 				</form>
 				<div id="validation-result" style="margin-top: 20px;"></div>
@@ -3989,7 +3990,7 @@ templ JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *mode
 				</div>
 				<div style="display: flex; gap: 10px;">
 					<a href={ templ.URL(fmt.Sprintf("/web/stacks/%s", deployment.StackID)) } class="btn btn-primary">Manage Stack</a>
-					<a href="/web/stacks/jsonld/deployments" class="btn btn-secondary">Back to List</a>
+					<a href="/web/stacks" class="btn btn-secondary">Back to List</a>
 				</div>
 			</div>
 			<div class="card">
