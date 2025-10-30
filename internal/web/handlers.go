@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	evecommon "eve.evalgo.org/common"
 	"evalgo.org/graphium/internal/auth"
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/internal/storage"
@@ -31,17 +32,24 @@ type ContainerWithStack struct {
 	StackID   string // Empty if not part of a stack
 }
 
+// EventBroadcaster is an interface for broadcasting events
+type EventBroadcaster interface {
+	BroadcastGraphEvent(eventType string, data interface{})
+}
+
 // Handler handles web UI requests.
 type Handler struct {
-	storage *storage.Storage
-	config  *config.Config
+	storage     *storage.Storage
+	config      *config.Config
+	broadcaster EventBroadcaster
 }
 
 // NewHandler creates a new web handler.
-func NewHandler(store *storage.Storage, cfg *config.Config) *Handler {
+func NewHandler(store *storage.Storage, cfg *config.Config, broadcaster EventBroadcaster) *Handler {
 	return &Handler{
-		storage: store,
-		config:  cfg,
+		storage:     store,
+		config:      cfg,
+		broadcaster: broadcaster,
 	}
 }
 
@@ -151,7 +159,10 @@ func (h *Handler) ContainersList(c echo.Context) error {
 	pagination := calculatePagination(len(allContainers), page, pageSize)
 	containers := paginateContainers(allContainers, page, pageSize)
 
-	return Render(c, ContainersListWithUser(containers, stackMap, pagination, user))
+	// Get error message from query params (if any)
+	errorMsg := c.QueryParam("error")
+
+	return Render(c, ContainersListWithUser(containers, stackMap, pagination, errorMsg, user))
 }
 
 // ContainersTable renders just the containers table (for HTMX).
@@ -398,7 +409,7 @@ func (h *Handler) ContainerDetail(c echo.Context) error {
 	// Get container
 	container, err := h.storage.GetContainer(id)
 	if err != nil {
-		return c.String(http.StatusNotFound, "Container not found")
+		return c.Redirect(http.StatusSeeOther, "/web/containers?error=Container+not+found+(may+have+been+deleted)")
 	}
 
 	// Get host if hostedOn is set
@@ -556,6 +567,23 @@ func (h *Handler) UpdateHost(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/web/hosts/%s", id))
 }
 
+// removeContainerFromDocker attempts to remove a container from Docker using EVE.
+// Returns nil if successful, error if it fails.
+func (h *Handler) removeContainerFromDocker(containerID string) error {
+	dockerSocket := h.config.Agent.DockerSocket
+	if dockerSocket == "" {
+		dockerSocket = "/var/run/docker.sock"
+	}
+
+	// Use EVE's CtxCli to create Docker client
+	ctx, cli := evecommon.CtxCli("unix://" + dockerSocket)
+	defer cli.Close()
+
+	// Use EVE's ContainerStopAndRemove function
+	// Stop timeout: 10 seconds, RemoveVolumes: false
+	return evecommon.ContainerStopAndRemove(ctx, cli, containerID, 10, false)
+}
+
 // DeleteContainer handles container deletion (only for standalone containers).
 func (h *Handler) DeleteContainer(c echo.Context) error {
 	id := c.Param("id")
@@ -580,9 +608,36 @@ func (h *Handler) DeleteContainer(c echo.Context) error {
 		return c.String(http.StatusNotFound, "Container not found")
 	}
 
-	// Delete with revision
+	// Try to remove from Docker first
+	dockerDeleteErr := h.removeContainerFromDocker(id)
+	if dockerDeleteErr != nil {
+		// Docker deletion failed - log warning
+		fmt.Printf("Warning: Failed to remove container %s from Docker: %v\n", id, dockerDeleteErr)
+	}
+
+	// Delete from database
+	fmt.Printf("DEBUG: About to delete container %s from database (rev: %s)\n", id[:12], container.Rev)
 	if err := h.storage.DeleteContainer(id, container.Rev); err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to delete container: "+err.Error())
+		fmt.Printf("DEBUG: Database deletion FAILED for %s: %v\n", id[:12], err)
+		return c.String(http.StatusInternalServerError, "Failed to delete container from database: "+err.Error())
+	}
+	fmt.Printf("DEBUG: Successfully deleted container %s from database\n", id[:12])
+
+	// Broadcast WebSocket event for real-time dashboard updates
+	if h.broadcaster == nil {
+		fmt.Printf("DEBUG: WARNING - broadcaster is nil, cannot broadcast deletion event\n")
+	} else {
+		fmt.Printf("DEBUG: Broadcasting container_removed event for %s\n", id[:12])
+		h.broadcaster.BroadcastGraphEvent("container_removed", map[string]string{"id": id})
+		fmt.Printf("DEBUG: Broadcast call completed for %s\n", id[:12])
+	}
+
+	// Only add to ignore list if Docker deletion failed
+	// If Docker deletion succeeded, allow re-sync if container is recreated
+	if dockerDeleteErr != nil {
+		if err := h.storage.AddToIgnoreList(id, container.HostedOn, "user-deleted via web UI (Docker removal failed)", "system"); err != nil {
+			fmt.Printf("Warning: Failed to add container %s to ignore list: %v\n", id, err)
+		}
 	}
 
 	return c.Redirect(http.StatusSeeOther, "/web/containers")
@@ -625,7 +680,7 @@ func (h *Handler) ContainerLogs(c echo.Context) error {
 	// Get container
 	container, err := h.storage.GetContainer(id)
 	if err != nil {
-		return c.String(http.StatusNotFound, "Container not found")
+		return c.Redirect(http.StatusSeeOther, "/web/containers?error=Container+not+found+(may+have+been+deleted)")
 	}
 
 	// Get host if hostedOn is set

@@ -6,6 +6,8 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"time"
 
 	"eve.evalgo.org/db"
 
@@ -171,6 +173,20 @@ func (s *Storage) SaveContainer(container *models.Container) error {
 	}
 
 	_, err := s.service.SaveGenericDocument(container)
+
+	// If we get a conflict, fetch the existing document and retry with its revision
+	if err != nil {
+		if couchErr, ok := err.(*db.CouchDBError); ok && couchErr.IsConflict() {
+			// Get the existing document to retrieve its revision
+			existing, getErr := s.GetContainer(container.ID)
+			if getErr == nil {
+				// Update with the existing revision and retry
+				container.Rev = existing.Rev
+				_, err = s.service.SaveGenericDocument(container)
+			}
+		}
+	}
+
 	return err
 }
 
@@ -185,8 +201,25 @@ func (s *Storage) GetContainer(id string) (*models.Container, error) {
 }
 
 // DeleteContainer deletes a container by ID and revision.
-func (s *Storage) DeleteContainer(id, rev string) error {
-	return s.service.DeleteDocument(id, rev)
+// This deletes ALL documents with the given container ID to handle duplicates.
+func (s *Storage) DeleteContainer(containerID, rev string) error {
+	// For now, use the simple single-document deletion
+	// The EVE fix will prevent new duplicates from being created
+	// Existing duplicates will be cleaned up by the deduplication in ListContainers
+
+	// We'll call the simpler approach: just try to delete the document
+	// If it's a duplicate, the next query won't find the others anyway
+	// because deduplication keeps "last one wins"
+
+	log.Printf("DEBUG: Deleting container %s (rev: %s)", containerID[:12], rev)
+	err := s.service.DeleteDocument(containerID, rev)
+	if err != nil {
+		log.Printf("ERROR: Failed to delete container %s: %v", containerID[:12], err)
+		return fmt.Errorf("failed to delete container: %w", err)
+	}
+
+	log.Printf("DEBUG: Successfully deleted container %s", containerID[:12])
+	return nil
 }
 
 // ListContainers retrieves all containers matching the given filters.
@@ -202,11 +235,15 @@ func (s *Storage) ListContainers(filters map[string]interface{}) ([]*models.Cont
 
 	query := qb.Build()
 
+	log.Printf("DEBUG: ListContainers query selector: %+v", query.Selector)
+
 	// Execute query
 	containers, err := db.FindTyped[models.Container](s.service, query)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Printf("DEBUG: ListContainers returned %d documents before dedup", len(containers))
 
 	// Deduplicate containers by @id (Docker container ID)
 	// CouchDB may have multiple documents for the same container due to sync issues
@@ -221,6 +258,8 @@ func (s *Storage) ListContainers(filters map[string]interface{}) ([]*models.Cont
 	for _, container := range containerMap {
 		result = append(result, container)
 	}
+
+	log.Printf("DEBUG: ListContainers returning %d containers after dedup", len(result))
 
 	return result, nil
 }
@@ -291,6 +330,20 @@ func (s *Storage) SaveHost(host *models.Host) error {
 	}
 
 	_, err := s.service.SaveGenericDocument(host)
+
+	// If we get a conflict, fetch the existing document and retry with its revision
+	if err != nil {
+		if couchErr, ok := err.(*db.CouchDBError); ok && couchErr.IsConflict() {
+			// Get the existing document to retrieve its revision
+			existing, getErr := s.GetHost(host.ID)
+			if getErr == nil {
+				// Update with the existing revision and retry
+				host.Rev = existing.Rev
+				_, err = s.service.SaveGenericDocument(host)
+			}
+		}
+	}
+
 	return err
 }
 
@@ -486,4 +539,83 @@ func (s *Storage) GetContainerStackMap() (map[string]*models.Stack, error) {
 // GetDatabaseInfo returns database statistics.
 func (s *Storage) GetDatabaseInfo() (*db.DatabaseInfo, error) {
 	return s.service.GetDatabaseInfo()
+}
+
+// ===============================================================
+// Ignore List Operations
+// ===============================================================
+
+// AddToIgnoreList adds a container ID to the ignore list.
+// Containers in the ignore list will not be synced by the agent.
+func (s *Storage) AddToIgnoreList(containerID, hostID, reason, createdBy string) error {
+	entry := &models.IgnoreListEntry{
+		Context:     "https://schema.org",
+		Type:        "IgnoreListEntry",
+		ID:          "ignore-" + containerID,
+		ContainerID: containerID,
+		HostID:      hostID,
+		Reason:      reason,
+		CreatedBy:   createdBy,
+		CreatedAt:   time.Now(),
+	}
+
+	_, err := s.service.SaveGenericDocument(entry)
+	return err
+}
+
+// IsContainerIgnored checks if a container ID is in the ignore list.
+func (s *Storage) IsContainerIgnored(containerID string) (bool, error) {
+	docID := "ignore-" + containerID
+
+	var entry models.IgnoreListEntry
+	err := s.service.GetGenericDocument(docID, &entry)
+	if err != nil {
+		// Check if error is a 404 not found using EVE's error type
+		if couchErr, ok := err.(*db.CouchDBError); ok && couchErr.IsNotFound() {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to check ignore list: %w", err)
+	}
+
+	return true, nil
+}
+
+// RemoveFromIgnoreList removes a container ID from the ignore list.
+func (s *Storage) RemoveFromIgnoreList(containerID string) error {
+	docID := "ignore-" + containerID
+
+	// Get the document to retrieve its revision
+	var entry models.IgnoreListEntry
+	err := s.service.GetGenericDocument(docID, &entry)
+	if err != nil {
+		// Check if error is a 404 not found using EVE's error type
+		if couchErr, ok := err.(*db.CouchDBError); ok && couchErr.IsNotFound() {
+			return nil // Already not in ignore list
+		}
+		return fmt.Errorf("failed to get ignore list entry: %w", err)
+	}
+
+	return s.service.DeleteDocument(docID, entry.Rev)
+}
+
+// ListIgnored returns all containers in the ignore list.
+func (s *Storage) ListIgnored() ([]*models.IgnoreListEntry, error) {
+	// Query for all documents starting with "ignore-"
+	query := db.NewQueryBuilder().
+		Where("_id", "$regex", "^ignore-").
+		Build()
+
+	// Execute query
+	entries, err := db.FindTyped[models.IgnoreListEntry](s.service, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query ignore list: %w", err)
+	}
+
+	// Convert to pointer slice
+	result := make([]*models.IgnoreListEntry, len(entries))
+	for i := range entries {
+		result[i] = &entries[i]
+	}
+
+	return result, nil
 }

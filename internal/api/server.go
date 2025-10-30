@@ -37,6 +37,7 @@ func New(cfg *config.Config, store *storage.Storage) *Server {
 	// Configure Echo
 	e.HideBanner = true
 	e.HidePort = true
+	e.Debug = cfg.Server.Debug
 
 	// Set custom error handler
 	e.HTTPErrorHandler = HTTPErrorHandler
@@ -131,7 +132,10 @@ func (s *Server) setupRoutes() {
 	containers := v1.Group("/containers")
 	containers.Use(ValidateQueryParams) // Validate query parameters for list operations
 	containers.GET("", s.listContainers, s.authMiddle.RequireRead)
+	containers.GET("/ignored", s.listIgnored, s.authMiddle.RequireAgentOrWrite) // List all ignored containers
 	containers.GET("/:id", s.getContainer, ValidateIDFormat, s.authMiddle.RequireRead)
+	containers.HEAD("/:id/ignored", s.checkContainerIgnored, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
+	containers.DELETE("/:id/ignored", s.removeFromIgnoreList, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
 	// Note: logs endpoints moved after webHandler creation (see below)
 	containers.POST("", s.createContainer, s.authMiddle.RequireAgentOrWrite)
 	containers.PUT("/:id", s.updateContainer, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
@@ -156,13 +160,6 @@ func (s *Server) setupRoutes() {
 	query.GET("/traverse/:id", s.traverseGraph, ValidateIDFormat, s.authMiddle.RequireRead)
 	query.GET("/dependents/:id", s.getDependents, ValidateIDFormat, s.authMiddle.RequireRead)
 	query.GET("/topology/:datacenter", s.getDatacenterTopology, s.authMiddle.RequireRead)
-
-	// Statistics routes
-	stats := v1.Group("/stats")
-	stats.GET("", s.getStatistics, s.authMiddle.RequireRead)
-	stats.GET("/containers/count", s.getContainerCount, s.authMiddle.RequireRead)
-	stats.GET("/hosts/count", s.getHostCount, s.authMiddle.RequireRead)
-	stats.GET("/distribution", s.getHostContainerDistribution, s.authMiddle.RequireRead)
 
 	// Validation routes
 	validate := v1.Group("/validate")
@@ -201,7 +198,14 @@ func (s *Server) setupRoutes() {
 	users.DELETE("/api-keys/:index", s.revokeAPIKey, s.authMiddle.RequireAuth)
 
 	// Web UI routes
-	webHandler := web.NewHandler(s.storage, s.config)
+	webHandler := web.NewHandler(s.storage, s.config, &serverBroadcaster{server: s})
+
+	// Statistics routes (support both JWT and web session auth for web UI compatibility)
+	stats := v1.Group("/stats")
+	stats.GET("", s.getStatistics, webHandler.WebAuthMiddleware)
+	stats.GET("/containers/count", s.getContainerCount, webHandler.WebAuthMiddleware)
+	stats.GET("/hosts/count", s.getHostCount, webHandler.WebAuthMiddleware)
+	stats.GET("/distribution", s.getHostContainerDistribution, webHandler.WebAuthMiddleware)
 
 	// Container logs routes (support web session auth for web UI compatibility)
 	v1.GET("/containers/:id/logs", s.getContainerLogs, ValidateIDFormat, webHandler.WebAuthMiddleware)
@@ -344,13 +348,27 @@ func (s *Server) healthCheck(c echo.Context) error {
 
 // BroadcastGraphEvent broadcasts a graph event to all WebSocket clients
 func (s *Server) BroadcastGraphEvent(eventType GraphEventType, data interface{}) {
+	log.Printf("DEBUG: BroadcastGraphEvent called with type=%s, data=%+v", eventType, data)
 	event := GraphEvent{
 		Type: eventType,
 		Data: data,
 	}
+	log.Printf("DEBUG: Broadcasting to %d WebSocket clients", s.wsHub.ClientCount())
 	if err := s.wsHub.BroadcastEvent(event); err != nil {
-		log.Printf("Failed to broadcast event: %v", err)
+		log.Printf("ERROR: Failed to broadcast event: %v", err)
+	} else {
+		log.Printf("DEBUG: Successfully broadcast %s event to hub", eventType)
 	}
+}
+
+// serverBroadcaster adapts Server to web.EventBroadcaster interface
+type serverBroadcaster struct {
+	server *Server
+}
+
+// BroadcastGraphEvent implements web.EventBroadcaster
+func (sb *serverBroadcaster) BroadcastGraphEvent(eventType string, data interface{}) {
+	sb.server.BroadcastGraphEvent(GraphEventType(eventType), data)
 }
 
 // ServeHTTP allows Server to implement http.Handler for testing

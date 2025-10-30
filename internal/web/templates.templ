@@ -152,7 +152,7 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 					<div class="stat-icon">📦</div>
 					<div class="stat-content">
 						<h3>Total Containers</h3>
-						<p class="stat-value">{ fmt.Sprintf("%d", stats.TotalContainers) }</p>
+						<p class="stat-value" id="stat-total-containers">{ fmt.Sprintf("%d", stats.TotalContainers) }</p>
 					</div>
 				</div>
 
@@ -160,7 +160,7 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 					<div class="stat-icon">▶️</div>
 					<div class="stat-content">
 						<h3>Running</h3>
-						<p class="stat-value">{ fmt.Sprintf("%d", stats.RunningContainers) }</p>
+						<p class="stat-value" id="stat-running-containers">{ fmt.Sprintf("%d", stats.RunningContainers) }</p>
 					</div>
 				</div>
 
@@ -168,7 +168,7 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 					<div class="stat-icon">🖥️</div>
 					<div class="stat-content">
 						<h3>Total Hosts</h3>
-						<p class="stat-value">{ fmt.Sprintf("%d", stats.TotalHosts) }</p>
+						<p class="stat-value" id="stat-total-hosts">{ fmt.Sprintf("%d", stats.TotalHosts) }</p>
 					</div>
 				</div>
 
@@ -176,7 +176,7 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 					<div class="stat-icon">📚</div>
 					<div class="stat-content">
 						<h3>Total Stacks</h3>
-						<p class="stat-value">{ fmt.Sprintf("%d", stats.TotalStacks) }</p>
+						<p class="stat-value" id="stat-total-stacks">{ fmt.Sprintf("%d", stats.TotalStacks) }</p>
 					</div>
 				</div>
 
@@ -184,7 +184,7 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 					<div class="stat-icon">🚀</div>
 					<div class="stat-content">
 						<h3>Running Stacks</h3>
-						<p class="stat-value">{ fmt.Sprintf("%d", stats.RunningStacks) }</p>
+						<p class="stat-value" id="stat-running-stacks">{ fmt.Sprintf("%d", stats.RunningStacks) }</p>
 					</div>
 				</div>
 
@@ -192,7 +192,7 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 					<div class="stat-icon">📊</div>
 					<div class="stat-content">
 						<h3>Hosts with Containers</h3>
-						<p class="stat-value">{ fmt.Sprintf("%d", len(stats.HostContainerCounts)) }</p>
+						<p class="stat-value" id="stat-hosts-with-containers">{ fmt.Sprintf("%d", len(stats.HostContainerCounts)) }</p>
 					</div>
 				</div>
 			</div>
@@ -224,6 +224,101 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 				</div>
 			</div>
 		</div>
+		<script>
+			(function() {
+				// WebSocket connection for real-time dashboard updates
+				let ws = null;
+				let wsReconnectAttempts = 0;
+				const maxReconnectAttempts = 10;
+				const reconnectDelay = 3000;
+
+				function connectWebSocket() {
+					const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+					const wsURL = `${protocol}//${window.location.host}/api/v1/ws/graph`;
+
+					try {
+						ws = new WebSocket(wsURL);
+
+						ws.onopen = function() {
+							console.log('Dashboard WebSocket connected');
+							wsReconnectAttempts = 0;
+						};
+
+						ws.onmessage = function(event) {
+							try {
+								const graphEvent = JSON.parse(event.data);
+								console.log('Dashboard received event:', graphEvent.type);
+
+								// Refresh stats on any container/host/stack change
+								if (graphEvent.type === 'container_added' ||
+									graphEvent.type === 'container_removed' ||
+									graphEvent.type === 'container_updated' ||
+									graphEvent.type === 'host_added' ||
+									graphEvent.type === 'host_removed' ||
+									graphEvent.type === 'stack_added' ||
+									graphEvent.type === 'stack_removed') {
+									refreshStats();
+								}
+							} catch (error) {
+								console.error('Failed to parse WebSocket message:', error);
+							}
+						};
+
+						ws.onerror = function(error) {
+							console.error('Dashboard WebSocket error:', error);
+						};
+
+						ws.onclose = function() {
+							console.log('Dashboard WebSocket disconnected');
+							// Attempt to reconnect
+							if (wsReconnectAttempts < maxReconnectAttempts) {
+								wsReconnectAttempts++;
+								console.log(`Reconnecting dashboard WebSocket (attempt ${wsReconnectAttempts}/${maxReconnectAttempts})...`);
+								setTimeout(connectWebSocket, reconnectDelay);
+							} else {
+								console.error('Max dashboard WebSocket reconnection attempts reached');
+							}
+						};
+					} catch (error) {
+						console.error('Failed to create dashboard WebSocket connection:', error);
+					}
+				}
+
+				// Fetch and update statistics
+				function refreshStats() {
+					console.log('🔄 Refreshing stats from /api/v1/stats...');
+					fetch('/api/v1/stats', {
+						credentials: 'same-origin'
+					})
+						.then(response => {
+							console.log('📊 Stats API response status:', response.status);
+							if (!response.ok) {
+								throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+							}
+							return response.json();
+						})
+						.then(data => {
+							console.log('✅ Stats data received:', data);
+							document.getElementById('stat-total-containers').textContent = data.totalContainers;
+							document.getElementById('stat-running-containers').textContent = data.runningContainers;
+							document.getElementById('stat-total-hosts').textContent = data.totalHosts;
+							document.getElementById('stat-total-stacks').textContent = data.totalStacks || 0;
+							document.getElementById('stat-running-stacks').textContent = data.runningStacks || 0;
+							document.getElementById('stat-hosts-with-containers').textContent = data.hostsWithContainers || 0;
+							console.log('✅ Dashboard DOM updated with new stats');
+						})
+						.catch(error => {
+							console.error('❌ Failed to refresh stats:', error);
+						});
+				}
+
+				// Connect WebSocket on page load
+				connectWebSocket();
+
+				// Also refresh stats immediately on page load (in case data changed while on another page)
+				refreshStats();
+			})();
+		</script>
 	}
 }
 
@@ -258,8 +353,13 @@ templ Pagination(pagination PaginationInfo, baseURL string, queryParams string) 
 }
 
 // Containers list template (with user)
-templ ContainersListWithUser(containers []*models.Container, stackMap map[string]*models.Stack, pagination PaginationInfo, user *models.User) {
+templ ContainersListWithUser(containers []*models.Container, stackMap map[string]*models.Stack, pagination PaginationInfo, errorMsg string, user *models.User) {
 	@LayoutWithUser("Containers", user) {
+		if errorMsg != "" {
+			<div class="alert alert-error" style="margin: 20px; padding: 15px; background-color: #fee; border: 1px solid #fcc; border-radius: 4px; color: #c00;">
+				{ errorMsg }
+			</div>
+		}
 		<div class="page-header">
 			<h2>Containers</h2>
 			<div class="filters">

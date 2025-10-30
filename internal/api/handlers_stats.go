@@ -28,6 +28,8 @@ func (s *Server) getStatistics(c echo.Context) error {
 		"totalContainers":       stats.TotalContainers,
 		"runningContainers":     stats.RunningContainers,
 		"totalHosts":            stats.TotalHosts,
+		"totalStacks":           stats.TotalStacks,
+		"runningStacks":         stats.RunningStacks,
 		"hostsWithContainers":   len(stats.HostContainerCounts),
 		"containerDistribution": stats.HostContainerCounts,
 	})

@@ -136,6 +136,11 @@ func (a *Agent) Start(ctx context.Context) error {
 	log.Printf("Docker socket: %s", a.dockerSocket)
 	log.Printf("API server: %s", a.apiURL)
 
+	// Verify authentication before proceeding
+	if err := a.verifyAuthentication(ctx); err != nil {
+		return fmt.Errorf("authentication failed: %w\n\nThe agent cannot operate without valid authentication.\nPlease check:\n  1. Agent token is configured in config.yaml\n  2. Token is valid and not expired\n  3. Server security.auth_enabled matches agent configuration", err)
+	}
+
 	// Register host with API server
 	if err := a.registerHost(ctx); err != nil {
 		log.Printf("Warning: Failed to register host: %v", err)
@@ -151,6 +156,46 @@ func (a *Agent) Start(ctx context.Context) error {
 
 	// Monitor Docker events
 	return a.monitorEvents(ctx)
+}
+
+// verifyAuthentication tests if the agent can authenticate with the server.
+// This prevents the agent from running if authentication will fail.
+func (a *Agent) verifyAuthentication(ctx context.Context) error {
+	// Test authentication with a simple API call
+	url := fmt.Sprintf("%s/api/v1/stats", a.apiURL)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create auth test request: %w", err)
+	}
+
+	// Add auth token if configured
+	if a.authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+a.authToken)
+	}
+
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to connect to API server: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check for authentication errors
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		if a.authToken == "" {
+			return fmt.Errorf("server requires authentication but no agent_token is configured")
+		}
+		return fmt.Errorf("authentication rejected (HTTP %d) - token may be invalid or expired", resp.StatusCode)
+	}
+
+	// Any 2xx response means we're authenticated
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		log.Printf("✓ Authentication successful")
+		return nil
+	}
+
+	// Other errors (5xx, etc.) - warn but don't fail
+	log.Printf("Warning: API returned HTTP %d during auth check, but continuing anyway", resp.StatusCode)
+	return nil
 }
 
 // registerHost registers this host with the API server.
@@ -223,6 +268,12 @@ func (a *Agent) syncContainers(ctx context.Context) error {
 
 	log.Printf("Discovered %d containers", len(containers))
 
+	// Build set of container IDs that exist in Docker
+	dockerContainerIDs := make(map[string]bool)
+	for _, c := range containers {
+		dockerContainerIDs[c.ID] = true
+	}
+
 	// Sync each container with rate limiting to avoid overwhelming the API
 	for i, c := range containers {
 		if err := a.syncContainer(ctx, c.ID); err != nil {
@@ -234,6 +285,10 @@ func (a *Agent) syncContainers(ctx context.Context) error {
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
+
+	// Clean up ignore list: remove entries for containers that no longer exist in Docker
+	// This handles the edge case where the agent missed a "destroy" event
+	a.cleanupIgnoreList(ctx, dockerContainerIDs)
 
 	return nil
 }
@@ -269,6 +324,33 @@ func (a *Agent) syncContainer(ctx context.Context, containerID string) error {
 
 	// Convert to Graphium container model
 	container := a.dockerToGraphium(inspect)
+
+	// Check if this container is in the ignore list (user-deleted containers)
+	ignoreURL := fmt.Sprintf("%s/api/v1/containers/%s/ignored", a.apiURL, container.ID)
+	ignoreReq, err := http.NewRequestWithContext(ctx, "HEAD", ignoreURL, nil)
+	if err != nil {
+		log.Printf("Warning: Failed to create ignore check request for %s: %v", containerID[:12], err)
+		// Continue with sync despite error (fail-open)
+	} else {
+		if a.authToken != "" {
+			ignoreReq.Header.Set("Authorization", "Bearer "+a.authToken)
+		}
+
+		ignoreResp, err := a.httpClient.Do(ignoreReq)
+		if err != nil {
+			log.Printf("Warning: Failed to check ignore list for %s: %v", containerID[:12], err)
+			// Continue with sync despite error (fail-open)
+		} else {
+			ignoreResp.Body.Close()
+
+			// If container is ignored (200 OK), skip syncing
+			if ignoreResp.StatusCode == http.StatusOK {
+				log.Printf("Container %s is in ignore list, skipping sync", containerID[:12])
+				return nil
+			}
+			// If 404 (not ignored), continue with normal sync below
+		}
+	}
 
 	// Check if container already exists
 	url := fmt.Sprintf("%s/api/v1/containers/%s", a.apiURL, container.ID)
@@ -372,6 +454,11 @@ func (a *Agent) handleContainerEvent(ctx context.Context, event events.Message) 
 
 	switch event.Action {
 	case "create", "start", "restart", "unpause":
+		// On create, remove from ignore list in case container was recreated
+		if event.Action == "create" {
+			a.removeFromIgnoreList(containerID)
+		}
+
 		// Sync container state
 		if err := a.syncContainer(ctx, containerID); err != nil {
 			log.Printf("Failed to sync container: %v", err)
@@ -405,6 +492,92 @@ func (a *Agent) handleContainerEvent(ctx context.Context, event events.Message) 
 		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNotFound {
 			log.Printf("✓ Container removed: %s", containerID[:12])
 		}
+
+		// Clean up: remove from ignore list (container no longer exists)
+		a.removeFromIgnoreList(containerID)
+	}
+}
+
+// removeFromIgnoreList removes a container from the ignore list.
+// This is called when a container is recreated or destroyed.
+func (a *Agent) removeFromIgnoreList(containerID string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	url := fmt.Sprintf("%s/api/v1/containers/%s/ignored", a.apiURL, containerID)
+	req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
+	if err != nil {
+		log.Printf("Warning: Failed to create ignore list removal request for %s: %v", containerID[:12], err)
+		return
+	}
+
+	if a.authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+a.authToken)
+	}
+
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		log.Printf("Warning: Failed to remove %s from ignore list: %v", containerID[:12], err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		log.Printf("✓ Container %s removed from ignore list", containerID[:12])
+	}
+	// Silently ignore 404 or other errors - container may not be in ignore list
+}
+
+// cleanupIgnoreList removes stale entries from the ignore list.
+// An ignore list entry is considered stale if the container no longer exists in Docker.
+// This handles the edge case where the agent missed a "destroy" event or was offline.
+func (a *Agent) cleanupIgnoreList(ctx context.Context, dockerContainerIDs map[string]bool) {
+	// Fetch current ignore list from API
+	url := fmt.Sprintf("%s/api/v1/containers/ignored", a.apiURL)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		log.Printf("Warning: Failed to create ignore list fetch request: %v", err)
+		return
+	}
+
+	if a.authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+a.authToken)
+	}
+
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		log.Printf("Warning: Failed to fetch ignore list: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// Ignore list endpoint may not exist yet or auth issue
+		return
+	}
+
+	// Parse ignore list response
+	var ignoreList []struct {
+		ContainerID string `json:"container_id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&ignoreList); err != nil {
+		log.Printf("Warning: Failed to decode ignore list: %v", err)
+		return
+	}
+
+	// Check each ignored container and remove if not in Docker
+	cleanedCount := 0
+	for _, entry := range ignoreList {
+		if !dockerContainerIDs[entry.ContainerID] {
+			// Container doesn't exist in Docker, remove from ignore list
+			log.Printf("Cleaning up stale ignore list entry for %s (not in Docker)", entry.ContainerID[:12])
+			a.removeFromIgnoreList(entry.ContainerID)
+			cleanedCount++
+		}
+	}
+
+	if cleanedCount > 0 {
+		log.Printf("✓ Cleaned up %d stale ignore list entries", cleanedCount)
 	}
 }
 

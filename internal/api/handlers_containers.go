@@ -215,10 +215,16 @@ func (s *Server) deleteContainer(c echo.Context) error {
 		return BadRequestError("Container ID is required", "The 'id' parameter cannot be empty")
 	}
 
-	// Get container to retrieve revision
+	// Get container to retrieve revision and host info
 	container, err := s.storage.GetContainer(id)
 	if err != nil {
 		return NotFoundError("Container", id)
+	}
+
+	// Add container to ignore list to prevent agent from re-syncing it
+	if err := s.storage.AddToIgnoreList(id, container.HostedOn, "user-deleted via API", "system"); err != nil {
+		// Log the error but don't fail the delete operation
+		fmt.Printf("Warning: Failed to add container %s to ignore list: %v\n", id, err)
 	}
 
 	// Delete container
@@ -280,14 +286,23 @@ func (s *Server) bulkCreateContainers(c echo.Context) error {
 		return InternalError("Failed to bulk create containers", err.Error())
 	}
 
-	// Count successes and failures
+	// Count successes and failures and convert to API type
 	successCount := 0
 	failureCount := 0
-	for _, result := range results {
+	apiResults := make([]BulkResult, len(results))
+	for i, result := range results {
 		if result.OK {
 			successCount++
 		} else {
 			failureCount++
+		}
+		// Convert db.BulkResult to api.BulkResult
+		apiResults[i] = BulkResult{
+			ID:      result.ID,
+			Rev:     result.Rev,
+			Error:   result.Error,
+			Reason:  result.Reason,
+			Success: result.OK,
 		}
 	}
 
@@ -295,7 +310,7 @@ func (s *Server) bulkCreateContainers(c echo.Context) error {
 		Total:   len(results),
 		Success: successCount,
 		Failed:  failureCount,
-		Results: results,
+		Results: apiResults,
 	})
 }
 
@@ -344,4 +359,62 @@ func (s *Server) getContainersByStatus(c echo.Context) error {
 		Count:      len(containers),
 		Containers: containers,
 	})
+}
+
+// checkContainerIgnored handles HEAD /api/v1/containers/:id/ignored
+// Returns 200 if container is ignored, 404 if not ignored
+func (s *Server) checkContainerIgnored(c echo.Context) error {
+	id := c.Param("id")
+
+	if id == "" {
+		return BadRequestError("Container ID is required", "The 'id' parameter cannot be empty")
+	}
+
+	ignored, err := s.storage.IsContainerIgnored(id)
+	if err != nil {
+		return InternalError("Failed to check ignore list", err.Error())
+	}
+
+	if ignored {
+		return c.NoContent(http.StatusOK) // 200 means ignored
+	}
+
+	return c.NoContent(http.StatusNotFound) // 404 means not ignored
+}
+
+// removeFromIgnoreList handles DELETE /api/v1/containers/:id/ignored
+// Removes a container from the ignore list
+func (s *Server) removeFromIgnoreList(c echo.Context) error {
+	id := c.Param("id")
+
+	if id == "" {
+		return BadRequestError("Container ID is required", "The 'id' parameter cannot be empty")
+	}
+
+	if err := s.storage.RemoveFromIgnoreList(id); err != nil {
+		return InternalError("Failed to remove from ignore list", err.Error())
+	}
+
+	return c.JSON(http.StatusOK, MessageResponse{
+		Message: "container removed from ignore list",
+		ID:      id,
+	})
+}
+
+// listIgnored handles GET /api/v1/containers/ignored
+// @Summary List ignored containers
+// @Description Get a list of all containers in the ignore list
+// @Tags Containers
+// @Accept json
+// @Produce json
+// @Success 200 {array} models.IgnoreListEntry "List of ignored containers"
+// @Failure 500 {object} ErrorResponse
+// @Router /containers/ignored [get]
+func (s *Server) listIgnored(c echo.Context) error {
+	entries, err := s.storage.ListIgnored()
+	if err != nil {
+		return InternalError("Failed to list ignored containers", err.Error())
+	}
+
+	return c.JSON(http.StatusOK, entries)
 }
