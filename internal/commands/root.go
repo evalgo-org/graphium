@@ -44,7 +44,6 @@ func init() {
 
 	rootCmd.AddCommand(serverCmd)
 	rootCmd.AddCommand(agentCmd)
-	rootCmd.AddCommand(stackCmd)
 	rootCmd.AddCommand(integrityCmd)
 	rootCmd.AddCommand(tokenCmd)
 	rootCmd.AddCommand(versionCmd)

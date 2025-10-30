@@ -433,3 +433,65 @@ func (f *APIDockerClientFactory) GetClient(ctx context.Context, hostID string) (
 	// Docker SDK client already implements common.DockerClient
 	return cli, nil
 }
+// listStacks returns all stacks.
+// @Summary List all stacks
+// @Description Get a list of all stacks in the system
+// @Tags stacks
+// @Produce json
+// @Success 200 {array} models.Stack
+// @Failure 500 {object} ErrorResponse
+// @Router /api/v1/stacks [get]
+func (s *Server) listStacks(c echo.Context) error {
+	stacks, err := s.storage.ListStacks(nil)
+	if err != nil {
+		return InternalError("Failed to list stacks", err.Error())
+	}
+	return c.JSON(http.StatusOK, stacks)
+}
+
+// getStack returns a single stack by ID.
+// @Summary Get stack by ID
+// @Description Get detailed information about a specific stack
+// @Tags stacks
+// @Produce json
+// @Param id path string true "Stack ID"
+// @Success 200 {object} models.Stack
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/v1/stacks/{id} [get]
+func (s *Server) getStack(c echo.Context) error {
+	id := c.Param("id")
+	stack, err := s.storage.GetStack(id)
+	if err != nil {
+		return NotFoundError("Stack not found", id)
+	}
+	return c.JSON(http.StatusOK, stack)
+}
+
+// getStackDeployment returns the deployment state for a stack.
+// @Summary Get stack deployment state
+// @Description Get the current deployment state and container placements for a stack
+// @Tags stacks
+// @Produce json
+// @Param id path string true "Stack ID"
+// @Success 200 {object} models.DeploymentState
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/v1/stacks/{id}/deployment [get]
+func (s *Server) getStackDeployment(c echo.Context) error {
+	id := c.Param("id")
+	
+	// Try DeploymentState first (JSON-LD deployments)
+	deploymentState, err := s.storage.GetDeploymentState(id)
+	if err == nil && deploymentState != nil {
+		return c.JSON(http.StatusOK, deploymentState)
+	}
+	
+	// Fall back to old StackDeployment format
+	deployment, err := s.storage.GetDeployment(id)
+	if err != nil {
+		return NotFoundError("Deployment not found", id)
+	}
+	
+	return c.JSON(http.StatusOK, deployment)
+}

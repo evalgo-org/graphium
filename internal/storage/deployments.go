@@ -48,3 +48,27 @@ func (s *Storage) GetDeploymentsByStackID(stackID string) ([]*models.DeploymentS
 	}
 	return s.ListDeployments(filters)
 }
+
+// SaveDeploymentState saves a deployment state document to the database.
+func (s *Storage) SaveDeploymentState(state *models.DeploymentState) error {
+	// Set JSON-LD type if not set
+	if state.Type == "" {
+		state.Type = "DeploymentState"
+	}
+	return s.SaveDocument(state)
+}
+
+// GetDeploymentState retrieves a deployment state by ID.
+func (s *Storage) GetDeploymentState(id string) (*models.DeploymentState, error) {
+	var state models.DeploymentState
+	if err := s.GetDocument(id, &state); err != nil {
+		return nil, err
+	}
+	return &state, nil
+}
+
+// UpdateDeploymentState updates an existing deployment state in the database.
+// This is an alias for SaveDeploymentState which handles both create and update operations.
+func (s *Storage) UpdateDeploymentState(state *models.DeploymentState) error {
+	return s.SaveDeploymentState(state)
+}

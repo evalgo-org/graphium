@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,13 +10,120 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/client"
 	"github.com/labstack/echo/v4"
 
+	"evalgo.org/eve/common"
 	"evalgo.org/graphium/internal/auth"
-	"evalgo.org/graphium/internal/orchestration"
+	stackpkg "evalgo.org/graphium/internal/stack"
+	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/models"
-	"eve.evalgo.org/containers/stacks"
 )
+
+// WebHostResolver implements the stack.HostResolver interface using the storage layer.
+type WebHostResolver struct {
+	storage *storage.Storage
+}
+
+// ResolveHost resolves an absolute @id URL to host information.
+func (r *WebHostResolver) ResolveHost(id string) (*models.HostInfo, error) {
+	host, err := r.storage.GetHost(id)
+	if err != nil {
+		return nil, fmt.Errorf("host %s not found: %w", id, err)
+	}
+
+	// Determine Docker socket
+	dockerSocket := fmt.Sprintf("tcp://%s:2375", host.IPAddress)
+	if host.IPAddress == "localhost" || host.IPAddress == "127.0.0.1" {
+		dockerSocket = "unix:///var/run/docker.sock"
+	}
+
+	// Get container count
+	containerCount := 0
+	containers, err := r.storage.GetContainersByHost(host.ID)
+	if err == nil {
+		containerCount = len(containers)
+	}
+
+	return &models.HostInfo{
+		Host:         host,
+		DockerSocket: dockerSocket,
+		CurrentLoad: models.ResourceLoad{
+			CPUUsage:       0,
+			MemoryUsage:    0,
+			ContainerCount: containerCount,
+		},
+		AvailableResources: models.Resources{
+			CPU:    host.CPU,
+			Memory: host.Memory,
+		},
+		Labels: make(map[string]string),
+	}, nil
+}
+
+// ListHosts returns all available hosts for automatic placement.
+func (r *WebHostResolver) ListHosts() ([]*models.HostInfo, error) {
+	hosts, err := r.storage.ListHosts(map[string]interface{}{
+		"status": "active",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	hostInfos := make([]*models.HostInfo, len(hosts))
+	for i, host := range hosts {
+		info, err := r.ResolveHost(host.ID)
+		if err != nil {
+			continue
+		}
+		hostInfos[i] = info
+	}
+
+	return hostInfos, nil
+}
+
+// WebDatabaseAdapter adapts the Storage layer to the stack.Database interface.
+type WebDatabaseAdapter struct {
+	storage *storage.Storage
+}
+
+// Create creates a new document in CouchDB.
+func (a *WebDatabaseAdapter) Create(ctx context.Context, doc interface{}) error {
+	return a.storage.SaveDocument(doc)
+}
+
+// Update updates an existing document in CouchDB.
+func (a *WebDatabaseAdapter) Update(ctx context.Context, doc interface{}) error {
+	return a.storage.SaveDocument(doc)
+}
+
+// WebDockerClientFactory creates Docker clients for different hosts.
+type WebDockerClientFactory struct {
+	storage *storage.Storage
+}
+
+// GetClient returns a Docker client for the given host ID.
+func (f *WebDockerClientFactory) GetClient(ctx context.Context, hostID string) (common.DockerClient, error) {
+	host, err := f.storage.GetHost(hostID)
+	if err != nil {
+		return nil, fmt.Errorf("host %s not found: %w", hostID, err)
+	}
+
+	dockerSocket := fmt.Sprintf("tcp://%s:2375", host.IPAddress)
+	if host.IPAddress == "localhost" || host.IPAddress == "127.0.0.1" {
+		dockerSocket = "unix:///var/run/docker.sock"
+	}
+
+	cli, err := client.NewClientWithOpts(
+		client.WithHost(dockerSocket),
+		client.WithAPIVersionNegotiation(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Docker client: %w", err)
+	}
+
+	return cli, nil
+}
 
 // paginateStacks returns a slice of stacks for the current page
 func paginateStacks(stacks []*models.Stack, page, pageSize int) []*models.Stack {
@@ -149,11 +257,31 @@ func (h *Handler) StackDetail(c echo.Context) error {
 		return c.String(http.StatusNotFound, "Stack not found")
 	}
 
-	// Get deployment info if stack is deployed
+	// Get deployment info if stack is deployed - use DeploymentState instead of StackDeployment
 	var deployment *models.StackDeployment
 	if stack.Status == "running" || stack.Status == "stopped" {
-		deployment, _ = h.storage.GetDeployment(id)
-		// Ignore error - deployment might not exist
+		// Try to get DeploymentState first
+		deploymentState, err := h.storage.GetDeploymentState(id)
+		if err == nil && deploymentState != nil {
+			// Convert DeploymentState to StackDeployment for template compatibility
+			deployment = &models.StackDeployment{
+				StackID:   deploymentState.StackID,
+				Status:    deploymentState.Status,
+				StartedAt: deploymentState.StartedAt,
+				Placements: func() map[string]models.ContainerPlacement {
+					placements := make(map[string]models.ContainerPlacement)
+					for name, placement := range deploymentState.Placements {
+						if placement != nil {
+							placements[name] = *placement
+						}
+					}
+					return placements
+				}(),
+			}
+		} else {
+			// Fall back to old StackDeployment if exists
+			deployment, _ = h.storage.GetDeployment(id)
+		}
 	}
 
 	// Load container details for all containers assigned to this stack
@@ -209,7 +337,7 @@ func (h *Handler) DeployStackForm(c echo.Context) error {
 	return Render(c, DeployStackFormWithUser(templates, hosts, containers, datacenters, "", user))
 }
 
-// DeployStack handles the stack deployment form submission.
+// DeployStack handles the stack deployment form submission using JSON-LD deployer.
 func (h *Handler) DeployStack(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -256,28 +384,33 @@ func (h *Handler) DeployStack(c echo.Context) error {
 		return Render(c, DeployStackFormWithUser(templates, hosts, containers, datacenters, errorMsg, user))
 	}
 
-	// Parse the JSON-LD stack definition to validate it
-	var definition map[string]interface{}
+	// Parse the JSON-LD stack definition
+	var definition models.StackDefinition
 	if err := json.Unmarshal([]byte(stackJSON), &definition); err != nil {
 		return renderError("Invalid JSON: " + err.Error())
 	}
 
-	// Validate required fields
-	stackName, ok := definition["name"].(string)
-	if !ok || stackName == "" {
-		return renderError("Stack 'name' field is required in JSON definition")
-	}
+	// Create parser with host resolver
+	resolver := &WebHostResolver{storage: h.storage}
+	parser := stackpkg.NewStackParser(resolver)
 
-	// Load stack definition using stacks package
-	stackDef, err := stacks.LoadStackFromJSON([]byte(stackJSON))
+	// Parse the stack definition
+	parseResult, err := parser.Parse(&definition)
 	if err != nil {
-		return renderError("Invalid stack definition: " + err.Error())
+		return renderError("Failed to parse stack definition: " + err.Error())
 	}
 
-	stackDescription := ""
-	if desc, ok := definition["description"].(string); ok {
-		stackDescription = desc
+	// Check for errors
+	if len(parseResult.Errors) > 0 {
+		errorMsg := "Stack validation failed:\n"
+		for _, e := range parseResult.Errors {
+			errorMsg += "- " + e + "\n"
+		}
+		return renderError(errorMsg)
 	}
+
+	stackName := parseResult.Plan.StackNode.Name
+	stackDescription := parseResult.Plan.StackNode.Description
 
 	// Create stack model
 	stack := &models.Stack{
@@ -340,104 +473,44 @@ func (h *Handler) DeployStack(c echo.Context) error {
 		return renderError("No active hosts available for deployment. Please ensure hosts are registered and active.")
 	}
 
-	// Convert to HostInfo format with smart Docker socket detection
-	hostInfos := make([]*models.HostInfo, 0, len(targetHosts))
-	for _, host := range targetHosts {
-		var dockerSocket string
+	// Create deployer
+	dbAdapter := &WebDatabaseAdapter{storage: h.storage}
+	clientFactory := &WebDockerClientFactory{storage: h.storage}
+	deployer := stackpkg.NewDeployer(dbAdapter, resolver, clientFactory)
 
-		// Determine Docker socket based on host configuration
-		if host.IPAddress == "localhost" || host.IPAddress == "127.0.0.1" || host.IPAddress == "" {
-			// Local host - use Unix socket
-			dockerSocket = "unix:///var/run/docker.sock"
-		} else if strings.HasPrefix(host.IPAddress, "192.168.") || strings.HasPrefix(host.IPAddress, "10.") || strings.HasPrefix(host.IPAddress, "172.") {
-			// Private network - use TCP
-			dockerSocket = "tcp://" + host.IPAddress + ":2375"
-		} else {
-			// Public IP or hostname - use TCP
-			dockerSocket = "tcp://" + host.IPAddress + ":2375"
-		}
-
-		hostInfos = append(hostInfos, &models.HostInfo{
-			Host:         host,
-			DockerSocket: dockerSocket,
-			CurrentLoad: models.ResourceLoad{
-				CPUUsage:       0,
-				MemoryUsage:    0,
-				ContainerCount: 0,
-			},
-			AvailableResources: models.Resources{
-				CPU:    host.CPU,
-				Memory: host.Memory,
-			},
-			Labels: make(map[string]string),
-		})
+	// Set deployment options
+	opts := stackpkg.DeployOptions{
+		Timeout:         5 * time.Minute,
+		RollbackOnError: true,
+		StackName:       stackName,
+		PullImages:      false,
 	}
 
-	// Create orchestrator
-	orch := orchestration.NewDistributedStackOrchestrator(h.storage)
-	defer orch.Close()
-
-	// Register hosts with orchestrator and track failures
-	registeredCount := 0
-	var registrationErrors []string
-
-	for _, hostInfo := range hostInfos {
-		if err := orch.RegisterHost(hostInfo.Host, hostInfo.DockerSocket); err != nil {
-			registrationErrors = append(registrationErrors,
-				fmt.Sprintf("Host %s (%s): %v", hostInfo.Host.Name, hostInfo.Host.ID, err))
-			continue
-		}
-		registeredCount++
-	}
-
-	// Check if we have any hosts successfully registered
-	if registeredCount == 0 {
-		stack.Status = "error"
-		errorMsg := "Failed to register any Docker clients. No hosts are accessible.\n\n"
-		errorMsg += "Possible solutions:\n"
-		errorMsg += "1. Ensure Docker is running on the target hosts\n"
-		errorMsg += "2. For localhost: Verify Docker socket is accessible (usually /var/run/docker.sock)\n"
-		errorMsg += "3. For remote hosts: Ensure Docker API is exposed on port 2375\n"
-		errorMsg += "4. Run the Graphium agent on each host to auto-register\n\n"
-		errorMsg += "Registration errors:\n"
-		for _, regErr := range registrationErrors {
-			errorMsg += "  - " + regErr + "\n"
-		}
-		stack.ErrorMessage = errorMsg
-		h.storage.UpdateStack(stack)
-		return renderError(errorMsg)
-	}
-
-	// Deploy stack
-	deployment, err := orch.DeployStack(ctx, stack, stackDef, hostInfos)
+	// Deploy asynchronously
+	deploymentState, err := deployer.Deploy(ctx, parseResult.Plan, opts)
 	if err != nil {
 		stack.Status = "error"
 		stack.ErrorMessage = err.Error()
 		h.storage.UpdateStack(stack)
-
-		// Enhance error message with registration info
-		enhancedErr := fmt.Sprintf("Deployment failed: %v\n\n", err)
-		if registeredCount < len(hostInfos) {
-			enhancedErr += fmt.Sprintf("Note: Only %d of %d hosts were successfully registered.\n",
-				registeredCount, len(hostInfos))
-			enhancedErr += "Failed hosts:\n"
-			for _, regErr := range registrationErrors {
-				enhancedErr += "  - " + regErr + "\n"
-			}
-		}
-		return renderError(enhancedErr)
+		return renderError("Deployment failed: " + err.Error())
 	}
 
 	// Update stack status
 	stack.Status = "running"
-	stack.DeployedAt = &deployment.StartedAt
+	stack.DeployedAt = &deploymentState.StartedAt
+	stack.Containers = make([]string, 0, len(deploymentState.Placements))
+	for _, placement := range deploymentState.Placements {
+		if placement != nil && placement.ContainerID != "" {
+			stack.Containers = append(stack.Containers, placement.ContainerID)
+		}
+	}
 	h.storage.UpdateStack(stack)
 
 	// Redirect to stack detail on success
 	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/web/stacks/%s", stack.ID))
 }
 
-// StopStack handles stopping a stack.
+// StopStack handles stopping a stack using JSON-LD deployer.
 func (h *Handler) StopStack(c echo.Context) error {
 	ctx := c.Request().Context()
 	id := c.Param("id")
@@ -451,28 +524,38 @@ func (h *Handler) StopStack(c echo.Context) error {
 		return c.String(http.StatusNotFound, "Stack not found")
 	}
 
-	// Get deployment
-	deployment, err := h.storage.GetDeployment(id)
+	// Get deployment state
+	deploymentState, err := h.storage.GetDeploymentState(id)
 	if err != nil {
-		return c.String(http.StatusNotFound, "Deployment not found")
-	}
-
-	// Create orchestrator
-	orch := orchestration.NewDistributedStackOrchestrator(h.storage)
-	defer orch.Close()
-
-	// Register hosts from deployment
-	for _, placement := range deployment.Placements {
-		host, err := h.storage.GetHost(placement.HostID)
-		if err != nil {
-			continue
+		// Try old StackDeployment format
+		oldDeployment, err2 := h.storage.GetDeployment(id)
+		if err2 != nil {
+			return c.String(http.StatusNotFound, "Deployment not found")
 		}
-		dockerSocket := "tcp://" + host.IPAddress + ":2375"
-		orch.RegisterHost(host, dockerSocket)
+		// Convert to DeploymentState
+		deploymentState = &models.DeploymentState{
+			StackID: oldDeployment.StackID,
+			Status:  oldDeployment.Status,
+			Placements: func() map[string]*models.ContainerPlacement {
+				m := make(map[string]*models.ContainerPlacement)
+				for name, placement := range oldDeployment.Placements {
+					p := placement
+					m[name] = &p
+				}
+				return m
+			}(),
+			StartedAt: oldDeployment.StartedAt,
+		}
 	}
+
+	// Create deployer
+	resolver := &WebHostResolver{storage: h.storage}
+	dbAdapter := &WebDatabaseAdapter{storage: h.storage}
+	clientFactory := &WebDockerClientFactory{storage: h.storage}
+	deployer := stackpkg.NewDeployer(dbAdapter, resolver, clientFactory)
 
 	// Stop stack
-	if err := orch.StopStack(ctx, id); err != nil {
+	if err := deployer.Stop(ctx, deploymentState); err != nil {
 		return c.String(http.StatusInternalServerError, "Failed to stop stack: "+err.Error())
 	}
 
@@ -484,7 +567,7 @@ func (h *Handler) StopStack(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/web/stacks/%s", id))
 }
 
-// DeleteStack handles deleting a stack.
+// DeleteStack handles deleting a stack using JSON-LD deployer.
 func (h *Handler) DeleteStack(c echo.Context) error {
 	ctx := c.Request().Context()
 	id := c.Param("id")
@@ -492,51 +575,52 @@ func (h *Handler) DeleteStack(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Stack ID is required")
 	}
 
-	// Get deployment if it exists
-	deployment, err := h.storage.GetDeployment(id)
-	if err == nil {
-		// Create orchestrator
-		orch := orchestration.NewDistributedStackOrchestrator(h.storage)
-		defer orch.Close()
-
-		// Register hosts from deployment using the exact HostID from placement
-		registeredHosts := make(map[string]bool)
-		for _, placement := range deployment.Placements {
-			// Skip if already registered
-			if registeredHosts[placement.HostID] {
-				continue
-			}
-
-			host, err := h.storage.GetHost(placement.HostID)
-			if err != nil {
-				continue
-			}
-
-			// Determine Docker socket based on host type
-			var dockerSocket string
-			if host.IPAddress == "localhost" || host.IPAddress == "127.0.0.1" ||
-			   host.IPAddress == "host-"+host.Name || host.Name == "fedora-local" {
-				// Local host - use Unix socket
-				dockerSocket = "unix:///var/run/docker.sock"
-			} else {
-				// Remote host - use TCP
-				dockerSocket = "tcp://" + host.IPAddress + ":2375"
-			}
-
-			// Register using placement.HostID to ensure consistency
-			if err := orch.RegisterHostWithID(placement.HostID, dockerSocket); err != nil {
-				continue
-			}
-			registeredHosts[placement.HostID] = true
-		}
+	// Get deployment state if it exists
+	deploymentState, err := h.storage.GetDeploymentState(id)
+	if err == nil && deploymentState != nil {
+		// Create deployer
+		resolver := &WebHostResolver{storage: h.storage}
+		dbAdapter := &WebDatabaseAdapter{storage: h.storage}
+		clientFactory := &WebDockerClientFactory{storage: h.storage}
+		deployer := stackpkg.NewDeployer(dbAdapter, resolver, clientFactory)
 
 		// Remove stack containers
-		if err := orch.RemoveStack(ctx, id, false); err != nil {
+		if err := deployer.Remove(ctx, deploymentState, false); err != nil {
 			return c.String(http.StatusInternalServerError, "Failed to remove stack: "+err.Error())
 		}
+	}
 
-		// Delete deployment
-		h.storage.DeleteDeployment(id)
+	// Try old StackDeployment format if DeploymentState not found
+	if deploymentState == nil {
+		oldDeployment, err := h.storage.GetDeployment(id)
+		if err == nil {
+			// Convert and remove using deployer
+			deploymentState = &models.DeploymentState{
+				StackID: oldDeployment.StackID,
+				Status:  oldDeployment.Status,
+				Placements: func() map[string]*models.ContainerPlacement {
+					m := make(map[string]*models.ContainerPlacement)
+					for name, placement := range oldDeployment.Placements {
+						p := placement
+						m[name] = &p
+					}
+					return m
+				}(),
+				StartedAt: oldDeployment.StartedAt,
+			}
+
+			resolver := &WebHostResolver{storage: h.storage}
+			dbAdapter := &WebDatabaseAdapter{storage: h.storage}
+			clientFactory := &WebDockerClientFactory{storage: h.storage}
+			deployer := stackpkg.NewDeployer(dbAdapter, resolver, clientFactory)
+
+			if err := deployer.Remove(ctx, deploymentState, false); err != nil {
+				return c.String(http.StatusInternalServerError, "Failed to remove stack: "+err.Error())
+			}
+
+			// Delete old deployment
+			h.storage.DeleteDeployment(id)
+		}
 	}
 
 	// Delete stack
@@ -674,8 +758,9 @@ func (h *Handler) UpdateStack(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/web/stacks/%s", id))
 }
 
-// StartStack handles starting a stopped stack.
+// StartStack handles starting a stopped stack using JSON-LD deployer.
 func (h *Handler) StartStack(c echo.Context) error {
+	ctx := c.Request().Context()
 	id := c.Param("id")
 	if id == "" {
 		return c.String(http.StatusBadRequest, "Stack ID is required")
@@ -687,33 +772,40 @@ func (h *Handler) StartStack(c echo.Context) error {
 		return c.String(http.StatusNotFound, "Stack not found")
 	}
 
-	// Get deployment
-	deployment, err := h.storage.GetDeployment(id)
+	// Get deployment state
+	deploymentState, err := h.storage.GetDeploymentState(id)
 	if err != nil {
-		return c.String(http.StatusNotFound, "Deployment not found")
+		// Try old StackDeployment format
+		oldDeployment, err2 := h.storage.GetDeployment(id)
+		if err2 != nil {
+			return c.String(http.StatusNotFound, "Deployment not found")
+		}
+		// Convert to DeploymentState
+		deploymentState = &models.DeploymentState{
+			StackID: oldDeployment.StackID,
+			Status:  oldDeployment.Status,
+			Placements: func() map[string]*models.ContainerPlacement {
+				m := make(map[string]*models.ContainerPlacement)
+				for name, placement := range oldDeployment.Placements {
+					p := placement
+					m[name] = &p
+				}
+				return m
+			}(),
+			StartedAt: oldDeployment.StartedAt,
+		}
 	}
 
-	// Create orchestrator
-	orch := orchestration.NewDistributedStackOrchestrator(h.storage)
-	defer orch.Close()
+	// Create deployer
+	resolver := &WebHostResolver{storage: h.storage}
+	dbAdapter := &WebDatabaseAdapter{storage: h.storage}
+	clientFactory := &WebDockerClientFactory{storage: h.storage}
+	deployer := stackpkg.NewDeployer(dbAdapter, resolver, clientFactory)
 
-	// Register hosts from deployment
-	for _, placement := range deployment.Placements {
-		host, err := h.storage.GetHost(placement.HostID)
-		if err != nil {
-			continue
-		}
-		dockerSocket := "tcp://" + host.IPAddress + ":2375"
-		if host.IPAddress == "localhost" || host.IPAddress == "127.0.0.1" {
-			dockerSocket = "unix:///var/run/docker.sock"
-		}
-		orch.RegisterHost(host, dockerSocket)
+	// Start stack
+	if err := deployer.Start(ctx, deploymentState); err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to start stack: "+err.Error())
 	}
-
-	// Start all containers in the stack
-	// Note: Would need to add StartContainer method to orchestrator
-	// For now, we'll just update the status
-	_ = deployment
 
 	// Update stack status
 	stack.Status = "running"
@@ -759,17 +851,35 @@ func (h *Handler) StackLogs(c echo.Context) error {
 		return c.String(http.StatusNotFound, "Stack not found")
 	}
 
-	// Get deployment
-	deployment, err := h.storage.GetDeployment(id)
-	if err != nil {
-		return c.String(http.StatusNotFound, "Deployment not found")
-	}
+	// Get deployment - try DeploymentState first, then fall back to StackDeployment
+	var deployment *models.StackDeployment
+	var containerIDs []string
 
-	// Collect container IDs from deployment
-	containerIDs := make([]string, 0, len(deployment.Placements))
-	for _, placement := range deployment.Placements {
-		if placement.ContainerID != "" {
-			containerIDs = append(containerIDs, placement.ContainerID)
+	deploymentState, err := h.storage.GetDeploymentState(id)
+	if err == nil && deploymentState != nil {
+		// Convert DeploymentState to StackDeployment for template
+		deployment = &models.StackDeployment{
+			StackID:   deploymentState.StackID,
+			Status:    deploymentState.Status,
+			StartedAt: deploymentState.StartedAt,
+		}
+		// Collect container IDs from placements
+		for _, placement := range deploymentState.Placements {
+			if placement != nil && placement.ContainerID != "" {
+				containerIDs = append(containerIDs, placement.ContainerID)
+			}
+		}
+	} else {
+		// Fall back to old StackDeployment
+		deployment, err = h.storage.GetDeployment(id)
+		if err != nil {
+			return c.String(http.StatusNotFound, "Deployment not found")
+		}
+		// Collect container IDs from old format
+		for _, placement := range deployment.Placements {
+			if placement.ContainerID != "" {
+				containerIDs = append(containerIDs, placement.ContainerID)
+			}
 		}
 	}
 
