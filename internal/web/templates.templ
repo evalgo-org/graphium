@@ -3078,7 +3078,7 @@ templ StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInf
 				for _, stack := range stacks {
 					<tr>
 						<td>
-							<a href={ templ.URL("/web/stacks/" + stack.ID) }>{ stack.Name }</a>
+							<a href={ templ.URL("/web/stacks/" + stack.ID) } style="text-decoration: none; color: inherit;">{ stack.Name }</a>
 							if stack.Description != "" {
 								<br/><small class="text-muted">{ stack.Description }</small>
 							}
