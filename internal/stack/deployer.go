@@ -449,8 +449,8 @@ func (d *Deployer) buildContainerConfig(spec *models.ContainerSpec) *container.C
 	}
 
 	// Environment variables
-	for k, v := range spec.Environment {
-		config.Env = append(config.Env, fmt.Sprintf("%s=%s", k, v))
+	for _, env := range spec.Environment {
+		config.Env = append(config.Env, fmt.Sprintf("%s=%s", env.Name, env.Value))
 	}
 
 	// Command and args

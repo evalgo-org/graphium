@@ -86,6 +86,9 @@ type Stack struct {
 
 // DeploymentConfig defines how a stack should be deployed.
 type DeploymentConfig struct {
+	// Type is the JSON-LD type
+	Type string `json:"@type,omitempty"`
+
 	// Mode is the deployment mode: "single-host" or "multi-host"
 	Mode string `json:"mode"`
 
@@ -93,12 +96,18 @@ type DeploymentConfig struct {
 	// Values: "auto", "manual", "datacenter", "spread"
 	PlacementStrategy string `json:"placementStrategy,omitempty"`
 
-	// HostConstraints define placement rules per container
+	// TargetDatacenter specifies which datacenter to deploy to (optional, for JSON-LD deployments)
+	TargetDatacenter string `json:"targetDatacenter,omitempty"`
+
+	// HostConstraints define placement rules per container (for YAML deployments)
 	HostConstraints []HostConstraint `json:"hostConstraints,omitempty"`
 
 	// NetworkMode defines cross-host networking
 	// Values: "host-port" (exposed ports), "overlay" (Docker overlay network)
 	NetworkMode string `json:"networkMode,omitempty"`
+
+	// Comment is a human-readable comment about the deployment strategy
+	Comment string `json:"comment,omitempty"`
 }
 
 // HostConstraint defines placement rules for a container.

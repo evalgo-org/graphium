@@ -79,7 +79,10 @@ func startStack() {
 	}
 
 	// Connect to Docker
-	ctx, cli := common.CtxCli("unix:///var/run/docker.sock")
+	ctx, cli, err := common.CtxCli("unix:///var/run/docker.sock")
+	if err != nil {
+		log.Fatalf("Failed to connect to Docker: %v", err)
+	}
 	defer cli.Close()
 
 	// Deploy stack
@@ -107,7 +110,10 @@ func startStack() {
 func stopStack() {
 	log.Println("🛑 Stopping Graphium development environment...")
 
-	ctx, cli := common.CtxCli("unix:///var/run/docker.sock")
+	ctx, cli, err := common.CtxCli("unix:///var/run/docker.sock")
+	if err != nil {
+		log.Fatalf("Failed to connect to Docker: %v", err)
+	}
 	defer cli.Close()
 
 	if err := production.StopStack(ctx, cli, stackName); err != nil {
@@ -120,7 +126,10 @@ func stopStack() {
 func removeStack() {
 	log.Println("🗑️  Removing Graphium development environment...")
 
-	ctx, cli := common.CtxCli("unix:///var/run/docker.sock")
+	ctx, cli, err := common.CtxCli("unix:///var/run/docker.sock")
+	if err != nil {
+		log.Fatalf("Failed to connect to Docker: %v", err)
+	}
 	defer cli.Close()
 
 	// Remove stack including volumes

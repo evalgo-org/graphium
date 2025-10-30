@@ -42,9 +42,10 @@ type GraphNode struct {
 	Description string `json:"description,omitempty"`
 
 	// Stack-specific fields
-	LocatedInHost *Reference      `json:"locatedInHost,omitempty"`
-	Network       *NetworkSpec    `json:"network,omitempty"`
-	HasPart       []ContainerSpec `json:"hasPart,omitempty"`
+	LocatedInHost *Reference        `json:"locatedInHost,omitempty"`
+	Network       *NetworkSpec      `json:"network,omitempty"`
+	HasPart       []ContainerSpec   `json:"hasPart,omitempty"`
+	Deployment    *DeploymentConfig `json:"deployment,omitempty"`
 
 	// Host-specific fields
 	UPosition     string     `json:"uPosition,omitempty"`
@@ -77,11 +78,14 @@ type ContainerSpec struct {
 	// Image is the Docker image (e.g., "postgres:15", "nginx:alpine")
 	Image string `json:"image"`
 
-	// Environment contains environment variables
-	Environment map[string]string `json:"environment,omitempty"`
+	// Environment contains environment variables as array of objects
+	Environment []EnvironmentVariable `json:"environment,omitempty"`
 
 	// Ports defines port mappings
 	Ports []PortMapping `json:"ports,omitempty"`
+
+	// ResourceRequirements defines resource constraints for placement
+	ResourceRequirements *ResourceRequirements `json:"resourceRequirements,omitempty"`
 
 	// VolumeMounts defines volume mounts
 	VolumeMounts []VolumeMount `json:"volumeMounts,omitempty"`
@@ -440,4 +444,43 @@ type RollbackState struct {
 
 	// ErrorMessage contains error details if rollback failed
 	ErrorMessage string `json:"errorMessage,omitempty"`
+}
+
+// EnvironmentVariable represents a single environment variable in array format.
+type EnvironmentVariable struct {
+	// Type is the JSON-LD type
+	Type string `json:"@type,omitempty"`
+
+	// Name is the environment variable name
+	Name string `json:"name"`
+
+	// Value is the environment variable value
+	Value string `json:"value"`
+}
+
+// ResourceRequirements defines resource constraints for intelligent placement.
+type ResourceRequirements struct {
+	// Type is the JSON-LD type
+	Type string `json:"@type,omitempty"`
+
+	// MinCPU is the minimum number of CPU cores required
+	MinCPU int `json:"minCPU,omitempty"`
+
+	// MaxCPU is the maximum number of CPU cores to allocate
+	MaxCPU int `json:"maxCPU,omitempty"`
+
+	// MinMemory is the minimum memory in bytes
+	MinMemory int64 `json:"minMemory,omitempty"`
+
+	// MaxMemory is the maximum memory in bytes
+	MaxMemory int64 `json:"maxMemory,omitempty"`
+
+	// RequiredLabels are host labels that must match for placement
+	RequiredLabels map[string]string `json:"requiredLabels,omitempty"`
+
+	// PreferredDatacenter is a soft constraint for datacenter placement
+	PreferredDatacenter string `json:"preferredDatacenter,omitempty"`
+
+	// Description is a human-readable description of the requirements
+	Description string `json:"description,omitempty"`
 }

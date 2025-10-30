@@ -71,8 +71,8 @@ func TestContainerSpec_FullSpec(t *testing.T) {
 		Name:                "web",
 		ApplicationCategory: "WebServer",
 		Image:               "nginx:latest",
-		Environment: map[string]string{
-			"ENV": "production",
+		Environment: []EnvironmentVariable{
+			{Name: "ENV", Value: "production"},
 		},
 		Ports: []PortMapping{
 			{ContainerPort: 80, HostPort: 8080, Protocol: "tcp"},
@@ -548,5 +548,287 @@ func TestRollbackState_JSONMarshaling(t *testing.T) {
 
 	if len(decoded.RemovedContainers) != 3 {
 		t.Errorf("Expected 3 removed containers, got %d", len(decoded.RemovedContainers))
+	}
+}
+
+// TestEnvironmentVariable_ArrayFormat tests the new environment variable array format
+func TestEnvironmentVariable_ArrayFormat(t *testing.T) {
+	envVars := []EnvironmentVariable{
+		{
+			Type:  "datacenter:EnvironmentVariable",
+			Name:  "DATABASE_URL",
+			Value: "postgres://localhost:5432/mydb",
+		},
+		{
+			Type:  "datacenter:EnvironmentVariable",
+			Name:  "API_KEY",
+			Value: "secret-key-123",
+		},
+		{
+			Name:  "ENV",
+			Value: "production",
+		},
+	}
+
+	// Marshal to JSON
+	data, err := json.Marshal(envVars)
+	if err != nil {
+		t.Fatalf("Failed to marshal: %v", err)
+	}
+
+	// Unmarshal back
+	var decoded []EnvironmentVariable
+	err = json.Unmarshal(data, &decoded)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal: %v", err)
+	}
+
+	// Verify
+	if len(decoded) != 3 {
+		t.Errorf("Expected 3 environment variables, got %d", len(decoded))
+	}
+
+	if decoded[0].Name != "DATABASE_URL" {
+		t.Errorf("Expected name 'DATABASE_URL', got '%s'", decoded[0].Name)
+	}
+
+	if decoded[0].Value != "postgres://localhost:5432/mydb" {
+		t.Errorf("Expected specific database URL, got '%s'", decoded[0].Value)
+	}
+
+	if decoded[0].Type != "datacenter:EnvironmentVariable" {
+		t.Errorf("Expected type 'datacenter:EnvironmentVariable', got '%s'", decoded[0].Type)
+	}
+
+	// Third entry has no @type
+	if decoded[2].Type != "" {
+		t.Errorf("Expected empty type for third entry, got '%s'", decoded[2].Type)
+	}
+}
+
+// TestContainerSpec_WithEnvironmentArray tests ContainerSpec with the new environment array
+func TestContainerSpec_WithEnvironmentArray(t *testing.T) {
+	spec := ContainerSpec{
+		ID:    "container1",
+		Name:  "web",
+		Image: "nginx:latest",
+		Environment: []EnvironmentVariable{
+			{
+				Type:  "datacenter:EnvironmentVariable",
+				Name:  "NGINX_HOST",
+				Value: "localhost",
+			},
+			{
+				Type:  "datacenter:EnvironmentVariable",
+				Name:  "NGINX_PORT",
+				Value: "80",
+			},
+		},
+		Ports: []PortMapping{
+			{ContainerPort: 80, HostPort: 8080, Protocol: "tcp"},
+		},
+	}
+
+	// Marshal and unmarshal
+	data, err := json.Marshal(spec)
+	if err != nil {
+		t.Fatalf("Failed to marshal: %v", err)
+	}
+
+	var decoded ContainerSpec
+	err = json.Unmarshal(data, &decoded)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal: %v", err)
+	}
+
+	// Verify environment variables
+	if len(decoded.Environment) != 2 {
+		t.Errorf("Expected 2 environment variables, got %d", len(decoded.Environment))
+	}
+
+	if decoded.Environment[0].Name != "NGINX_HOST" {
+		t.Errorf("Expected first env name 'NGINX_HOST', got '%s'", decoded.Environment[0].Name)
+	}
+
+	if decoded.Environment[1].Value != "80" {
+		t.Errorf("Expected second env value '80', got '%s'", decoded.Environment[1].Value)
+	}
+}
+
+// TestResourceRequirements_JSONMarshaling tests the new ResourceRequirements struct
+func TestResourceRequirements_JSONMarshaling(t *testing.T) {
+	requirements := ResourceRequirements{
+		Type:                "datacenter:ResourceRequirements",
+		MinCPU:              2,
+		MaxCPU:              4,
+		MinMemory:           2147483648, // 2GB
+		MaxMemory:           4294967296, // 4GB
+		RequiredLabels:      map[string]string{"environment": "production"},
+		PreferredDatacenter: "dc1",
+		Description:         "Database server requires high resources",
+	}
+
+	data, err := json.Marshal(requirements)
+	if err != nil {
+		t.Fatalf("Failed to marshal: %v", err)
+	}
+
+	var decoded ResourceRequirements
+	err = json.Unmarshal(data, &decoded)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal: %v", err)
+	}
+
+	if decoded.MinCPU != 2 {
+		t.Errorf("Expected MinCPU 2, got %d", decoded.MinCPU)
+	}
+
+	if decoded.MaxMemory != 4294967296 {
+		t.Errorf("Expected MaxMemory 4294967296, got %d", decoded.MaxMemory)
+	}
+
+	if decoded.PreferredDatacenter != "dc1" {
+		t.Errorf("Expected PreferredDatacenter 'dc1', got '%s'", decoded.PreferredDatacenter)
+	}
+
+	if decoded.Description != "Database server requires high resources" {
+		t.Errorf("Expected specific description, got '%s'", decoded.Description)
+	}
+}
+
+// TestContainerSpec_WithResourceRequirements tests ContainerSpec with resource requirements
+func TestContainerSpec_WithResourceRequirements(t *testing.T) {
+	spec := ContainerSpec{
+		Name:  "database",
+		Image: "postgres:15",
+		ResourceRequirements: &ResourceRequirements{
+			Type:      "datacenter:ResourceRequirements",
+			MinCPU:    2,
+			MaxCPU:    4,
+			MinMemory: 2147483648,
+			MaxMemory: 4294967296,
+		},
+		Environment: []EnvironmentVariable{
+			{Name: "POSTGRES_PASSWORD", Value: "secret"},
+		},
+	}
+
+	data, err := json.Marshal(spec)
+	if err != nil {
+		t.Fatalf("Failed to marshal: %v", err)
+	}
+
+	var decoded ContainerSpec
+	err = json.Unmarshal(data, &decoded)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal: %v", err)
+	}
+
+	if decoded.ResourceRequirements == nil {
+		t.Fatal("Expected resource requirements, got nil")
+	}
+
+	if decoded.ResourceRequirements.MinCPU != 2 {
+		t.Errorf("Expected MinCPU 2, got %d", decoded.ResourceRequirements.MinCPU)
+	}
+
+	if decoded.ResourceRequirements.MaxMemory != 4294967296 {
+		t.Errorf("Expected MaxMemory 4294967296, got %d", decoded.ResourceRequirements.MaxMemory)
+	}
+}
+
+// TestFullStack_WithNewStructures tests a complete stack with all new features
+func TestFullStack_WithNewStructures(t *testing.T) {
+	definition := StackDefinition{
+		Context: map[string]interface{}{
+			"@vocab":     "https://graphium.evalgo.org/schema/",
+			"schema":     "https://schema.org/",
+			"datacenter": "https://graphium.evalgo.org/schema/datacenter/",
+		},
+		Graph: []GraphNode{
+			{
+				ID:   "https://example.com/stacks/mystack",
+				Type: []interface{}{"datacenter:Stack", "schema:SoftwareApplication"},
+				Name: "mystack",
+				Deployment: &DeploymentConfig{
+					Type:              "datacenter:DeploymentConfig",
+					Mode:              "multi-host",
+					PlacementStrategy: "auto",
+					TargetDatacenter:  "dc1",
+					NetworkMode:       "host-port",
+					Comment:           "Automatic placement with resource awareness",
+				},
+				HasPart: []ContainerSpec{
+					{
+						ID:    "https://example.com/containers/db",
+						Type:  []interface{}{"datacenter:Container"},
+						Name:  "database",
+						Image: "postgres:15",
+						Environment: []EnvironmentVariable{
+							{
+								Type:  "datacenter:EnvironmentVariable",
+								Name:  "POSTGRES_PASSWORD",
+								Value: "secret",
+							},
+						},
+						ResourceRequirements: &ResourceRequirements{
+							Type:      "datacenter:ResourceRequirements",
+							MinCPU:    2,
+							MinMemory: 2147483648,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Marshal and unmarshal
+	data, err := json.Marshal(definition)
+	if err != nil {
+		t.Fatalf("Failed to marshal: %v", err)
+	}
+
+	var decoded StackDefinition
+	err = json.Unmarshal(data, &decoded)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal: %v", err)
+	}
+
+	// Verify structure
+	if len(decoded.Graph) != 1 {
+		t.Fatalf("Expected 1 graph node, got %d", len(decoded.Graph))
+	}
+
+	node := decoded.Graph[0]
+
+	// Check deployment config
+	if node.Deployment == nil {
+		t.Fatal("Expected deployment config, got nil")
+	}
+	if node.Deployment.PlacementStrategy != "auto" {
+		t.Errorf("Expected placement strategy 'auto', got '%s'", node.Deployment.PlacementStrategy)
+	}
+
+	// Check container
+	if len(node.HasPart) != 1 {
+		t.Fatalf("Expected 1 container, got %d", len(node.HasPart))
+	}
+
+	container := node.HasPart[0]
+
+	// Check environment array
+	if len(container.Environment) != 1 {
+		t.Errorf("Expected 1 environment variable, got %d", len(container.Environment))
+	}
+	if container.Environment[0].Name != "POSTGRES_PASSWORD" {
+		t.Errorf("Expected env name 'POSTGRES_PASSWORD', got '%s'", container.Environment[0].Name)
+	}
+
+	// Check resource requirements
+	if container.ResourceRequirements == nil {
+		t.Fatal("Expected resource requirements, got nil")
+	}
+	if container.ResourceRequirements.MinCPU != 2 {
+		t.Errorf("Expected MinCPU 2, got %d", container.ResourceRequirements.MinCPU)
 	}
 }
