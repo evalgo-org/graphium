@@ -16,7 +16,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/client"
+	dockerclient "github.com/docker/docker/client"
 
 	"evalgo.org/graphium/models"
 )
@@ -27,7 +27,7 @@ type Agent struct {
 	hostID       string
 	datacenter   string
 	dockerSocket string
-	docker       *client.Client
+	docker       *dockerclient.Client
 	httpClient   *http.Client
 	syncInterval time.Duration
 	hostInfo     *models.Host
@@ -49,10 +49,10 @@ func NewAgent(apiURL, hostID, datacenter, dockerSocket, agentToken string) (*Age
 	}
 
 	// Create Docker client
-	dockerClient, err := client.NewClientWithOpts(
-		client.FromEnv,
-		client.WithHost("unix://"+dockerSocket),
-		client.WithAPIVersionNegotiation(),
+	dockerClient, err := dockerclient.NewClientWithOpts(
+		dockerclient.FromEnv,
+		dockerclient.WithHost("unix://"+dockerSocket),
+		dockerclient.WithAPIVersionNegotiation(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Docker client: %w", err)
@@ -173,10 +173,15 @@ func (a *Agent) syncContainers(ctx context.Context) error {
 
 	log.Printf("Discovered %d containers", len(containers))
 
-	// Sync each container
-	for _, c := range containers {
+	// Sync each container with rate limiting to avoid overwhelming the API
+	for i, c := range containers {
 		if err := a.syncContainer(ctx, c.ID); err != nil {
 			log.Printf("Warning: Failed to sync container %s: %v", c.ID[:12], err)
+		}
+
+		// Add delay between syncs to respect rate limits (except for the last one)
+		if i < len(containers)-1 {
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 
@@ -188,6 +193,11 @@ func (a *Agent) syncContainer(ctx context.Context, containerID string) error {
 	// Inspect container for full details
 	inspect, err := a.docker.ContainerInspect(ctx, containerID)
 	if err != nil {
+		// Container no longer exists in Docker - this is normal when containers are removed
+		if dockerclient.IsErrNotFound(err) {
+			log.Printf("Container %s no longer exists in Docker, skipping sync", containerID[:12])
+			return nil
+		}
 		return fmt.Errorf("failed to inspect container: %w", err)
 	}
 
@@ -213,14 +223,16 @@ func (a *Agent) syncContainer(ctx context.Context, containerID string) error {
 	var method string
 	var endpoint string
 
-	if resp.StatusCode == http.StatusNotFound {
-		// Create new container
-		method = "POST"
-		endpoint = fmt.Sprintf("%s/api/v1/containers", a.apiURL)
-	} else {
+	// Only try to UPDATE if we got a 200 OK (container exists)
+	// For 404 (not found) or any error status (401, 403, 500, etc.), try to CREATE
+	if resp.StatusCode == http.StatusOK {
 		// Update existing container
 		method = "PUT"
 		endpoint = url
+	} else {
+		// Create new container (covers 404, 401, and other error cases)
+		method = "POST"
+		endpoint = fmt.Sprintf("%s/api/v1/containers", a.apiURL)
 	}
 
 	// Send to API
