@@ -1,8 +1,6 @@
 package api
 
 import (
-	"eve.evalgo.org/db"
-
 	"evalgo.org/graphium/models"
 )
 

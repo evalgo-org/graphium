@@ -270,14 +270,23 @@ func (s *Server) bulkCreateHosts(c echo.Context) error {
 		return InternalError("Failed to bulk create hosts", err.Error())
 	}
 
-	// Count successes and failures
+	// Count successes and failures and convert to API type
 	successCount := 0
 	failureCount := 0
-	for _, result := range results {
+	apiResults := make([]BulkResult, len(results))
+	for i, result := range results {
 		if result.OK {
 			successCount++
 		} else {
 			failureCount++
+		}
+		// Convert db.BulkResult to api.BulkResult
+		apiResults[i] = BulkResult{
+			ID:      result.ID,
+			Rev:     result.Rev,
+			Error:   result.Error,
+			Reason:  result.Reason,
+			Success: result.OK,
 		}
 	}
 
@@ -285,7 +294,7 @@ func (s *Server) bulkCreateHosts(c echo.Context) error {
 		Total:   len(results),
 		Success: successCount,
 		Failed:  failureCount,
-		Results: results,
+		Results: apiResults,
 	})
 }
 
