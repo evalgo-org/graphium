@@ -172,6 +172,12 @@ func (s *Storage) Close() error {
 	return s.service.Close()
 }
 
+// GetDBService returns the underlying CouchDB service.
+// This is used by the integrity service to access the database directly.
+func (s *Storage) GetDBService() *db.CouchDBService {
+	return s.service
+}
+
 // SaveContainer saves a container to the database.
 func (s *Storage) SaveContainer(container *models.Container) error {
 	// Set JSON-LD context and type if not set

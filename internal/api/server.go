@@ -17,6 +17,7 @@ import (
 	_ "evalgo.org/graphium/docs" // Import generated docs
 	"evalgo.org/graphium/internal/auth"
 	"evalgo.org/graphium/internal/config"
+	"evalgo.org/graphium/internal/integrity"
 	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/internal/web"
 )
@@ -28,6 +29,7 @@ type Server struct {
 	config     *config.Config
 	wsHub      *Hub // WebSocket hub for real-time updates
 	authMiddle *auth.Middleware
+	integrity  *integrity.Service // Database integrity service
 }
 
 // debugLog logs a message only if debug mode is enabled in config
@@ -55,6 +57,14 @@ func New(cfg *config.Config, store *storage.Storage) *Server {
 	// Create auth middleware
 	authMiddle := auth.NewMiddleware(cfg)
 
+	// Initialize integrity service
+	integrityService, err := integrity.NewService(store.GetDBService(), cfg, log.Default())
+	if err != nil {
+		log.Printf("Warning: Failed to initialize integrity service: %v", err)
+		// Continue without integrity service - it's optional
+		integrityService = nil
+	}
+
 	// Create server instance
 	server := &Server{
 		echo:       e,
@@ -62,6 +72,7 @@ func New(cfg *config.Config, store *storage.Storage) *Server {
 		config:     cfg,
 		wsHub:      hub,
 		authMiddle: authMiddle,
+		integrity:  integrityService,
 	}
 
 	// Start WebSocket hub in background
@@ -235,6 +246,16 @@ func (s *Server) setupRoutes() {
 	graph.GET("/containers/:id/dependents", s.getContainerDependents, ValidateIDFormat, webHandler.WebAuthMiddleware)
 	graph.GET("/containers/:id/graph", s.getContainerGraph, ValidateIDFormat, webHandler.WebAuthMiddleware)
 
+	// Integrity routes (database health and repair)
+	integrityRoutes := v1.Group("/integrity")
+	integrityRoutes.POST("/scan", s.scanIntegrity, s.authMiddle.RequireAdmin)
+	integrityRoutes.GET("/health", s.getHealth, s.authMiddle.RequireRead)
+	integrityRoutes.GET("/scans/:id", s.getScanReport, ValidateIDFormat, s.authMiddle.RequireRead)
+	integrityRoutes.GET("/scans", s.listScans, s.authMiddle.RequireRead)
+	integrityRoutes.POST("/repair-plans", s.createRepairPlan, s.authMiddle.RequireAdmin)
+	integrityRoutes.POST("/execute", s.executeRepairPlan, s.authMiddle.RequireAdmin)
+	integrityRoutes.GET("/audit", s.getAuditLog, s.authMiddle.RequireAdmin)
+
 	// WebSocket routes (use web auth middleware for session cookie support)
 	ws := v1.Group("/ws")
 	ws.GET("/graph", s.HandleWebSocket, webHandler.WebAuthMiddleware)   // WebSocket connection for graph updates
@@ -343,6 +364,13 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	// Shutdown Echo server
 	if err := s.echo.Shutdown(ctx); err != nil {
 		return fmt.Errorf("error shutting down server: %w", err)
+	}
+
+	// Close integrity service
+	if s.integrity != nil {
+		if err := s.integrity.Close(); err != nil {
+			log.Printf("Warning: error closing integrity service: %v", err)
+		}
 	}
 
 	// Close storage
