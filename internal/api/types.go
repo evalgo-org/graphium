@@ -48,12 +48,21 @@ type PaginatedHostsResponse struct {
 	Hosts  []*models.Host `json:"hosts"`
 }
 
+// BulkResult represents the result of a single bulk operation.
+type BulkResult struct {
+	ID      string `json:"id"`
+	Rev     string `json:"rev,omitempty"`
+	Error   string `json:"error,omitempty"`
+	Reason  string `json:"reason,omitempty"`
+	Success bool   `json:"success"`
+}
+
 // BulkResponse represents a bulk operation response.
 type BulkResponse struct {
-	Total   int             `json:"total"`
-	Success int             `json:"success"`
-	Failed  int             `json:"failed"`
-	Results []db.BulkResult `json:"results"`
+	Total   int          `json:"total"`
+	Success int          `json:"success"`
+	Failed  int          `json:"failed"`
+	Results []BulkResult `json:"results"`
 }
 
 // WebSocketMessage represents a message sent via WebSocket.

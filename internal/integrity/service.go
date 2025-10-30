@@ -1,3 +1,71 @@
+// Package integrity provides database integrity checking, validation, and automated
+// repair capabilities for the Graphium CouchDB database.
+//
+// The integrity service helps maintain data consistency and health by:
+//   - Scanning for duplicate documents with the same semantic ID
+//   - Detecting revision conflicts in CouchDB
+//   - Validating referential integrity between documents
+//   - Checking JSON-LD schema compliance
+//   - Generating repair plans for detected issues
+//   - Executing repairs with configurable risk levels
+//   - Maintaining audit logs of all operations
+//   - Computing database health scores
+//
+// Architecture:
+//
+// The service is organized into several components:
+//   - Scanner: Detects integrity issues across multiple categories
+//   - Repair Planner: Generates repair plans with risk assessment
+//   - Executor: Applies repair operations with dry-run support
+//   - Audit Logger: Tracks all scans, plans, and repairs
+//
+// Issue Types:
+//
+// The service can detect and repair several types of issues:
+//   - Duplicates: Multiple documents with same @id in JSON-LD
+//   - Conflicts: CouchDB revision conflicts
+//   - Broken References: References to non-existent documents
+//   - Schema Violations: Invalid JSON-LD structure
+//
+// Resolution Strategies:
+//
+// Multiple resolution strategies are supported:
+//   - latest-wins: Keep most recently modified document
+//   - oldest-wins: Keep oldest document
+//   - merge: Combine data from duplicates (manual review required)
+//   - manual: Flag for manual resolution
+//
+// Risk Levels:
+//
+// Each repair operation is assigned a risk level:
+//   - low: Safe automated repairs (e.g., delete exact duplicates)
+//   - medium: Generally safe but may need review
+//   - high: Requires careful review before execution
+//   - critical: Manual intervention strongly recommended
+//
+// Example usage:
+//
+//	service, err := integrity.NewService(dbService, config, logger)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	defer service.Close()
+//
+//	// Scan for issues
+//	report, err := service.Scan(ctx, integrity.ScanOptions{
+//	    ScanDuplicates: true,
+//	    ScanConflicts:  true,
+//	})
+//
+//	// Create repair plan
+//	plan, err := service.CreateRepairPlan(
+//	    report.ID,
+//	    integrity.StrategyLatestWins,
+//	    []integrity.RiskLevel{integrity.RiskLow, integrity.RiskMedium},
+//	)
+//
+//	// Execute repairs (dry-run first)
+//	result, err := service.ExecutePlan(ctx, plan)
 package integrity
 
 import (
@@ -13,6 +81,8 @@ import (
 )
 
 // Service provides database integrity checking and repair capabilities.
+// It scans for duplicates, conflicts, and referential integrity issues,
+// then generates and executes repair plans to maintain database health.
 type Service struct {
 	db     *db.CouchDBService
 	config *Config

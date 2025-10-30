@@ -9,23 +9,15 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {
-            "name": "Graphium API Support",
-            "url": "https://github.com/[org]/graphium",
-            "email": "support@graphium.io"
-        },
-        "license": {
-            "name": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
-        },
+        "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/hosts": {
+        "/api/v1/stacks": {
             "get": {
-                "description": "Get a paginated list of hosts with optional filtering by status and datacenter",
+                "description": "List all stacks with optional status and datacenter filters",
                 "consumes": [
                     "application/json"
                 ],
@@ -33,33 +25,19 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Hosts"
+                    "stacks"
                 ],
-                "summary": "List hosts",
+                "summary": "List stacks",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Maximum number of items to return",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 0,
-                        "description": "Number of items to skip",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
                         "type": "string",
-                        "description": "Filter by host status",
+                        "description": "Filter by status",
                         "name": "status",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Filter by datacenter location",
+                        "description": "Filter by datacenter",
                         "name": "datacenter",
                         "in": "query"
                     }
@@ -68,7 +46,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.PaginatedHostsResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.StackResponse"
+                            }
                         }
                     },
                     "500": {
@@ -80,7 +61,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a new host with the provided information. ID will be auto-generated if not provided.",
+                "description": "Deploy a multi-container stack across multiple Docker hosts",
                 "consumes": [
                     "application/json"
                 ],
@@ -88,17 +69,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Hosts"
+                    "stacks"
                 ],
-                "summary": "Create a new host",
+                "summary": "Deploy a new stack",
                 "parameters": [
                     {
-                        "description": "Host object to create",
-                        "name": "host",
+                        "description": "Stack deployment configuration",
+                        "name": "stack",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Host"
+                            "$ref": "#/definitions/api.DeployStackRequest"
                         }
                     }
                 ],
@@ -106,7 +87,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Host"
+                            "$ref": "#/definitions/api.DeploymentResponse"
                         }
                     },
                     "400": {
@@ -124,58 +105,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/hosts/bulk": {
-            "post": {
-                "description": "Create multiple hosts in a single request. Returns success/failure counts and detailed results.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Hosts"
-                ],
-                "summary": "Bulk create hosts",
-                "parameters": [
-                    {
-                        "description": "Array of host objects to create",
-                        "name": "hosts",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Host"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.BulkResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/hosts/{id}": {
+        "/api/v1/stacks/{id}": {
             "get": {
-                "description": "Retrieve detailed information about a specific host",
+                "description": "Get detailed information about a specific stack",
                 "consumes": [
                     "application/json"
                 ],
@@ -183,13 +115,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Hosts"
+                    "stacks"
                 ],
-                "summary": "Get a host by ID",
+                "summary": "Get stack by ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Host ID",
+                        "description": "Stack ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -199,64 +131,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Host"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update an existing host with new information. ID and revision are preserved.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Hosts"
-                ],
-                "summary": "Update a host",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Host ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Updated host object",
-                        "name": "host",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Host"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Host"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
+                            "$ref": "#/definitions/api.StackResponse"
                         }
                     },
                     "404": {
@@ -274,7 +149,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete a host by its ID. This operation broadcasts a WebSocket event.",
+                "description": "Remove a stack and all its containers",
                 "consumes": [
                     "application/json"
                 ],
@@ -282,29 +157,33 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Hosts"
+                    "stacks"
                 ],
-                "summary": "Delete a host",
+                "summary": "Remove stack",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Host ID",
+                        "description": "Stack ID",
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Remove volumes",
+                        "name": "removeVolumes",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "404": {
@@ -322,9 +201,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/stats": {
+        "/api/v1/stacks/{id}/deployment": {
             "get": {
-                "description": "Get overall system statistics including container and host counts",
+                "description": "Get detailed deployment information including container placements",
                 "consumes": [
                     "application/json"
                 ],
@@ -332,59 +211,29 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Statistics"
+                    "stacks"
                 ],
-                "summary": "Get overall statistics",
-                "responses": {
-                    "200": {
-                        "description": "Statistics with container and host information",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/stats/containers/count": {
-            "get": {
-                "description": "Get the count of containers with optional filters",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Statistics"
-                ],
-                "summary": "Get container count",
+                "summary": "Get stack deployment",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Filter by container status",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by host",
-                        "name": "host",
-                        "in": "query"
+                        "description": "Stack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Container count with applied filters",
+                        "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/api.DeploymentResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
                         }
                     },
                     "500": {
@@ -396,9 +245,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/stats/distribution": {
-            "get": {
-                "description": "Get the distribution of containers across hosts with statistics",
+        "/api/v1/stacks/{id}/stop": {
+            "post": {
+                "description": "Stop all containers in a stack",
                 "consumes": [
                     "application/json"
                 ],
@@ -406,59 +255,32 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Statistics"
+                    "stacks"
                 ],
-                "summary": "Get host container distribution",
-                "responses": {
-                    "200": {
-                        "description": "Container distribution with min, max, and average containers per host",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/stats/hosts/count": {
-            "get": {
-                "description": "Get the count of hosts with optional filters",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Statistics"
-                ],
-                "summary": "Get host count",
+                "summary": "Stop stack",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Filter by host status",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by datacenter location",
-                        "name": "datacenter",
-                        "in": "query"
+                        "description": "Stack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Host count with applied filters",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": true
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
                         }
                     },
                     "500": {
@@ -1017,6 +839,84 @@ const docTemplate = `{
                 }
             }
         },
+        "/containers/{id}/logs": {
+            "get": {
+                "description": "Get logs from a container via the agent's Docker socket",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "containers"
+                ],
+                "summary": "Get container logs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Container ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 100,
+                        "description": "Number of lines",
+                        "name": "lines",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Stream logs",
+                        "name": "follow",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Include timestamps",
+                        "name": "timestamps",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "\"100\"",
+                        "description": "Lines from end",
+                        "name": "tail",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Container logs",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/graph": {
             "get": {
                 "description": "Get graph visualization data with nodes and edges",
@@ -1105,6 +1005,453 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/hosts": {
+            "get": {
+                "description": "Get a paginated list of hosts with optional filtering by status and datacenter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hosts"
+                ],
+                "summary": "List hosts",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Maximum number of items to return",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Number of items to skip",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by host status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by datacenter location",
+                        "name": "datacenter",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.PaginatedHostsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new host with the provided information. ID will be auto-generated if not provided.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hosts"
+                ],
+                "summary": "Create a new host",
+                "parameters": [
+                    {
+                        "description": "Host object to create",
+                        "name": "host",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Host"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Host"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/hosts/bulk": {
+            "post": {
+                "description": "Create multiple hosts in a single request. Returns success/failure counts and detailed results.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hosts"
+                ],
+                "summary": "Bulk create hosts",
+                "parameters": [
+                    {
+                        "description": "Array of host objects to create",
+                        "name": "hosts",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Host"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.BulkResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/hosts/{id}": {
+            "get": {
+                "description": "Retrieve detailed information about a specific host",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hosts"
+                ],
+                "summary": "Get a host by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Host ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Host"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an existing host with new information. ID and revision are preserved.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hosts"
+                ],
+                "summary": "Update a host",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Host ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated host object",
+                        "name": "host",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Host"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Host"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a host by its ID. This operation broadcasts a WebSocket event.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hosts"
+                ],
+                "summary": "Delete a host",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Host ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats": {
+            "get": {
+                "description": "Get overall system statistics including container and host counts",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Statistics"
+                ],
+                "summary": "Get overall statistics",
+                "responses": {
+                    "200": {
+                        "description": "Statistics with container and host information",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/containers/count": {
+            "get": {
+                "description": "Get the count of containers with optional filters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Statistics"
+                ],
+                "summary": "Get container count",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by container status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by host",
+                        "name": "host",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Container count with applied filters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/distribution": {
+            "get": {
+                "description": "Get the distribution of containers across hosts with statistics",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Statistics"
+                ],
+                "summary": "Get host container distribution",
+                "responses": {
+                    "200": {
+                        "description": "Container distribution with min, max, and average containers per host",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/hosts/count": {
+            "get": {
+                "description": "Get the count of hosts with optional filters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Statistics"
+                ],
+                "summary": "Get host count",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by host status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by datacenter location",
+                        "name": "datacenter",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Host count with applied filters",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1596,7 +1943,7 @@ const docTemplate = `{
                 "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/db.BulkResult"
+                        "$ref": "#/definitions/api.BulkResult"
                     }
                 },
                 "success": {
@@ -1604,6 +1951,26 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.BulkResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "rev": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1620,6 +1987,85 @@ const docTemplate = `{
                 "new_password": {
                     "type": "string",
                     "minLength": 8
+                }
+            }
+        },
+        "api.DeployStackRequest": {
+            "type": "object",
+            "required": [
+                "definitionPath",
+                "name",
+                "placementStrategy"
+            ],
+            "properties": {
+                "datacenter": {
+                    "type": "string"
+                },
+                "definitionPath": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "hostConstraints": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.HostConstraint"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "networkMode": {
+                    "type": "string",
+                    "enum": [
+                        "host-port",
+                        "overlay"
+                    ]
+                },
+                "placementStrategy": {
+                    "type": "string",
+                    "enum": [
+                        "auto",
+                        "manual",
+                        "spread",
+                        "datacenter"
+                    ]
+                },
+                "targetHosts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "api.DeploymentResponse": {
+            "type": "object",
+            "properties": {
+                "completedAt": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "networkConfig": {
+                    "$ref": "#/definitions/models.NetworkConfig"
+                },
+                "placements": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/models.ContainerPlacement"
+                    }
+                },
+                "stackId": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },
@@ -1869,6 +2315,56 @@ const docTemplate = `{
                 }
             }
         },
+        "api.StackResponse": {
+            "type": "object",
+            "properties": {
+                "containers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "datacenter": {
+                    "type": "string"
+                },
+                "definitionPath": {
+                    "type": "string"
+                },
+                "deployedAt": {
+                    "type": "string"
+                },
+                "deployment": {
+                    "$ref": "#/definitions/models.DeploymentConfig"
+                },
+                "deploymentId": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "api.UpdateUserRequest": {
             "type": "object",
             "properties": {
@@ -1920,31 +2416,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "db.BulkResult": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "description": "Error type (failure)",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "Document ID",
-                    "type": "string"
-                },
-                "ok": {
-                    "description": "Success indicator",
-                    "type": "boolean"
-                },
-                "reason": {
-                    "description": "Error description (failure)",
-                    "type": "string"
-                },
-                "rev": {
-                    "description": "New revision (success)",
                     "type": "string"
                 }
             }
@@ -2004,6 +2475,66 @@ const docTemplate = `{
                 }
             }
         },
+        "models.ContainerPlacement": {
+            "type": "object",
+            "properties": {
+                "containerId": {
+                    "description": "ContainerID is the Docker container ID",
+                    "type": "string"
+                },
+                "containerName": {
+                    "description": "ContainerName is the container name",
+                    "type": "string"
+                },
+                "hostId": {
+                    "description": "HostID is the host where the container is running",
+                    "type": "string"
+                },
+                "ipAddress": {
+                    "description": "IPAddress is the host IP address",
+                    "type": "string"
+                },
+                "ports": {
+                    "description": "Ports maps container ports to exposed host ports",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "startedAt": {
+                    "description": "StartedAt is when the container started",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the container status",
+                    "type": "string"
+                }
+            }
+        },
+        "models.DeploymentConfig": {
+            "type": "object",
+            "properties": {
+                "hostConstraints": {
+                    "description": "HostConstraints define placement rules per container",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.HostConstraint"
+                    }
+                },
+                "mode": {
+                    "description": "Mode is the deployment mode: \"single-host\" or \"multi-host\"",
+                    "type": "string"
+                },
+                "networkMode": {
+                    "description": "NetworkMode defines cross-host networking\nValues: \"host-port\" (exposed ports), \"overlay\" (Docker overlay network)",
+                    "type": "string"
+                },
+                "placementStrategy": {
+                    "description": "PlacementStrategy defines how containers are placed on hosts\nValues: \"auto\", \"manual\", \"datacenter\", \"spread\"",
+                    "type": "string"
+                }
+            }
+        },
         "models.Host": {
             "type": "object",
             "properties": {
@@ -2049,6 +2580,68 @@ const docTemplate = `{
                 }
             }
         },
+        "models.HostConstraint": {
+            "type": "object",
+            "properties": {
+                "containerName": {
+                    "description": "ContainerName is the name of the container to constrain",
+                    "type": "string"
+                },
+                "labels": {
+                    "description": "Labels are custom labels that the host must have",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "minCpu": {
+                    "description": "MinCPU is the minimum CPU cores required",
+                    "type": "integer"
+                },
+                "minMemory": {
+                    "description": "MinMemory is the minimum memory in bytes required",
+                    "type": "integer"
+                },
+                "requiredDatacenter": {
+                    "description": "RequiredDatacenter requires the container to be in this datacenter",
+                    "type": "string"
+                },
+                "targetHost": {
+                    "description": "TargetHostID is the specific host ID (for manual placement)",
+                    "type": "string"
+                }
+            }
+        },
+        "models.NetworkConfig": {
+            "type": "object",
+            "properties": {
+                "environmentVariables": {
+                    "description": "EnvironmentVariables contains injected environment variables for cross-host connections",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "mode": {
+                    "description": "Mode is the networking mode (host-port or overlay)",
+                    "type": "string"
+                },
+                "overlayNetworkId": {
+                    "description": "OverlayNetworkID is the Docker overlay network ID (if mode is overlay)",
+                    "type": "string"
+                },
+                "serviceEndpoints": {
+                    "description": "ServiceEndpoints maps container names to their connection endpoints\nFormat: {\"postgres\": \"192.168.1.10:5432\", \"redis\": \"192.168.1.11:6379\"}",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "models.Port": {
             "type": "object",
             "properties": {
@@ -2081,43 +2674,17 @@ const docTemplate = `{
                 "RoleAgent"
             ]
         }
-    },
-    "tags": [
-        {
-            "description": "Operations related to container management",
-            "name": "Containers"
-        },
-        {
-            "description": "Operations related to host management",
-            "name": "Hosts"
-        },
-        {
-            "description": "Graph query and traversal operations",
-            "name": "Queries"
-        },
-        {
-            "description": "Statistics and metrics endpoints",
-            "name": "Statistics"
-        },
-        {
-            "description": "Graph visualization endpoints",
-            "name": "Graph"
-        },
-        {
-            "description": "WebSocket endpoints for real-time updates",
-            "name": "WebSocket"
-        }
-    ]
+    }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "0.1.0",
-	Host:             "localhost:8095",
-	BasePath:         "/api/v1",
-	Schemes:          []string{"http", "https"},
-	Title:            "Graphium API",
-	Description:      "Graphium is a semantic container orchestration platform that uses knowledge graphs and JSON-LD to manage multi-host Docker infrastructure with intelligent querying, graph traversal, and real-time insights.\n\n## Features\n- JSON-LD/Schema.org semantic models\n- REST API for container and host management\n- Graph visualization and traversal\n- Real-time Docker agent integration\n- WebSocket support for live updates\n\n## Authentication\nCurrently, the API does not require authentication. Authentication will be added in Phase 12.",
+	Version:          "",
+	Host:             "",
+	BasePath:         "",
+	Schemes:          []string{},
+	Title:            "",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

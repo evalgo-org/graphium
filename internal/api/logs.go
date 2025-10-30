@@ -34,9 +34,9 @@ type ContainerLogsRequest struct {
 // @Param timestamps query bool false "Include timestamps" default(true)
 // @Param tail query string false "Lines from end" default("100")
 // @Success 200 {string} string "Container logs"
-// @Failure 400 {object} HTTPError
-// @Failure 404 {object} HTTPError
-// @Failure 500 {object} HTTPError
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /containers/{id}/logs [get]
 func (s *Server) getContainerLogs(c echo.Context) error {
 	containerID := c.Param("id")

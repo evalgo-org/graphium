@@ -1,3 +1,84 @@
+// Package orchestration provides distributed multi-container stack deployment
+// and management across multiple Docker hosts.
+//
+// The orchestration service enables deployment of multi-container applications
+// (stacks) across a distributed infrastructure with intelligent placement strategies.
+//
+// Features:
+//   - Deploy multi-container stacks from YAML definitions
+//   - Intelligent container placement across hosts
+//   - Multiple placement strategies (auto, manual, spread, datacenter)
+//   - Resource-aware scheduling
+//   - Stack lifecycle management (deploy, start, stop, remove)
+//   - Real-time deployment status tracking
+//   - Rollback support on deployment failures
+//
+// Placement Strategies:
+//
+// The orchestrator supports multiple placement strategies:
+//
+//	auto: Automatic placement based on resource availability
+//	  - Considers CPU, memory, and current container count
+//	  - Selects least loaded host for each container
+//	  - Best for general-purpose deployments
+//
+//	manual: Explicit host assignment per container
+//	  - User specifies exact host for each container
+//	  - Provides full control over placement
+//	  - Best for specific deployment requirements
+//
+//	spread: Even distribution across available hosts
+//	  - Balances containers evenly across infrastructure
+//	  - Maximizes high availability
+//	  - Best for resilient deployments
+//
+//	datacenter: Keep all containers in same datacenter
+//	  - Minimizes inter-container latency
+//	  - Optimizes for data locality
+//	  - Best for latency-sensitive applications
+//
+// Deployment Process:
+//
+//  1. Parse stack definition (YAML)
+//  2. Validate container specifications
+//  3. Execute placement strategy to assign hosts
+//  4. Create Docker containers on assigned hosts
+//  5. Track deployment status and container IDs
+//  6. Handle failures with automatic rollback
+//
+// Stack Definition Format:
+//
+//	name: my-app
+//	placement: auto
+//	containers:
+//	  - name: web
+//	    image: nginx:latest
+//	    ports:
+//	      - "80:80"
+//	  - name: api
+//	    image: myapp/api:latest
+//	    environment:
+//	      - DATABASE_URL=postgres://...
+//
+// Example usage:
+//
+//	orchestrator := orchestration.NewDistributedStackOrchestrator(storage)
+//
+//	// Deploy a stack
+//	deployment, err := orchestrator.DeployStack(ctx, stackDef, hosts)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+//	// Monitor deployment status
+//	fmt.Printf("Deployment: %s\n", deployment.Status)
+//	for _, container := range deployment.Containers {
+//	    fmt.Printf("  %s on %s: %s\n",
+//	        container.Name, container.HostID, container.Status)
+//	}
+//
+//	// Stop the stack
+//	err = orchestrator.StopStack(ctx, deployment.StackID)
 package orchestration
 
 import (
@@ -12,7 +93,8 @@ import (
 	"eve.evalgo.org/containers/stacks"
 )
 
-// DistributedStackOrchestrator orchestrates distributed stack deployments.
+// DistributedStackOrchestrator orchestrates distributed stack deployments
+// across multiple Docker hosts with intelligent placement strategies.
 type DistributedStackOrchestrator struct {
 	clientManager *DockerClientManager
 	storage       StackStorage
@@ -41,6 +123,12 @@ func NewDistributedStackOrchestrator(storage StackStorage) *DistributedStackOrch
 // RegisterHost registers a Docker host for deployment.
 func (o *DistributedStackOrchestrator) RegisterHost(host *models.Host, dockerSocket string) error {
 	return o.clientManager.AddHost(host.ID, dockerSocket)
+}
+
+// RegisterHostWithID registers a Docker host using a specific host ID.
+// This is useful when you need to ensure the ID used matches exactly with what's stored in placements.
+func (o *DistributedStackOrchestrator) RegisterHostWithID(hostID string, dockerSocket string) error {
+	return o.clientManager.AddHost(hostID, dockerSocket)
 }
 
 // DeployStack deploys a stack across multiple hosts.

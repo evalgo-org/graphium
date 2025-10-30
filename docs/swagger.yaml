@@ -1,4 +1,3 @@
-basePath: /api/v1
 definitions:
   api.APIError:
     properties:
@@ -22,12 +21,25 @@ definitions:
         type: integer
       results:
         items:
-          $ref: '#/definitions/db.BulkResult'
+          $ref: '#/definitions/api.BulkResult'
         type: array
       success:
         type: integer
       total:
         type: integer
+    type: object
+  api.BulkResult:
+    properties:
+      error:
+        type: string
+      id:
+        type: string
+      reason:
+        type: string
+      rev:
+        type: string
+      success:
+        type: boolean
     type: object
   api.ChangePasswordRequest:
     properties:
@@ -39,6 +51,60 @@ definitions:
     required:
     - current_password
     - new_password
+    type: object
+  api.DeployStackRequest:
+    properties:
+      datacenter:
+        type: string
+      definitionPath:
+        type: string
+      description:
+        type: string
+      hostConstraints:
+        items:
+          $ref: '#/definitions/models.HostConstraint'
+        type: array
+      name:
+        type: string
+      networkMode:
+        enum:
+        - host-port
+        - overlay
+        type: string
+      placementStrategy:
+        enum:
+        - auto
+        - manual
+        - spread
+        - datacenter
+        type: string
+      targetHosts:
+        items:
+          type: string
+        type: array
+    required:
+    - definitionPath
+    - name
+    - placementStrategy
+    type: object
+  api.DeploymentResponse:
+    properties:
+      completedAt:
+        type: string
+      errorMessage:
+        type: string
+      networkConfig:
+        $ref: '#/definitions/models.NetworkConfig'
+      placements:
+        additionalProperties:
+          $ref: '#/definitions/models.ContainerPlacement'
+        type: object
+      stackId:
+        type: string
+      startedAt:
+        type: string
+      status:
+        type: string
     type: object
   api.ErrorResponse:
     properties:
@@ -205,6 +271,39 @@ definitions:
     - password
     - username
     type: object
+  api.StackResponse:
+    properties:
+      containers:
+        items:
+          type: string
+        type: array
+      createdAt:
+        type: string
+      datacenter:
+        type: string
+      definitionPath:
+        type: string
+      deployedAt:
+        type: string
+      deployment:
+        $ref: '#/definitions/models.DeploymentConfig'
+      deploymentId:
+        type: string
+      description:
+        type: string
+      errorMessage:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      owner:
+        type: string
+      status:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   api.UpdateUserRequest:
     properties:
       email:
@@ -239,24 +338,6 @@ definitions:
       updated_at:
         type: string
       username:
-        type: string
-    type: object
-  db.BulkResult:
-    properties:
-      error:
-        description: Error type (failure)
-        type: string
-      id:
-        description: Document ID
-        type: string
-      ok:
-        description: Success indicator
-        type: boolean
-      reason:
-        description: Error description (failure)
-        type: string
-      rev:
-        description: New revision (success)
         type: string
     type: object
   models.Container:
@@ -301,6 +382,53 @@ definitions:
           etc.)
         type: string
     type: object
+  models.ContainerPlacement:
+    properties:
+      containerId:
+        description: ContainerID is the Docker container ID
+        type: string
+      containerName:
+        description: ContainerName is the container name
+        type: string
+      hostId:
+        description: HostID is the host where the container is running
+        type: string
+      ipAddress:
+        description: IPAddress is the host IP address
+        type: string
+      ports:
+        additionalProperties:
+          type: integer
+        description: Ports maps container ports to exposed host ports
+        type: object
+      startedAt:
+        description: StartedAt is when the container started
+        type: string
+      status:
+        description: Status is the container status
+        type: string
+    type: object
+  models.DeploymentConfig:
+    properties:
+      hostConstraints:
+        description: HostConstraints define placement rules per container
+        items:
+          $ref: '#/definitions/models.HostConstraint'
+        type: array
+      mode:
+        description: 'Mode is the deployment mode: "single-host" or "multi-host"'
+        type: string
+      networkMode:
+        description: |-
+          NetworkMode defines cross-host networking
+          Values: "host-port" (exposed ports), "overlay" (Docker overlay network)
+        type: string
+      placementStrategy:
+        description: |-
+          PlacementStrategy defines how containers are placed on hosts
+          Values: "auto", "manual", "datacenter", "spread"
+        type: string
+    type: object
   models.Host:
     properties:
       '@context':
@@ -334,6 +462,54 @@ definitions:
         description: Status is the host operational status (active, maintenance, offline)
         type: string
     type: object
+  models.HostConstraint:
+    properties:
+      containerName:
+        description: ContainerName is the name of the container to constrain
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        description: Labels are custom labels that the host must have
+        type: object
+      minCpu:
+        description: MinCPU is the minimum CPU cores required
+        type: integer
+      minMemory:
+        description: MinMemory is the minimum memory in bytes required
+        type: integer
+      requiredDatacenter:
+        description: RequiredDatacenter requires the container to be in this datacenter
+        type: string
+      targetHost:
+        description: TargetHostID is the specific host ID (for manual placement)
+        type: string
+    type: object
+  models.NetworkConfig:
+    properties:
+      environmentVariables:
+        additionalProperties:
+          additionalProperties:
+            type: string
+          type: object
+        description: EnvironmentVariables contains injected environment variables
+          for cross-host connections
+        type: object
+      mode:
+        description: Mode is the networking mode (host-port or overlay)
+        type: string
+      overlayNetworkId:
+        description: OverlayNetworkID is the Docker overlay network ID (if mode is
+          overlay)
+        type: string
+      serviceEndpoints:
+        additionalProperties:
+          type: string
+        description: |-
+          ServiceEndpoints maps container names to their connection endpoints
+          Format: {"postgres": "192.168.1.10:5432", "redis": "192.168.1.11:6379"}
+        type: object
+    type: object
   models.Port:
     properties:
       containerPort:
@@ -358,52 +534,20 @@ definitions:
     - RoleUser
     - RoleViewer
     - RoleAgent
-host: localhost:8095
 info:
-  contact:
-    email: support@graphium.io
-    name: Graphium API Support
-    url: https://github.com/[org]/graphium
-  description: |-
-    Graphium is a semantic container orchestration platform that uses knowledge graphs and JSON-LD to manage multi-host Docker infrastructure with intelligent querying, graph traversal, and real-time insights.
-
-    ## Features
-    - JSON-LD/Schema.org semantic models
-    - REST API for container and host management
-    - Graph visualization and traversal
-    - Real-time Docker agent integration
-    - WebSocket support for live updates
-
-    ## Authentication
-    Currently, the API does not require authentication. Authentication will be added in Phase 12.
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-  title: Graphium API
-  version: 0.1.0
+  contact: {}
 paths:
-  /api/v1/hosts:
+  /api/v1/stacks:
     get:
       consumes:
       - application/json
-      description: Get a paginated list of hosts with optional filtering by status
-        and datacenter
+      description: List all stacks with optional status and datacenter filters
       parameters:
-      - default: 10
-        description: Maximum number of items to return
-        in: query
-        name: limit
-        type: integer
-      - default: 0
-        description: Number of items to skip
-        in: query
-        name: offset
-        type: integer
-      - description: Filter by host status
+      - description: Filter by status
         in: query
         name: status
         type: string
-      - description: Filter by datacenter location
+      - description: Filter by datacenter
         in: query
         name: datacenter
         type: string
@@ -413,33 +557,34 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.PaginatedHostsResponse'
+            items:
+              $ref: '#/definitions/api.StackResponse'
+            type: array
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
-      summary: List hosts
+      summary: List stacks
       tags:
-      - Hosts
+      - stacks
     post:
       consumes:
       - application/json
-      description: Create a new host with the provided information. ID will be auto-generated
-        if not provided.
+      description: Deploy a multi-container stack across multiple Docker hosts
       parameters:
-      - description: Host object to create
+      - description: Stack deployment configuration
         in: body
-        name: host
+        name: stack
         required: true
         schema:
-          $ref: '#/definitions/models.Host'
+          $ref: '#/definitions/api.DeployStackRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.Host'
+            $ref: '#/definitions/api.DeploymentResponse'
         "400":
           description: Bad Request
           schema:
@@ -448,32 +593,34 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
-      summary: Create a new host
+      summary: Deploy a new stack
       tags:
-      - Hosts
-  /api/v1/hosts/{id}:
+      - stacks
+  /api/v1/stacks/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete a host by its ID. This operation broadcasts a WebSocket
-        event.
+      description: Remove a stack and all its containers
       parameters:
-      - description: Host ID
+      - description: Stack ID
         in: path
         name: id
         required: true
         type: string
+      - default: false
+        description: Remove volumes
+        in: query
+        name: removeVolumes
+        type: boolean
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: Not Found
           schema:
@@ -482,15 +629,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
-      summary: Delete a host
+      summary: Remove stack
       tags:
-      - Hosts
+      - stacks
     get:
       consumes:
       - application/json
-      description: Retrieve detailed information about a specific host
+      description: Get detailed information about a specific stack
       parameters:
-      - description: Host ID
+      - description: Stack ID
         in: path
         name: id
         required: true
@@ -501,46 +648,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Host'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
-      summary: Get a host by ID
-      tags:
-      - Hosts
-    put:
-      consumes:
-      - application/json
-      description: Update an existing host with new information. ID and revision are
-        preserved.
-      parameters:
-      - description: Host ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Updated host object
-        in: body
-        name: host
-        required: true
-        schema:
-          $ref: '#/definitions/models.Host'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Host'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
+            $ref: '#/definitions/api.StackResponse'
         "404":
           description: Not Found
           schema:
@@ -549,141 +657,69 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
-      summary: Update a host
+      summary: Get stack by ID
       tags:
-      - Hosts
-  /api/v1/hosts/bulk:
+      - stacks
+  /api/v1/stacks/{id}/deployment:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed deployment information including container placements
+      parameters:
+      - description: Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.DeploymentResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get stack deployment
+      tags:
+      - stacks
+  /api/v1/stacks/{id}/stop:
     post:
       consumes:
       - application/json
-      description: Create multiple hosts in a single request. Returns success/failure
-        counts and detailed results.
+      description: Stop all containers in a stack
       parameters:
-      - description: Array of host objects to create
-        in: body
-        name: hosts
+      - description: Stack ID
+        in: path
+        name: id
         required: true
-        schema:
-          items:
-            $ref: '#/definitions/models.Host'
-          type: array
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.BulkResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
-      summary: Bulk create hosts
-      tags:
-      - Hosts
-  /api/v1/stats:
-    get:
-      consumes:
-      - application/json
-      description: Get overall system statistics including container and host counts
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Statistics with container and host information
-          schema:
-            additionalProperties: true
+            additionalProperties:
+              type: string
             type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
-      summary: Get overall statistics
+      summary: Stop stack
       tags:
-      - Statistics
-  /api/v1/stats/containers/count:
-    get:
-      consumes:
-      - application/json
-      description: Get the count of containers with optional filters
-      parameters:
-      - description: Filter by container status
-        in: query
-        name: status
-        type: string
-      - description: Filter by host
-        in: query
-        name: host
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Container count with applied filters
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
-      summary: Get container count
-      tags:
-      - Statistics
-  /api/v1/stats/distribution:
-    get:
-      consumes:
-      - application/json
-      description: Get the distribution of containers across hosts with statistics
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Container distribution with min, max, and average containers
-            per host
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
-      summary: Get host container distribution
-      tags:
-      - Statistics
-  /api/v1/stats/hosts/count:
-    get:
-      consumes:
-      - application/json
-      description: Get the count of hosts with optional filters
-      parameters:
-      - description: Filter by host status
-        in: query
-        name: status
-        type: string
-      - description: Filter by datacenter location
-        in: query
-        name: datacenter
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Host count with applied filters
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
-      summary: Get host count
-      tags:
-      - Statistics
+      - stacks
   /auth/login:
     post:
       consumes:
@@ -1010,6 +1046,59 @@ paths:
       summary: Update a container
       tags:
       - Containers
+  /containers/{id}/logs:
+    get:
+      consumes:
+      - application/json
+      description: Get logs from a container via the agent's Docker socket
+      parameters:
+      - description: Container ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 100
+        description: Number of lines
+        in: query
+        name: lines
+        type: integer
+      - default: false
+        description: Stream logs
+        in: query
+        name: follow
+        type: boolean
+      - default: true
+        description: Include timestamps
+        in: query
+        name: timestamps
+        type: boolean
+      - default: '"100"'
+        description: Lines from end
+        in: query
+        name: tail
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Container logs
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get container logs
+      tags:
+      - containers
   /containers/bulk:
     post:
       consumes:
@@ -1110,6 +1199,308 @@ paths:
       summary: Get graph stats
       tags:
       - Graph
+  /hosts:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of hosts with optional filtering by status
+        and datacenter
+      parameters:
+      - default: 10
+        description: Maximum number of items to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of items to skip
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by host status
+        in: query
+        name: status
+        type: string
+      - description: Filter by datacenter location
+        in: query
+        name: datacenter
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.PaginatedHostsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: List hosts
+      tags:
+      - Hosts
+    post:
+      consumes:
+      - application/json
+      description: Create a new host with the provided information. ID will be auto-generated
+        if not provided.
+      parameters:
+      - description: Host object to create
+        in: body
+        name: host
+        required: true
+        schema:
+          $ref: '#/definitions/models.Host'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Host'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create a new host
+      tags:
+      - Hosts
+  /hosts/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a host by its ID. This operation broadcasts a WebSocket
+        event.
+      parameters:
+      - description: Host ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Delete a host
+      tags:
+      - Hosts
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a specific host
+      parameters:
+      - description: Host ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Host'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get a host by ID
+      tags:
+      - Hosts
+    put:
+      consumes:
+      - application/json
+      description: Update an existing host with new information. ID and revision are
+        preserved.
+      parameters:
+      - description: Host ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated host object
+        in: body
+        name: host
+        required: true
+        schema:
+          $ref: '#/definitions/models.Host'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Host'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Update a host
+      tags:
+      - Hosts
+  /hosts/bulk:
+    post:
+      consumes:
+      - application/json
+      description: Create multiple hosts in a single request. Returns success/failure
+        counts and detailed results.
+      parameters:
+      - description: Array of host objects to create
+        in: body
+        name: hosts
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.Host'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.BulkResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Bulk create hosts
+      tags:
+      - Hosts
+  /stats:
+    get:
+      consumes:
+      - application/json
+      description: Get overall system statistics including container and host counts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Statistics with container and host information
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get overall statistics
+      tags:
+      - Statistics
+  /stats/containers/count:
+    get:
+      consumes:
+      - application/json
+      description: Get the count of containers with optional filters
+      parameters:
+      - description: Filter by container status
+        in: query
+        name: status
+        type: string
+      - description: Filter by host
+        in: query
+        name: host
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Container count with applied filters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get container count
+      tags:
+      - Statistics
+  /stats/distribution:
+    get:
+      consumes:
+      - application/json
+      description: Get the distribution of containers across hosts with statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Container distribution with min, max, and average containers
+            per host
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get host container distribution
+      tags:
+      - Statistics
+  /stats/hosts/count:
+    get:
+      consumes:
+      - application/json
+      description: Get the count of hosts with optional filters
+      parameters:
+      - description: Filter by host status
+        in: query
+        name: status
+        type: string
+      - description: Filter by datacenter location
+        in: query
+        name: datacenter
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Host count with applied filters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get host count
+      tags:
+      - Statistics
   /users:
     get:
       consumes:
@@ -1394,20 +1785,4 @@ paths:
       summary: Get WebSocket statistics
       tags:
       - websocket
-schemes:
-- http
-- https
 swagger: "2.0"
-tags:
-- description: Operations related to container management
-  name: Containers
-- description: Operations related to host management
-  name: Hosts
-- description: Graph query and traversal operations
-  name: Queries
-- description: Statistics and metrics endpoints
-  name: Statistics
-- description: Graph visualization endpoints
-  name: Graph
-- description: WebSocket endpoints for real-time updates
-  name: WebSocket

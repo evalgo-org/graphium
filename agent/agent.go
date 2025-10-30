@@ -1,3 +1,50 @@
+// Package agent provides Docker container discovery and automatic synchronization
+// with the Graphium API server.
+//
+// The agent runs on each Docker host and performs the following tasks:
+//   - Discovers all running and stopped containers via Docker API
+//   - Registers the host with the Graphium API server
+//   - Monitors Docker events in real-time (start, stop, create, destroy, etc.)
+//   - Automatically syncs container state changes to the API
+//   - Implements rate limiting to respect API server constraints
+//   - Handles authentication via Bearer tokens
+//
+// The agent uses a two-phase sync strategy:
+//  1. Initial full sync on startup to discover all existing containers
+//  2. Event-driven updates for real-time container lifecycle changes
+//  3. Periodic full sync (every 30 seconds) to catch any missed events
+//
+// Rate Limiting:
+//
+// To prevent overwhelming the API server, the agent implements 100ms delays
+// between container sync operations during bulk operations. This spreads the
+// request load over time and stays well within the server's 100 req/s limit.
+//
+// Error Handling:
+//
+// The agent uses a smart sync logic that handles various HTTP response codes:
+//   - 200 OK: Container exists, perform UPDATE (PUT)
+//   - 404 Not Found: Container doesn't exist, perform CREATE (POST)
+//   - 401 Unauthorized: Auth issue, perform CREATE (POST) to retry
+//   - Other errors: Logged and retried on next sync cycle
+//
+// Example usage:
+//
+//	agent, err := agent.NewAgent(
+//	    "http://localhost:8095",
+//	    "host-01",
+//	    "us-east",
+//	    "/var/run/docker.sock",
+//	    "agent-token",
+//	)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+//	ctx := context.Background()
+//	if err := agent.Start(ctx); err != nil {
+//	    log.Fatal(err)
+//	}
 package agent
 
 import (
@@ -22,6 +69,9 @@ import (
 )
 
 // Agent manages Docker container discovery and synchronization with the API server.
+// It monitors the Docker daemon for container events and automatically syncs changes
+// to the Graphium API, providing real-time visibility into container state across
+// distributed hosts.
 type Agent struct {
 	apiURL       string
 	hostID       string
@@ -188,7 +238,23 @@ func (a *Agent) syncContainers(ctx context.Context) error {
 	return nil
 }
 
-// syncContainer syncs a single container with the API.
+// syncContainer syncs a single container with the API server.
+//
+// This function implements a smart CREATE-or-UPDATE strategy:
+//  1. First checks if container exists via GET request
+//  2. If GET returns 200 OK: container exists, use PUT to UPDATE
+//  3. If GET returns any other status (404, 401, etc.): use POST to CREATE
+//
+// This approach handles various scenarios:
+//  - New containers that don't exist yet (404 → POST)
+//  - Authentication issues on GET (401 → POST, which may succeed)
+//  - Existing containers that need updates (200 → PUT)
+//
+// The function also handles the case where a container no longer exists in
+// Docker (IsErrNotFound), which is normal when containers are removed.
+//
+// Rate limiting is handled by the caller (syncContainers) which adds delays
+// between calls to this function.
 func (a *Agent) syncContainer(ctx context.Context, containerID string) error {
 	// Inspect container for full details
 	inspect, err := a.docker.ContainerInspect(ctx, containerID)
