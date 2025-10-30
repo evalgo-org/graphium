@@ -650,6 +650,85 @@ func (h *Handler) DeleteContainer(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, "/web/containers")
 }
 
+// BulkDeleteContainers handles bulk deletion of multiple containers
+func (h *Handler) BulkDeleteContainers(c echo.Context) error {
+	// Parse request body
+	var req struct {
+		ContainerIDs []string `json:"container_ids"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "Invalid request body",
+		})
+	}
+
+	if len(req.ContainerIDs) == 0 {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "No container IDs provided",
+		})
+	}
+
+	deletedCount := 0
+	failedCount := 0
+	var errors []string
+
+	// Delete each container
+	for _, id := range req.ContainerIDs {
+		// Get container info
+		container, err := h.storage.GetContainer(id)
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("%s: not found", id[:12]))
+			failedCount++
+			continue
+		}
+
+		// Try to remove from Docker
+		dockerDeleteErr := h.removeContainerFromDocker(id)
+		if dockerDeleteErr != nil {
+			h.debugLog("Warning: Failed to remove container %s from Docker: %v\n", id[:12], dockerDeleteErr)
+		}
+
+		// Delete from database
+		if err := h.storage.DeleteContainer(id, container.Rev); err != nil {
+			errors = append(errors, fmt.Sprintf("%s: %v", id[:12], err))
+			failedCount++
+			continue
+		}
+
+		// Broadcast WebSocket event
+		if h.broadcaster != nil {
+			h.broadcaster.BroadcastGraphEvent("container_removed", map[string]string{"id": id})
+		}
+
+		// Only add to ignore list if Docker deletion failed
+		if dockerDeleteErr != nil {
+			if err := h.storage.AddToIgnoreList(id, container.HostedOn, "user-deleted via bulk delete (Docker removal failed)", "system"); err != nil {
+				fmt.Printf("Warning: Failed to add container %s to ignore list: %v\n", id, err)
+			}
+		}
+
+		deletedCount++
+	}
+
+	// Return result
+	success := failedCount == 0
+	response := map[string]interface{}{
+		"success":       success,
+		"deleted_count": deletedCount,
+		"failed_count":  failedCount,
+	}
+
+	if len(errors) > 0 {
+		response["error"] = fmt.Sprintf("Failed to delete %d container(s)", failedCount)
+		response["details"] = errors
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
 // DeleteHost handles host deletion.
 func (h *Handler) DeleteHost(c echo.Context) error {
 	id := c.Param("id")

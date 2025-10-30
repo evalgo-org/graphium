@@ -264,6 +264,7 @@ func (s *Server) setupRoutes() {
 	webGroup.GET("/containers/:id", webHandler.ContainerDetail)
 	webGroup.GET("/containers/:id/logs", webHandler.ContainerLogs)
 	webGroup.POST("/containers/:id/delete", webHandler.DeleteContainer)
+	webGroup.POST("/containers/bulk/delete", webHandler.BulkDeleteContainers)
 	webGroup.GET("/hosts", webHandler.HostsList)
 	webGroup.GET("/hosts/table", webHandler.HostsTable)
 	webGroup.GET("/hosts/new", webHandler.CreateHostForm)

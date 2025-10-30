@@ -383,9 +383,122 @@ templ ContainersListWithUser(containers []*models.Container, stackMap map[string
 			</div>
 		</div>
 
+		<!-- Bulk actions toolbar -->
+		<div id="bulk-actions" class="bulk-actions" style="display: none; margin: 20px; padding: 15px; background: #f5f5f5; border-radius: 4px; display: flex; align-items: center; gap: 10px;">
+			<span id="selected-count" class="selected-count" style="font-weight: bold;">0 selected</span>
+			<button onclick="bulkDeleteContainers()" class="btn btn-danger" style="background: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Delete Selected</button>
+			<button onclick="clearSelection()" class="btn btn-secondary" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Clear Selection</button>
+		</div>
+
 		<div id="containers-table">
 			@ContainersTableWithPagination(containers, stackMap, pagination, "")
 		</div>
+
+		<script>
+			// Multi-select functionality for containers
+			function toggleSelectAll(checkbox) {
+				const checkboxes = document.querySelectorAll('.container-checkbox');
+				checkboxes.forEach(cb => {
+					cb.checked = checkbox.checked;
+				});
+				updateBulkActions();
+			}
+
+			function updateBulkActions() {
+				const checkboxes = document.querySelectorAll('.container-checkbox:checked');
+				const bulkActions = document.getElementById('bulk-actions');
+				const selectedCount = document.getElementById('selected-count');
+
+				if (checkboxes.length > 0) {
+					bulkActions.style.display = 'flex';
+					selectedCount.textContent = `${checkboxes.length} selected`;
+				} else {
+					bulkActions.style.display = 'none';
+				}
+
+				// Update "select all" checkbox state
+				const allCheckboxes = document.querySelectorAll('.container-checkbox');
+				const selectAllCheckbox = document.getElementById('select-all');
+				if (selectAllCheckbox) {
+					selectAllCheckbox.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+				}
+			}
+
+			function clearSelection() {
+				const checkboxes = document.querySelectorAll('.container-checkbox');
+				checkboxes.forEach(cb => {
+					cb.checked = false;
+				});
+				const selectAllCheckbox = document.getElementById('select-all');
+				if (selectAllCheckbox) {
+					selectAllCheckbox.checked = false;
+				}
+				updateBulkActions();
+			}
+
+			function getSelectedContainerIds() {
+				const checkboxes = document.querySelectorAll('.container-checkbox:checked');
+				return Array.from(checkboxes).map(cb => cb.dataset.containerId);
+			}
+
+			function bulkDeleteContainers() {
+				const containerIds = getSelectedContainerIds();
+				if (containerIds.length === 0) {
+					return;
+				}
+
+				const count = containerIds.length;
+				const message = `Are you sure you want to delete ${count} container${count > 1 ? 's' : ''}?\n\nThis will:\n- Remove the container(s) from Docker\n- Remove the container(s) from the database\n\nThis action cannot be undone.`;
+
+				if (!confirm(message)) {
+					return;
+				}
+
+				// Disable buttons to prevent double-click
+				const deleteBtn = event.target;
+				deleteBtn.disabled = true;
+				deleteBtn.textContent = 'Deleting...';
+
+				// Send bulk delete request
+				fetch('/web/containers/bulk/delete', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ container_ids: containerIds }),
+					credentials: 'same-origin'
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.success) {
+						// Show success message
+						alert(`Successfully deleted ${data.deleted_count} container(s)`);
+
+						// Reload the page to refresh the container list
+						window.location.reload();
+					} else {
+						// Show error message
+						alert(`Error: ${data.error}\n\nDeleted: ${data.deleted_count || 0}\nFailed: ${data.failed_count || 0}`);
+
+						// Reload anyway to show updated state
+						window.location.reload();
+					}
+				})
+				.catch(error => {
+					alert(`Failed to delete containers: ${error.message}`);
+					deleteBtn.disabled = false;
+					deleteBtn.textContent = 'Delete Selected';
+				});
+			}
+
+			// Restore checkbox states after HTMX updates
+			document.body.addEventListener('htmx:afterSwap', function(event) {
+				if (event.detail.target.id === 'containers-table') {
+					// Clear selections after table refresh
+					clearSelection();
+				}
+			});
+		</script>
 	}
 }
 
@@ -395,6 +508,9 @@ templ ContainersTable(containers []*models.Container, stackMap map[string]*model
 		<table class="data-table">
 			<thead>
 				<tr>
+					<th style="width: 40px;">
+						<input type="checkbox" id="select-all" onclick="toggleSelectAll(this)" title="Select all"/>
+					</th>
 					<th>Name</th>
 					<th>Image</th>
 					<th>Status</th>
@@ -407,11 +523,20 @@ templ ContainersTable(containers []*models.Container, stackMap map[string]*model
 			<tbody>
 				if len(containers) == 0 {
 					<tr>
-						<td colspan="7" class="no-data">No containers found</td>
+						<td colspan="8" class="no-data">No containers found</td>
 					</tr>
 				}
 				for _, container := range containers {
 					<tr>
+						<td>
+							<input
+								type="checkbox"
+								class="container-checkbox"
+								data-container-id={ container.ID }
+								data-container-name={ container.Name }
+								onclick="updateBulkActions()"
+							/>
+						</td>
 						<td>
 							<strong>{ container.Name }</strong>
 							<br/>
