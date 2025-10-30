@@ -9,10 +9,15 @@ Graphium is a **semantic container orchestration platform** that uses knowledge 
 - 🧬 **Semantic Graphs** - JSON-LD native knowledge representation
 - 🔍 **Smart Queries** - Traverse relationships, find dependencies, analyze impact
 - 🌐 **Multi-Host** - Distributed by design with CouchDB backend
-- ⚡ **Real-time** - WebSocket updates for instant visibility
+- ⚡ **Real-time** - WebSocket updates for instant visibility with Docker agent
 - 🎯 **Type-Safe** - Validated JSON-LD at every step
-- 📊 **REST API** - Complete HTTP API with 30+ endpoints
+- 📊 **REST API** - Complete HTTP API with 40+ endpoints
 - 🔐 **Validation** - Built-in JSON-LD schema validation
+- 🐳 **Docker Agent** - Automatic container discovery and synchronization
+- 🎨 **Modern Web UI** - Type-safe Templ templates with HTMX interactivity
+- 📦 **Stack Management** - Deploy multi-container applications across hosts
+- 🏥 **Integrity Service** - Automated health checks and database repair
+- 🔑 **Authentication** - JWT-based auth with role-based access control
 
 ## Implementation Status
 
@@ -53,17 +58,47 @@ Graphium is a **semantic container orchestration platform** that uses knowledge 
 - Task commands for dev workflow
 - CouchDB Docker container management
 
+### ✅ Phase 6: Docker Agent (Complete)
+- Real-time container discovery and monitoring
+- Automatic synchronization with API server
+- Event-driven updates for container lifecycle
+- Rate limiting and error handling
+- **Files**: `agent/agent.go` (444 lines)
+
+### ✅ Phase 9: Web UI (Complete)
+- Modern dark-themed web interface
+- Type-safe Templ templates with hot reload
+- HTMX for dynamic interactivity
+- Real-time container and host monitoring
+- Stack management interface
+- **Files**: `internal/web/` (2,500+ lines)
+- **Access**: http://localhost:8095/
+
+### ✅ Phase 10: Stack Management (Complete)
+- Multi-container application deployment
+- Distributed orchestration across hosts
+- Multiple placement strategies (auto, manual, spread, datacenter)
+- Stack status monitoring and lifecycle management
+- **Files**: `internal/orchestration/`, `internal/commands/stack.go`
+
 ### ✅ Phase 11: OpenAPI Documentation (Complete)
 - Full API documentation with Swagger/OpenAPI 3.0
 - Interactive Swagger UI at `/docs`
-- 19+ documented endpoints with request/response schemas
+- 40+ documented endpoints with request/response schemas
 - **Access**: http://localhost:8095/docs
 
+### ✅ Phase 12: Database Integrity (Complete)
+- Automated integrity scanning and health checks
+- Duplicate detection and resolution
+- Repair plan generation and execution
+- Audit logging for all operations
+- **Files**: `internal/integrity/` (1,200+ lines)
+
 ### 🚧 Pending
-- Agent enhancement (real-time sync)
-- Code generation tool
-- Web UI (Templ + HTMX)
+- Graph visualization (D3.js/Cytoscape)
+- Containerd runtime support
 - Comprehensive testing suite
+- Performance optimizations
 
 ## Quick Start
 
@@ -103,6 +138,23 @@ graphium server
 task dev
 ```
 
+#### Docker Agent
+
+```bash
+# Start agent for automatic container discovery
+graphium agent \
+  --api-url http://localhost:8095 \
+  --host-id $(hostname) \
+  --datacenter dc1
+
+# With custom Docker socket
+graphium agent \
+  --api-url http://localhost:8095 \
+  --host-id my-host \
+  --datacenter us-east \
+  --docker-socket /var/run/docker.sock
+```
+
 #### Query Commands
 
 ```bash
@@ -124,6 +176,41 @@ graphium query topology us-east
 
 # Infrastructure statistics
 graphium query stats
+```
+
+#### Stack Management
+
+```bash
+# Deploy a stack
+graphium stack deploy my-stack.yaml
+
+# List all stacks
+graphium stack list
+
+# Show stack status
+graphium stack status my-stack
+
+# Stop a stack
+graphium stack stop my-stack
+
+# Remove a stack
+graphium stack remove my-stack
+```
+
+#### Database Integrity
+
+```bash
+# Check database health
+graphium integrity health
+
+# Scan for integrity issues
+graphium integrity scan
+
+# Create a repair plan
+graphium integrity plan <scan-id> --strategy latest-wins
+
+# Execute repairs
+graphium integrity repair <plan-id>
 ```
 
 #### Validation
@@ -273,11 +360,12 @@ Edit `configs/config.yaml`:
 ```yaml
 server:
   host: 0.0.0.0
-  port: 8080
+  port: 8095
   read_timeout: 30
   write_timeout: 30
   shutdown_timeout: 10
   debug: true
+  tls_enabled: false
 
 couchdb:
   url: http://localhost:5984
@@ -285,6 +373,20 @@ couchdb:
   username: admin
   password: password
   timeout: 30
+
+agent:
+  api_url: http://localhost:8095
+  host_id: ""  # Auto-detected from hostname
+  datacenter: "dc1"
+  docker_socket: "/var/run/docker.sock"
+  sync_interval: 30
+  token: ""  # Agent authentication token
+
+authentication:
+  enabled: true
+  jwt_secret: "your-secret-key-here"
+  jwt_expiry: 3600
+  session_expiry: 86400
 
 logging:
   level: debug
@@ -299,64 +401,103 @@ security:
 ## Architecture
 
 ```
-┌─────────────┐
-│   CLI/User  │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────┐
-│   Commands Layer        │
-│  - query (list, etc.)   │
-│  - validate             │
-│  - server               │
-│  - agent                │
-└──────┬──────────────────┘
-       │
-       ├──► Direct Access ─────►┌──────────────────┐
-       │                        │ Storage Layer    │
-       │                        │ - CRUD ops       │
-       │                        │ - Graph queries  │
-       │                        │ - Change feed    │
-       │                        └────────┬─────────┘
-       │                                 │
-       ▼                                 ▼
-┌─────────────────────────┐    ┌──────────────────┐
-│   API Server (Echo)     │    │    CouchDB       │
-│  - REST endpoints       │◄───┤  - Documents     │
-│  - WebSocket            │    │  - Views         │
-│  - Validation           │    │  - Changes feed  │
-└─────────────────────────┘    └──────────────────┘
+┌─────────────┐              ┌──────────────────┐
+│  CLI/User   │              │   Docker Agent   │
+│   Browser   │              │ (per-host)       │
+└──────┬──────┘              └────────┬─────────┘
+       │                              │
+       │                              │ Auto-sync
+       ▼                              ▼
+┌─────────────────────────────────────────────────┐
+│              API Server (Echo)                  │
+│  - REST endpoints (40+)                         │
+│  - WebSocket (real-time updates)                │
+│  - Web UI (Templ/HTMX)                          │
+│  - Authentication (JWT/Sessions)                │
+│  - Validation & Integrity                       │
+└──────────────────┬──────────────────────────────┘
+                   │
+                   ▼
+          ┌────────────────┐
+          │ Storage Layer  │
+          │ - CRUD ops     │
+          │ - Graph queries│
+          │ - MapReduce    │
+          │ - Change feed  │
+          └────────┬───────┘
+                   │
+                   ▼
+          ┌────────────────┐
+          │    CouchDB     │
+          │ - Documents    │
+          │ - Views        │
+          │ - Replication  │
+          └────────────────┘
 ```
 
 ## Project Structure
 
 ```
 graphium/
-├── cmd/graphium/           # CLI entry point
+├── agent/                  # Docker agent for container discovery
+│   └── agent.go           # Agent implementation
+├── cmd/graphium/          # CLI entry point
+│   └── main.go
 ├── internal/
 │   ├── api/               # REST API server (Echo)
 │   │   ├── server.go
 │   │   ├── handlers_*.go
 │   │   ├── websocket.go
-│   │   └── types.go
+│   │   ├── graph.go
+│   │   └── middleware.go
+│   ├── auth/              # Authentication & authorization
+│   │   ├── auth.go
+│   │   ├── jwt.go
+│   │   ├── session.go
+│   │   └── middleware.go
 │   ├── commands/          # CLI commands (Cobra)
 │   │   ├── root.go
 │   │   ├── server.go
+│   │   ├── agent.go
 │   │   ├── query.go
-│   │   ├── validate.go
-│   │   └── agent.go
+│   │   ├── stack.go
+│   │   ├── integrity.go
+│   │   └── validate.go
+│   ├── config/            # Configuration management
+│   │   └── config.go
+│   ├── integrity/         # Database integrity service
+│   │   ├── service.go
+│   │   ├── scan.go
+│   │   ├── repair.go
+│   │   ├── audit.go
+│   │   └── types.go
+│   ├── orchestration/     # Stack orchestration
+│   │   ├── orchestrator.go
+│   │   ├── deployment.go
+│   │   └── placement.go
 │   ├── storage/           # CouchDB storage layer
 │   │   ├── storage.go
 │   │   ├── graph.go
-│   │   └── changes.go
+│   │   ├── changes.go
+│   │   └── stacks.go
 │   ├── validation/        # JSON-LD validation
 │   │   └── validator.go
-│   └── config/            # Configuration
-├── models/                # Data models
+│   ├── web/               # Web UI (Templ templates)
+│   │   ├── handler.go
+│   │   ├── templates/
+│   │   └── components/
+│   └── version/           # Version information
+├── models/                # JSON-LD data models
 │   ├── container.go
-│   └── host.go
+│   ├── host.go
+│   ├── stack.go
+│   └── user.go
+├── static/                # Web assets
+│   └── css/
 ├── tests/fixtures/        # Test data
 ├── configs/               # Configuration files
+│   └── config.yaml
+├── docs/                  # OpenAPI documentation
 └── Taskfile.yml          # Task automation
 ```
 
@@ -371,13 +512,18 @@ graphium/
 
 ## Technologies
 
-- **Language**: Go 1.21+
-- **Web Framework**: Echo v4
-- **Database**: CouchDB 3.3+
+- **Language**: Go 1.23+
+- **Web Framework**: Echo v4.13+
+- **Database**: CouchDB 3.3+ (via EVE library)
+- **Templates**: Templ v0.3+ (type-safe Go templates)
+- **Frontend**: HTMX v1.9+ (dynamic interactivity)
 - **Validation**: json-gold (JSON-LD processor)
 - **WebSocket**: gorilla/websocket
-- **CLI**: Cobra
+- **Authentication**: JWT (golang-jwt/jwt), gorilla/sessions
+- **CLI**: Cobra, Viper
 - **Task Runner**: Task (go-task)
+- **Documentation**: Swagger/OpenAPI 3.0
+- **Container Runtime**: Docker API (containerd planned)
 
 ## Module
 
