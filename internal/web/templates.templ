@@ -35,7 +35,6 @@ templ LayoutWithUser(title string, user *models.User) {
 				<li><a href="/web/containers" class="nav-link">Containers</a></li>
 				<li><a href="/web/hosts" class="nav-link">Hosts</a></li>
 				<li><a href="/web/stacks" class="nav-link">Stacks</a></li>
-				<li><a href="/web/stacks" class="nav-link">JSON-LD Deployments</a></li>
 				<li><a href="/web/graph" class="nav-link">Graph</a></li>
 				<li><a href="/web/topology" class="nav-link">Topology</a></li>
 			</ul>
@@ -198,50 +197,8 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 				</div>
 			</div>
 
-			if len(stats.HostContainerCounts) > 0 {
-				<div class="section">
-					<h3>Container Distribution</h3>
-					<div class="distribution-grid">
-						for hostID, count := range stats.HostContainerCounts {
-							<div class="distribution-item">
-								<span class="host-id">{ hostID }</span>
-								<div class="distribution-bar">
-									<div class="distribution-fill" style={ fmt.Sprintf("width: %d%%", (count * 100) / stats.TotalContainers) }></div>
-								</div>
-								<span class="container-count">{ fmt.Sprintf("%d", count) }</span>
-							</div>
-						}
-					</div>
-				</div>
-			}
 
-			if len(stats.DeploymentStatusCounts) > 0 {
-				<div class="section">
-					<h3>JSON-LD Deployment Distribution</h3>
-					<div class="distribution-grid">
-						for status, count := range stats.DeploymentStatusCounts {
-							<div class="distribution-item">
-								<span class="host-id">{ status }</span>
-								<div class="distribution-bar">
-									<div class="distribution-fill" style={ fmt.Sprintf("width: %d%%", (count * 100) / stats.TotalDeployments) }></div>
-								</div>
-								<span class="container-count">{ fmt.Sprintf("%d", count) }</span>
-							</div>
-						}
-					</div>
-				</div>
-			}
 
-			<div class="quick-actions">
-				<h3>Quick Actions</h3>
-				<div class="action-buttons">
-					<a href="/web/containers" class="btn btn-primary">View All Containers</a>
-					<a href="/web/hosts" class="btn btn-secondary">View All Hosts</a>
-					<a href="/web/stacks" class="btn btn-primary">View All Stacks</a>
-					<a href="/web/stacks" class="btn btn-primary">JSON-LD Deployments</a>
-					<a href="/web/topology" class="btn btn-info">View Topology</a>
-				</div>
-			</div>
 		</div>
 		<script>
 			(function() {
@@ -3907,75 +3864,6 @@ templ JSONLDDeployPage(user *models.User, validationResult *parseResultResponse,
 				<p>See the example in the editor above for complete structure.</p>
 			</div>
 		</div>
-	}
-}
-
-// JSONLDDeploymentsListPage renders the list of JSON-LD deployments
-templ JSONLDDeploymentsListPage(deployments []deploymentStateResponse, user *models.User) {
-	@LayoutWithUser("JSON-LD Deployments", user) {
-		<div class="page-header">
-			<h2>JSON-LD Deployments</h2>
-			<div class="filters">
-				<a href="/web/stacks/jsonld/deploy" class="btn btn-primary">+ Deploy New Stack</a>
-			</div>
-		</div>
-		<div class="table-container" id="jsonld-deployments-table" hx-get="/web/stacks/jsonld/deployments/table" hx-trigger="load" hx-swap="innerHTML">
-			<div class="loading">Loading deployments...</div>
-		</div>
-	}
-}
-
-templ JSONLDDeploymentsTableWithPagination(deployments []deploymentStateResponse, pagination PaginationInfo, queryParams string) {
-	if len(deployments) == 0 {
-		<div class="empty-state">
-			<p>No deployments found</p>
-			<p><a href="/web/stacks/jsonld/deploy" class="btn btn-primary">Deploy Your First Stack</a></p>
-		</div>
-	} else {
-		<table class="data-table">
-			<thead>
-				<tr>
-					<th>Stack Name</th>
-					<th>Status</th>
-					<th>Phase</th>
-					<th>Progress</th>
-					<th>Started</th>
-					<th>Completed</th>
-					<th>Actions</th>
-				</tr>
-			</thead>
-			<tbody>
-				for _, deployment := range deployments {
-					<tr>
-						<td>
-							<a href={ templ.URL(fmt.Sprintf("/web/stacks/jsonld/deployments/%s", deployment.ID)) }>{ deployment.StackID }</a>
-						</td>
-						<td>
-							<span class={ "badge badge-" + deployment.Status }>{ deployment.Status }</span>
-						</td>
-						<td>
-							if deployment.Phase != "" {
-								{ deployment.Phase }
-							} else {
-								<span class="text-muted">-</span>
-							}
-						</td>
-						<td>{ fmt.Sprintf("%d%%", deployment.Progress) }</td>
-						<td>{ deployment.StartedAt.Format("2006-01-02 15:04") }</td>
-						<td>
-							if deployment.CompletedAt != nil {
-								{ deployment.CompletedAt.Format("2006-01-02 15:04") }
-							} else {
-								<span class="text-muted">In progress</span>
-							}
-						</td>
-						<td>
-							<a href={ templ.URL(fmt.Sprintf("/web/stacks/jsonld/deployments/%s", deployment.ID)) } class="btn btn-sm btn-secondary">View</a>
-						</td>
-					</tr>
-				}
-			</tbody>
-		</table>
 	}
 }
 

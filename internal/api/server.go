@@ -327,8 +327,6 @@ func (s *Server) setupRoutes() {
 	webGroup.GET("/stacks/jsonld/deploy", webHandler.JSONLDDeployPage)
 	webGroup.POST("/stacks/jsonld/deploy", webHandler.JSONLDDeploy)
 	webGroup.POST("/stacks/jsonld/validate", webHandler.JSONLDValidate)
-	webGroup.GET("/stacks/jsonld/deployments", webHandler.JSONLDDeploymentsList)
-	webGroup.GET("/stacks/jsonld/deployments/table", webHandler.JSONLDDeploymentsTable)
 	webGroup.GET("/stacks/jsonld/deployments/:id", webHandler.JSONLDDeploymentDetail)
 
 	webGroup.GET("/topology", webHandler.TopologyView)
