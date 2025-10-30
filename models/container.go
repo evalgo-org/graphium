@@ -66,6 +66,10 @@ type Container struct {
 	// Env contains environment variables passed to the container
 	Env map[string]string `json:"environment,omitempty" jsonld:"environment"`
 
+	// DependsOn lists container names/IDs that this container depends on
+	// These dependencies are used for startup ordering and graph relationships
+	DependsOn []string `json:"dependsOn,omitempty" jsonld:"dependsOn"`
+
 	// Created is the ISO 8601 timestamp when the container was created
 	Created string `json:"dateCreated,omitempty" jsonld:"dateCreated"`
 }

@@ -1,9 +1,12 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+
+	"evalgo.org/graphium/models"
 )
 
 // GraphNode represents a node in the visualization graph
@@ -104,6 +107,12 @@ func (s *Server) GetGraphData(c echo.Context) error {
 		graphData.Nodes = append(graphData.Nodes, node)
 	}
 
+	// Build a set of valid container IDs for dependency edge validation
+	validContainers := make(map[string]bool)
+	for _, container := range containers {
+		validContainers[container.ID] = true
+	}
+
 	// Add container nodes and edges
 	for _, container := range containers {
 		// Add container node
@@ -133,6 +142,22 @@ func (s *Server) GetGraphData(c echo.Context) error {
 				},
 			}
 			graphData.Edges = append(graphData.Edges, edge)
+		}
+
+		// Add dependency edges (only if dependency exists)
+		for _, depID := range container.DependsOn {
+			if validContainers[depID] {
+				edge := GraphEdge{
+					Data: GraphEdgeData{
+						ID:     container.ID + "-depends-" + depID,
+						Source: container.ID,
+						Target: depID,
+						Label:  "depends on",
+						Type:   "depends_on",
+					},
+				}
+				graphData.Edges = append(graphData.Edges, edge)
+			}
 		}
 	}
 
@@ -181,10 +206,12 @@ func (s *Server) GetGraphStats(c echo.Context) error {
 
 	// Count relationships
 	relationships := 0
+	dependencies := 0
 	for _, container := range containers {
 		if container.HostedOn != "" {
 			relationships++
 		}
+		dependencies += len(container.DependsOn)
 	}
 
 	stats := map[string]interface{}{
@@ -194,9 +221,9 @@ func (s *Server) GetGraphStats(c echo.Context) error {
 			"containers": len(containers),
 		},
 		"edges": map[string]interface{}{
-			"total":      relationships,
+			"total":      relationships + dependencies,
 			"hosted_on":  relationships,
-			"depends_on": 0, // TODO: Add dependency tracking
+			"depends_on": dependencies,
 		},
 		"containersByStatus": containersByStatus,
 		"hostsByStatus":      hostsByStatus,
@@ -302,4 +329,220 @@ func (s *Server) GetGraphLayout(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, graphData)
+}
+
+// DependencyNode represents a node in the dependency tree.
+type DependencyNode struct {
+	Container *models.Container `json:"container"`
+	Depth     int               `json:"depth"`
+	Children  []*DependencyNode `json:"children,omitempty"`
+}
+
+// DependencyGraphResponse contains the full dependency graph for a container.
+type DependencyGraphResponse struct {
+	Container    *models.Container `json:"container"`
+	Dependencies []*DependencyNode `json:"dependencies"` // Containers this one depends on
+	Dependents   []*DependencyNode `json:"dependents"`   // Containers that depend on this one
+}
+
+// getContainerDependencies handles GET /api/v1/graph/containers/:id/dependencies
+// @Summary Get container dependencies
+// @Description Get all containers that the specified container depends on
+// @Tags Graph
+// @Accept json
+// @Produce json
+// @Param id path string true "Container ID"
+// @Success 200 {object} ContainersResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /graph/containers/{id}/dependencies [get]
+func (s *Server) getContainerDependencies(c echo.Context) error {
+	id := c.Param("id")
+
+	if id == "" {
+		return BadRequestError("Container ID is required", "The 'id' parameter cannot be empty")
+	}
+
+	// Get the container
+	container, err := s.storage.GetContainer(id)
+	if err != nil {
+		return NotFoundError("Container", id)
+	}
+
+	// If no dependencies, return empty list
+	if len(container.DependsOn) == 0 {
+		return c.JSON(http.StatusOK, ContainersResponse{
+			Count:      0,
+			Containers: []*models.Container{},
+		})
+	}
+
+	// Resolve dependencies
+	dependencies := make([]*models.Container, 0, len(container.DependsOn))
+	for _, depID := range container.DependsOn {
+		dep, err := s.storage.GetContainer(depID)
+		if err != nil {
+			// Dependency not found - skip but log warning
+			continue
+		}
+		dependencies = append(dependencies, dep)
+	}
+
+	return c.JSON(http.StatusOK, ContainersResponse{
+		Count:      len(dependencies),
+		Containers: dependencies,
+	})
+}
+
+// getContainerDependents handles GET /api/v1/graph/containers/:id/dependents
+// @Summary Get container dependents
+// @Description Get all containers that depend on the specified container
+// @Tags Graph
+// @Accept json
+// @Produce json
+// @Param id path string true "Container ID"
+// @Success 200 {object} ContainersResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /graph/containers/{id}/dependents [get]
+func (s *Server) getContainerDependents(c echo.Context) error {
+	id := c.Param("id")
+
+	if id == "" {
+		return BadRequestError("Container ID is required", "The 'id' parameter cannot be empty")
+	}
+
+	// Check if container exists
+	_, err := s.storage.GetContainer(id)
+	if err != nil {
+		return NotFoundError("Container", id)
+	}
+
+	// Find all containers that depend on this one
+	dependents, err := s.storage.GetContainerDependents(id)
+	if err != nil {
+		return InternalError("Failed to get dependents", err.Error())
+	}
+
+	return c.JSON(http.StatusOK, ContainersResponse{
+		Count:      len(dependents),
+		Containers: dependents,
+	})
+}
+
+// getContainerGraph handles GET /api/v1/graph/containers/:id/graph
+// @Summary Get container dependency graph
+// @Description Get the full dependency graph for a container (dependencies and dependents)
+// @Tags Graph
+// @Accept json
+// @Produce json
+// @Param id path string true "Container ID"
+// @Param depth query int false "Maximum depth to traverse (default: unlimited)" default(0)
+// @Success 200 {object} DependencyGraphResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /graph/containers/{id}/graph [get]
+func (s *Server) getContainerGraph(c echo.Context) error {
+	id := c.Param("id")
+
+	if id == "" {
+		return BadRequestError("Container ID is required", "The 'id' parameter cannot be empty")
+	}
+
+	// Get depth parameter (0 = unlimited)
+	depth := 0
+	if depthStr := c.QueryParam("depth"); depthStr != "" {
+		if _, err := fmt.Sscanf(depthStr, "%d", &depth); err != nil {
+			return BadRequestError("Invalid depth parameter", "depth must be a positive integer")
+		}
+		if depth < 0 {
+			return BadRequestError("Invalid depth parameter", "depth must be non-negative")
+		}
+	}
+
+	// Get the container
+	container, err := s.storage.GetContainer(id)
+	if err != nil {
+		return NotFoundError("Container", id)
+	}
+
+	// Build the dependency graph
+	graph := s.buildDependencyGraph(container, depth)
+
+	return c.JSON(http.StatusOK, graph)
+}
+
+// buildDependencyGraph recursively builds the dependency graph for a container.
+func (s *Server) buildDependencyGraph(container *models.Container, maxDepth int) *DependencyGraphResponse {
+	visited := make(map[string]bool)
+	graph := &DependencyGraphResponse{
+		Container:    container,
+		Dependencies: make([]*DependencyNode, 0),
+		Dependents:   make([]*DependencyNode, 0),
+	}
+
+	// Build dependencies tree
+	if len(container.DependsOn) > 0 {
+		graph.Dependencies = s.buildDependencyTree(container.DependsOn, maxDepth, 1, visited, "dependencies")
+	}
+
+	// Build dependents tree
+	visited = make(map[string]bool) // Reset visited for dependents traversal
+	dependents, _ := s.storage.GetContainerDependents(container.ID)
+	if len(dependents) > 0 {
+		depIDs := make([]string, len(dependents))
+		for i, dep := range dependents {
+			depIDs[i] = dep.ID
+		}
+		graph.Dependents = s.buildDependencyTree(depIDs, maxDepth, 1, visited, "dependents")
+	}
+
+	return graph
+}
+
+// buildDependencyTree recursively builds a tree of dependencies or dependents.
+func (s *Server) buildDependencyTree(containerIDs []string, maxDepth, currentDepth int, visited map[string]bool, direction string) []*DependencyNode {
+	// Check depth limit
+	if maxDepth > 0 && currentDepth > maxDepth {
+		return nil
+	}
+
+	nodes := make([]*DependencyNode, 0, len(containerIDs))
+
+	for _, id := range containerIDs {
+		// Avoid cycles
+		if visited[id] {
+			continue
+		}
+		visited[id] = true
+
+		container, err := s.storage.GetContainer(id)
+		if err != nil {
+			// Skip missing containers
+			continue
+		}
+
+		node := &DependencyNode{
+			Container: container,
+			Depth:     currentDepth,
+		}
+
+		// Recursively build children
+		if direction == "dependencies" && len(container.DependsOn) > 0 {
+			node.Children = s.buildDependencyTree(container.DependsOn, maxDepth, currentDepth+1, visited, direction)
+		} else if direction == "dependents" {
+			dependents, _ := s.storage.GetContainerDependents(id)
+			if len(dependents) > 0 {
+				depIDs := make([]string, len(dependents))
+				for i, dep := range dependents {
+					depIDs[i] = dep.ID
+				}
+				node.Children = s.buildDependencyTree(depIDs, maxDepth, currentDepth+1, visited, direction)
+			}
+		}
+
+		nodes = append(nodes, node)
+	}
+
+	return nodes
 }

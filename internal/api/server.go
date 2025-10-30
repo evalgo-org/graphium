@@ -231,6 +231,9 @@ func (s *Server) setupRoutes() {
 	graph.GET("", s.GetGraphData, webHandler.WebAuthMiddleware)
 	graph.GET("/stats", s.GetGraphStats, webHandler.WebAuthMiddleware)
 	graph.GET("/layout", s.GetGraphLayout, webHandler.WebAuthMiddleware)
+	graph.GET("/containers/:id/dependencies", s.getContainerDependencies, ValidateIDFormat, webHandler.WebAuthMiddleware)
+	graph.GET("/containers/:id/dependents", s.getContainerDependents, ValidateIDFormat, webHandler.WebAuthMiddleware)
+	graph.GET("/containers/:id/graph", s.getContainerGraph, ValidateIDFormat, webHandler.WebAuthMiddleware)
 
 	// WebSocket routes (use web auth middleware for session cookie support)
 	ws := v1.Group("/ws")
