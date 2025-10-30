@@ -357,6 +357,12 @@ func (s *Storage) SaveHost(host *models.Host) error {
 	return err
 }
 
+// UpdateHost updates an existing host in the database.
+// This is an alias for SaveHost which handles both create and update operations.
+func (s *Storage) UpdateHost(host *models.Host) error {
+	return s.SaveHost(host)
+}
+
 // GetHost retrieves a host by ID.
 func (s *Storage) GetHost(id string) (*models.Host, error) {
 	var host models.Host

@@ -58,4 +58,16 @@ type Host struct {
 
 	// Datacenter is the physical or logical location of the host
 	Datacenter string `json:"location" jsonld:"location" couchdb:"index"`
+
+	// CPUUsage is the current CPU usage percentage (0-100)
+	CPUUsage float64 `json:"cpuUsage,omitempty"`
+
+	// MemoryUsage is the current memory usage in bytes
+	MemoryUsage int64 `json:"memoryUsage,omitempty"`
+
+	// MemoryUsagePercent is the current memory usage percentage (0-100)
+	MemoryUsagePercent float64 `json:"memoryUsagePercent,omitempty"`
+
+	// LastMetricsUpdate is the timestamp when metrics were last updated
+	LastMetricsUpdate string `json:"lastMetricsUpdate,omitempty"`
 }

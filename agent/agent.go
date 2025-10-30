@@ -155,6 +155,9 @@ func (a *Agent) Start(ctx context.Context) error {
 	// Start periodic sync in background
 	go a.periodicSync(ctx)
 
+	// Start periodic metrics reporting
+	go a.periodicMetricsReport(ctx)
+
 	// Monitor Docker events
 	return a.monitorEvents(ctx)
 }
@@ -598,6 +601,78 @@ func (a *Agent) periodicSync(ctx context.Context) {
 			}
 		}
 	}
+}
+
+// periodicMetricsReport collects and reports system metrics periodically.
+func (a *Agent) periodicMetricsReport(ctx context.Context) {
+	ticker := time.NewTicker(a.syncInterval)
+	defer ticker.Stop()
+
+	// Report immediately on start
+	if err := a.reportMetrics(ctx); err != nil {
+		log.Printf("Warning: Initial metrics report failed: %v", err)
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := a.reportMetrics(ctx); err != nil {
+				log.Printf("Metrics report error: %v", err)
+			}
+		}
+	}
+}
+
+// reportMetrics collects system metrics and sends them to the API server.
+func (a *Agent) reportMetrics(ctx context.Context) error {
+	// Collect system metrics
+	metrics, err := GetSystemMetrics()
+	if err != nil {
+		return fmt.Errorf("failed to collect metrics: %w", err)
+	}
+
+	// Create metrics update payload
+	update := map[string]interface{}{
+		"cpuUsage":           metrics.CPUUsage,
+		"memoryUsage":        metrics.MemoryUsage,
+		"memoryUsagePercent": metrics.MemoryUsagePercent,
+		"lastMetricsUpdate":  metrics.Timestamp.Format(time.RFC3339),
+	}
+
+	data, err := json.Marshal(update)
+	if err != nil {
+		return fmt.Errorf("failed to marshal metrics: %w", err)
+	}
+
+	// Send metrics to API
+	url := fmt.Sprintf("%s/api/v1/hosts/%s/metrics", a.apiURL, a.hostID)
+	req, err := http.NewRequestWithContext(ctx, "PUT", url, bytes.NewBuffer(data))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if a.authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+a.authToken)
+	}
+
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send metrics: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("metrics update failed: %s - %s", resp.Status, string(body))
+	}
+
+	log.Printf("✓ Metrics reported: CPU %.1f%%, Memory %.1f%% (%d MB)",
+		metrics.CPUUsage,
+		metrics.MemoryUsagePercent,
+		metrics.MemoryUsage/(1024*1024))
+	return nil
 }
 
 // dockerToGraphium converts a Docker container to Graphium container model.

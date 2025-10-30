@@ -316,3 +316,55 @@ func (s *Server) getHostsByDatacenter(c echo.Context) error {
 		Hosts: hosts,
 	})
 }
+
+// updateHostMetrics handles PUT /api/v1/hosts/:id/metrics
+// @Summary Update host metrics
+// @Description Update CPU and memory usage metrics for a host
+// @Tags Hosts
+// @Accept json
+// @Produce json
+// @Param id path string true "Host ID"
+// @Param metrics body object true "Metrics update"
+// @Success 200 {object} models.Host
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /hosts/{id}/metrics [put]
+func (s *Server) updateHostMetrics(c echo.Context) error {
+	id := c.Param("id")
+
+	if id == "" {
+		return BadRequestError("Host ID is required", "The 'id' parameter cannot be empty")
+	}
+
+	// Get existing host
+	host, err := s.storage.GetHost(id)
+	if err != nil {
+		return NotFoundError("Host", id)
+	}
+
+	// Parse metrics update
+	var update struct {
+		CPUUsage           float64 `json:"cpuUsage"`
+		MemoryUsage        int64   `json:"memoryUsage"`
+		MemoryUsagePercent float64 `json:"memoryUsagePercent"`
+		LastMetricsUpdate  string  `json:"lastMetricsUpdate"`
+	}
+
+	if err := c.Bind(&update); err != nil {
+		return BadRequestError("Invalid request body", "Failed to parse JSON: "+err.Error())
+	}
+
+	// Update metrics fields
+	host.CPUUsage = update.CPUUsage
+	host.MemoryUsage = update.MemoryUsage
+	host.MemoryUsagePercent = update.MemoryUsagePercent
+	host.LastMetricsUpdate = update.LastMetricsUpdate
+
+	// Update host in storage
+	if err := s.storage.UpdateHost(host); err != nil {
+		return InternalError("Failed to update host metrics", err.Error())
+	}
+
+	return c.JSON(http.StatusOK, host)
+}

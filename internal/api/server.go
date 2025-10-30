@@ -156,6 +156,7 @@ func (s *Server) setupRoutes() {
 	hosts.GET("/:id", s.getHost, ValidateIDFormat, s.authMiddle.RequireRead)
 	hosts.POST("", s.createHost, s.authMiddle.RequireAgentOrWrite)
 	hosts.PUT("/:id", s.updateHost, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
+	hosts.PUT("/:id/metrics", s.updateHostMetrics, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
 	hosts.DELETE("/:id", s.deleteHost, ValidateIDFormat, s.authMiddle.RequireAgentOrWrite)
 	hosts.POST("/bulk", s.bulkCreateHosts, s.authMiddle.RequireAgentOrWrite)
 
