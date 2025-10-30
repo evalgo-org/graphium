@@ -35,6 +35,7 @@ templ LayoutWithUser(title string, user *models.User) {
 				<li><a href="/web/containers" class="nav-link">Containers</a></li>
 				<li><a href="/web/hosts" class="nav-link">Hosts</a></li>
 				<li><a href="/web/stacks" class="nav-link">Stacks</a></li>
+				<li><a href="/web/stacks/jsonld/deployments" class="nav-link">JSON-LD Deployments</a></li>
 				<li><a href="/web/graph" class="nav-link">Graph</a></li>
 				<li><a href="/web/topology" class="nav-link">Topology</a></li>
 			</ul>
@@ -3787,6 +3788,321 @@ templ EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User
 					<a href={ templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)) } class="btn btn-secondary">Cancel</a>
 				</div>
 			</form>
+		</div>
+	}
+}
+
+// JSONLDDeployPage renders the JSON-LD stack deployment page
+templ JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, errorMsg string) {
+	@LayoutWithUser("Deploy Stack (JSON-LD)", user) {
+		<div class="container">
+			<div class="page-header">
+				<h1>Deploy Stack (JSON-LD)</h1>
+				<p>Deploy containers using JSON-LD @graph format with semantic relationships</p>
+			</div>
+			if errorMsg != "" {
+				<div class="alert alert-error">
+					{ errorMsg }
+				</div>
+			}
+			if validationResult != nil {
+				if validationResult.Valid {
+					<div class="alert alert-success">
+						<strong>Validation Passed!</strong>
+						<ul>
+							<li>Stack: { validationResult.StackName }</li>
+							<li>Containers: { fmt.Sprintf("%d", validationResult.ContainerCount) }</li>
+							<li>Waves: { fmt.Sprintf("%d", validationResult.WaveCount) }</li>
+							if validationResult.HasNetwork {
+								<li>Custom network defined</li>
+							}
+						</ul>
+						if len(validationResult.Warnings) > 0 {
+							<strong>Warnings:</strong>
+							<ul>
+								for _, warning := range validationResult.Warnings {
+									<li>{ warning }</li>
+								}
+							</ul>
+						}
+					</div>
+				} else {
+					<div class="alert alert-error">
+						<strong>Validation Failed!</strong>
+						<ul>
+							for _, err := range validationResult.Errors {
+								<li>{ err }</li>
+							}
+						</ul>
+					</div>
+				}
+			}
+			<div class="card">
+				<form method="POST" action="/web/stacks/jsonld/deploy">
+					<div class="form-group">
+						<label for="stackDefinition">Stack Definition (JSON-LD)</label>
+						<textarea
+							id="stackDefinition"
+							name="stackDefinition"
+							rows="20"
+							style="font-family: monospace; font-size: 12px;"
+							placeholder='Paste your JSON-LD stack definition here'
+							required
+						></textarea>
+					</div>
+					<div class="form-group">
+						<label for="timeout">Timeout (seconds)</label>
+						<input type="number" id="timeout" name="timeout" value="300" min="30" max="3600"/>
+					</div>
+					<div class="form-group">
+						<label>
+							<input type="checkbox" name="rollbackOnError" checked/>
+							Rollback on error
+						</label>
+					</div>
+					<div class="form-group">
+						<label>
+							<input type="checkbox" name="pullImages"/>
+							Pull images before deployment
+						</label>
+					</div>
+					<div class="form-actions">
+						<button type="button" class="btn btn-secondary" hx-post="/web/stacks/jsonld/validate" hx-include="[name='stackDefinition']" hx-target="#validation-result">
+							Validate
+						</button>
+						<button type="submit" class="btn btn-primary">Deploy Stack</button>
+						<a href="/web/stacks/jsonld/deployments" class="btn btn-secondary">View Deployments</a>
+					</div>
+				</form>
+				<div id="validation-result" style="margin-top: 20px;"></div>
+			</div>
+			<div class="card" style="margin-top: 20px;">
+				<h3>Documentation</h3>
+				<p>The JSON-LD format uses Schema.org vocabulary with custom datacenter extensions:</p>
+				<ul>
+					<li><strong>{ "@context" }</strong>: Must be "https://schema.org"</li>
+					<li><strong>{ "@graph" }</strong>: Array of related entities</li>
+					<li><strong>Stack</strong>: Root entity with hasPart array of containers</li>
+					<li><strong>Container</strong>: Individual container specifications</li>
+				</ul>
+				<p>See the example in the editor above for complete structure.</p>
+			</div>
+		</div>
+	}
+}
+
+// JSONLDDeploymentsListPage renders the list of JSON-LD deployments
+templ JSONLDDeploymentsListPage(deployments []deploymentStateResponse, user *models.User) {
+	@LayoutWithUser("JSON-LD Deployments", user) {
+		<div class="page-header">
+			<h2>JSON-LD Deployments</h2>
+			<div class="filters">
+				<a href="/web/stacks/jsonld/deploy" class="btn btn-primary">+ Deploy New Stack</a>
+			</div>
+		</div>
+		<div class="table-container" id="jsonld-deployments-table" hx-get="/web/stacks/jsonld/deployments/table" hx-trigger="load" hx-swap="innerHTML">
+			<div class="loading">Loading deployments...</div>
+		</div>
+	}
+}
+
+templ JSONLDDeploymentsTableWithPagination(deployments []deploymentStateResponse, pagination PaginationInfo, queryParams string) {
+	if len(deployments) == 0 {
+		<div class="empty-state">
+			<p>No deployments found</p>
+			<p><a href="/web/stacks/jsonld/deploy" class="btn btn-primary">Deploy Your First Stack</a></p>
+		</div>
+	} else {
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Stack Name</th>
+					<th>Status</th>
+					<th>Phase</th>
+					<th>Progress</th>
+					<th>Started</th>
+					<th>Completed</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, deployment := range deployments {
+					<tr>
+						<td>
+							<a href={ templ.URL(fmt.Sprintf("/web/stacks/jsonld/deployments/%s", deployment.ID)) }>{ deployment.StackID }</a>
+						</td>
+						<td>
+							<span class={ "badge badge-" + deployment.Status }>{ deployment.Status }</span>
+						</td>
+						<td>
+							if deployment.Phase != "" {
+								{ deployment.Phase }
+							} else {
+								<span class="text-muted">-</span>
+							}
+						</td>
+						<td>{ fmt.Sprintf("%d%%", deployment.Progress) }</td>
+						<td>{ deployment.StartedAt.Format("2006-01-02 15:04") }</td>
+						<td>
+							if deployment.CompletedAt != nil {
+								{ deployment.CompletedAt.Format("2006-01-02 15:04") }
+							} else {
+								<span class="text-muted">In progress</span>
+							}
+						</td>
+						<td>
+							<a href={ templ.URL(fmt.Sprintf("/web/stacks/jsonld/deployments/%s", deployment.ID)) } class="btn btn-sm btn-secondary">View</a>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+}
+
+// JSONLDDeploymentDetailPage renders detailed deployment information
+templ JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *models.User) {
+	@LayoutWithUser("Deployment Details", user) {
+		<div class="container">
+			<div class="page-header">
+				<div>
+					<h1>Deployment: { deployment.StackID }</h1>
+					<p>ID: { deployment.ID }</p>
+				</div>
+				<a href="/web/stacks/jsonld/deployments" class="btn btn-secondary">Back to List</a>
+			</div>
+			<div class="card">
+				<h2>Status</h2>
+				<div class="deployment-status">
+					<div class="status-item">
+						<label>Status:</label>
+						<span class={ "status", "status-" + deployment.Status }>{ deployment.Status }</span>
+					</div>
+					<div class="status-item">
+						<label>Phase:</label>
+						<span>{ deployment.Phase }</span>
+					</div>
+					<div class="status-item">
+						<label>Progress:</label>
+						<div class="progress-bar" style="width: 300px;">
+							<div class="progress-fill" style={ fmt.Sprintf("width: %d%%", deployment.Progress) }></div>
+						</div>
+						{ fmt.Sprintf("%d%%", deployment.Progress) }
+					</div>
+					<div class="status-item">
+						<label>Started:</label>
+						<span>{ deployment.StartedAt.Format("2006-01-02 15:04:05") }</span>
+					</div>
+					if deployment.CompletedAt != nil {
+						<div class="status-item">
+							<label>Completed:</label>
+							<span>{ deployment.CompletedAt.Format("2006-01-02 15:04:05") }</span>
+						</div>
+					}
+					if deployment.ErrorMessage != "" {
+						<div class="alert alert-error">
+							<strong>Error:</strong> { deployment.ErrorMessage }
+						</div>
+					}
+				</div>
+			</div>
+			if len(deployment.Placements) > 0 {
+				<div class="card">
+					<h2>Container Placements</h2>
+					<table>
+						<thead>
+							<tr>
+								<th>Container</th>
+								<th>Host</th>
+								<th>Container ID</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						<tbody>
+							for containerName, placement := range deployment.Placements {
+								<tr>
+									<td>{ containerName }</td>
+									<td>{ placement.HostID }</td>
+									<td>
+										if placement.ContainerID != "" {
+											<code>{ placement.ContainerID[:12] }</code>
+										} else {
+											<em>Not created</em>
+										}
+									</td>
+									<td>
+										<span class={ "status", "status-" + placement.Status }>{ placement.Status }</span>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+			if deployment.NetworkInfo != nil {
+				<div class="card">
+					<h2>Network Information</h2>
+					<div class="info-grid">
+						<div class="info-item">
+							<label>Network Name:</label>
+							<span>{ deployment.NetworkInfo.NetworkName }</span>
+						</div>
+						<div class="info-item">
+							<label>Network ID:</label>
+							<span><code>{ deployment.NetworkInfo.NetworkID[:12] }</code></span>
+						</div>
+						<div class="info-item">
+							<label>Driver:</label>
+							<span>{ deployment.NetworkInfo.Driver }</span>
+						</div>
+					</div>
+				</div>
+			}
+			if len(deployment.Events) > 0 {
+				<div class="card">
+					<h2>Deployment Events</h2>
+					<div class="events-list">
+						for _, event := range deployment.Events {
+							<div class={ "event", "event-" + event.Type }>
+								<div class="event-header">
+									<span class="event-time">{ event.Timestamp.Format("15:04:05") }</span>
+									<span class={ "event-level", "level-" + event.Type }>{ event.Type }</span>
+									<span class="event-phase">{ event.Phase }</span>
+								</div>
+								<div class="event-body">
+									if event.Container != "" {
+										<strong>{ event.Container }:</strong>
+									}
+									{ event.Message }
+								</div>
+							</div>
+						}
+					</div>
+				</div>
+			}
+			if deployment.RollbackState != nil {
+				<div class="card">
+					<h2>Rollback Information</h2>
+					<div class="alert alert-warning">
+						<p><strong>Rollback { deployment.RollbackState.Status }</strong></p>
+						<p>Started: { deployment.RollbackState.StartedAt.Format("2006-01-02 15:04:05") }</p>
+						if deployment.RollbackState.CompletedAt != nil {
+							<p>Completed: { deployment.RollbackState.CompletedAt.Format("2006-01-02 15:04:05") }</p>
+						}
+						if len(deployment.RollbackState.RemovedContainers) > 0 {
+							<p>Removed containers:</p>
+							<ul>
+								for _, containerName := range deployment.RollbackState.RemovedContainers {
+									<li>{ containerName }</li>
+								}
+							</ul>
+						}
+						if deployment.RollbackState.ErrorMessage != "" {
+							<p><strong>Error:</strong> { deployment.RollbackState.ErrorMessage }</p>
+						}
+					</div>
+				</div>
+			}
 		</div>
 	}
 }

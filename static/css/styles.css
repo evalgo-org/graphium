@@ -2366,3 +2366,126 @@ textarea:disabled {
 .modal-footer .btn {
   min-width: 80px;
 }
+
+/* JSON-LD Deployment Styles */
+.deployment-status {
+  display: grid;
+  gap: 15px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-item label {
+  font-weight: 600;
+  min-width: 120px;
+}
+
+.progress-bar {
+  height: 20px;
+  background-color: var(--surface-color);
+  border-radius: 10px;
+  overflow: hidden;
+  flex: 1;
+  max-width: 100%;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+  transition: width 0.3s ease;
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.event {
+  padding: 12px;
+  border-left: 4px solid var(--border-color);
+  background-color: var(--surface-color);
+  border-radius: 4px;
+}
+
+.event-header {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 0.9em;
+}
+
+.event-time {
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.event-level {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
+.level-info {
+  background-color: var(--info-color);
+  color: white;
+}
+
+.level-warning {
+  background-color: var(--warning-color);
+  color: white;
+}
+
+.level-error {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.event-type {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.event-body {
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+.event-info {
+  border-left-color: var(--info-color);
+}
+
+.event-warning {
+  border-left-color: var(--warning-color);
+}
+
+.event-error {
+  border-left-color: var(--danger-color);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.info-item label {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.9em;
+}
+
+.info-item span {
+  color: var(--text-color);
+}
