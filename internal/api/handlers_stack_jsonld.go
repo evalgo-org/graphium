@@ -118,6 +118,67 @@ func (s *Server) deployJSONLDStack(c echo.Context) error {
 		return InternalError("Deployment failed", err.Error())
 	}
 
+	// Create or update Stack document with deployed containers
+	// This allows the web UI to show stack links and enable stack management
+	stackID := deploymentState.StackID
+	if stackID != "" {
+		// Collect all container IDs from placements
+		containerIDs := make([]string, 0, len(deploymentState.Placements))
+		for _, placement := range deploymentState.Placements {
+			if placement != nil && placement.ContainerID != "" {
+				containerIDs = append(containerIDs, placement.ContainerID)
+			}
+		}
+
+		// Try to get existing stack, if not found create new one
+		existingStack, err := s.storage.GetStack(stackID)
+		if err != nil {
+			// Stack doesn't exist, create new one
+			newStack := &models.Stack{
+				ID:          stackID,
+				Context:     "https://schema.org",
+				Type:        "ItemList",
+				Name:        parseResult.Plan.StackNode.Name,
+				Description: parseResult.Plan.StackNode.Description,
+				Status:      "running",
+				Containers:  containerIDs,
+				Datacenter:  "",  // Datacenter is optional, leave empty for now
+				DeployedAt:  &deploymentState.StartedAt,
+				CreatedAt:   deploymentState.StartedAt,
+				UpdatedAt:   deploymentState.StartedAt,
+			}
+
+			if err := s.storage.SaveStack(newStack); err != nil {
+				c.Logger().Warnf("Failed to create Stack document for deployment %s: %v", deploymentState.ID, err)
+				// Don't fail the deployment if Stack creation fails - just log warning
+			} else {
+				c.Logger().Infof("Created Stack document %s with %d containers", stackID, len(containerIDs))
+			}
+		} else {
+			// Stack exists, update it with new container IDs
+			// Merge with existing containers (avoid duplicates)
+			existingIDs := make(map[string]bool)
+			for _, id := range existingStack.Containers {
+				existingIDs[id] = true
+			}
+			for _, id := range containerIDs {
+				if !existingIDs[id] {
+					existingStack.Containers = append(existingStack.Containers, id)
+				}
+			}
+			existingStack.Status = "running"
+			existingStack.DeployedAt = &deploymentState.StartedAt
+			existingStack.UpdatedAt = deploymentState.StartedAt
+
+			if err := s.storage.UpdateStack(existingStack); err != nil {
+				c.Logger().Warnf("Failed to update Stack document for deployment %s: %v", deploymentState.ID, err)
+				// Don't fail the deployment if Stack update fails - just log warning
+			} else {
+				c.Logger().Infof("Updated Stack document %s, now has %d containers", stackID, len(existingStack.Containers))
+			}
+		}
+	}
+
 	// Convert to response
 	response := &DeploymentStateResponse{
 		ID:            deploymentState.ID,
