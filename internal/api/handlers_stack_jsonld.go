@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/docker/docker/client"
 	"github.com/labstack/echo/v4"
 
 	"evalgo.org/eve/common"
@@ -116,6 +115,15 @@ func (s *Server) deployJSONLDStack(c echo.Context) error {
 		// Log the actual error for debugging
 		c.Logger().Error("Deployment error: ", err)
 		return InternalError("Deployment failed", err.Error())
+	}
+
+	// IMPORTANT: Ensure deployment state is saved for stack deletion
+	// The deployer should save it, but explicitly save here to be certain
+	if err := s.storage.SaveDocument(deploymentState); err != nil {
+		c.Logger().Warnf("Failed to save deployment state %s: %v", deploymentState.ID, err)
+		// Don't fail deployment, just log warning
+	} else {
+		c.Logger().Infof("Saved deployment state %s with %d placements", deploymentState.ID, len(deploymentState.Placements))
 	}
 
 	// Create or update Stack document with deployed containers
@@ -339,10 +347,21 @@ func (r *APIHostResolver) ResolveHost(id string) (*models.HostInfo, error) {
 		return nil, fmt.Errorf("host %s not found: %w", id, err)
 	}
 
-	// Determine Docker socket
-	dockerSocket := fmt.Sprintf("tcp://%s:2375", host.IPAddress)
-	if host.IPAddress == "localhost" || host.IPAddress == "127.0.0.1" {
-		dockerSocket = "unix:///var/run/docker.sock"
+	// Determine Docker socket from agent configuration
+	dockerSocket := ""
+
+	// Try to get agent config for this host (agent ID format: "agent:hostId")
+	agentID := fmt.Sprintf("agent:%s", id)
+	agentConfig, err := r.storage.GetAgentConfig(agentID)
+	if err == nil && agentConfig != nil {
+		// Use the agent's configured Docker socket
+		dockerSocket = agentConfig.DockerSocket
+	} else {
+		// Fall back to guessing based on IP address
+		dockerSocket = fmt.Sprintf("tcp://%s:2375", host.IPAddress)
+		if host.IPAddress == "localhost" || host.IPAddress == "127.0.0.1" {
+			dockerSocket = "unix:///var/run/docker.sock"
+		}
 	}
 
 	// Get container count
@@ -417,17 +436,29 @@ func (f *APIDockerClientFactory) GetClient(ctx context.Context, hostID string) (
 		return nil, fmt.Errorf("host %s not found: %w", hostID, err)
 	}
 
-	dockerSocket := fmt.Sprintf("tcp://%s:2375", host.IPAddress)
-	if host.IPAddress == "localhost" || host.IPAddress == "127.0.0.1" {
-		dockerSocket = "unix:///var/run/docker.sock"
+	// Determine Docker socket from agent configuration
+	dockerSocket := ""
+	sshKeyPath := ""
+
+	// Try to get agent config for this host (agent ID format: "agent:hostId")
+	agentID := fmt.Sprintf("agent:%s", hostID)
+	agentConfig, err := f.storage.GetAgentConfig(agentID)
+	if err == nil && agentConfig != nil {
+		// Use the agent's configured Docker socket
+		dockerSocket = agentConfig.DockerSocket
+		sshKeyPath = agentConfig.SSHKeyPath
+	} else {
+		// Fall back to guessing based on IP address
+		dockerSocket = fmt.Sprintf("tcp://%s:2375", host.IPAddress)
+		if host.IPAddress == "localhost" || host.IPAddress == "127.0.0.1" {
+			dockerSocket = "unix:///var/run/docker.sock"
+		}
 	}
 
-	cli, err := client.NewClientWithOpts(
-		client.WithHost(dockerSocket),
-		client.WithAPIVersionNegotiation(),
-	)
+	// Use EVE's NewDockerClient which handles SSH tunnels
+	cli, err := common.NewDockerClient(dockerSocket, sshKeyPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Docker client: %w", err)
+		return nil, fmt.Errorf("failed to create Docker client for %s (socket: %s): %w", hostID, dockerSocket, err)
 	}
 
 	// Docker SDK client already implements common.DockerClient

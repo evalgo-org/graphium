@@ -339,8 +339,6 @@ func (h *Handler) DeployStackForm(c echo.Context) error {
 
 // DeployStack handles the stack deployment form submission using JSON-LD deployer.
 func (h *Handler) DeployStack(c echo.Context) error {
-	ctx := c.Request().Context()
-
 	// Get current user from context
 	var user *models.User
 	var username string = "web-user"
@@ -473,40 +471,52 @@ func (h *Handler) DeployStack(c echo.Context) error {
 		return renderError("No active hosts available for deployment. Please ensure hosts are registered and active.")
 	}
 
-	// Create deployer
-	dbAdapter := &WebDatabaseAdapter{storage: h.storage}
-	clientFactory := &WebDockerClientFactory{storage: h.storage}
-	deployer := stackpkg.NewDeployer(dbAdapter, resolver, clientFactory)
-
-	// Set deployment options
-	opts := stackpkg.DeployOptions{
-		Timeout:         5 * time.Minute,
-		RollbackOnError: true,
-		StackName:       stackName,
-		PullImages:      false,
+	// Update stack status to "deploying"
+	stack.Status = "deploying"
+	if err := h.storage.UpdateStack(stack); err != nil {
+		return renderError("Failed to update stack status: " + err.Error())
 	}
 
-	// Deploy asynchronously
-	deploymentState, err := deployer.Deploy(ctx, parseResult.Plan, opts)
+	// Create deployment state
+	deploymentState := &models.DeploymentState{
+		ID:         stack.ID,
+		StackID:    stack.ID,
+		Status:     "deploying",
+		Phase:      "creating-tasks",
+		Progress:   0,
+		Placements: make(map[string]*models.ContainerPlacement),
+		StartedAt:  time.Now(),
+	}
+
+	if err := h.storage.SaveDeploymentState(deploymentState); err != nil {
+		stack.Status = "error"
+		stack.ErrorMessage = "Failed to create deployment state: " + err.Error()
+		h.storage.UpdateStack(stack)
+		return renderError(stack.ErrorMessage)
+	}
+
+	// Create agent tasks for each container using the new task-based system
+	tasks, err := h.CreateDeploymentTasksForStack(stack.ID, parseResult.Plan.ContainerSpecs, username)
 	if err != nil {
 		stack.Status = "error"
-		stack.ErrorMessage = err.Error()
+		stack.ErrorMessage = fmt.Sprintf("Failed to create deployment tasks: %v", err)
 		h.storage.UpdateStack(stack)
-		return renderError("Deployment failed: " + err.Error())
+		return renderError(stack.ErrorMessage)
 	}
 
-	// Update stack status
-	stack.Status = "running"
-	stack.DeployedAt = &deploymentState.StartedAt
-	stack.Containers = make([]string, 0, len(deploymentState.Placements))
-	for _, placement := range deploymentState.Placements {
-		if placement != nil && placement.ContainerID != "" {
-			stack.Containers = append(stack.Containers, placement.ContainerID)
-		}
-	}
-	h.storage.UpdateStack(stack)
+	// Update deployment state
+	deploymentState.Phase = "waiting-for-agents"
+	deploymentState.Progress = 10
+	h.storage.UpdateDeploymentState(deploymentState)
 
-	// Redirect to stack detail on success
+	// Broadcast WebSocket event for real-time UI updates
+	h.broadcaster.BroadcastGraphEvent("stack_deploying", map[string]interface{}{
+		"stackId":    stack.ID,
+		"totalTasks": len(tasks),
+		"status":     "deploying",
+	})
+
+	// Redirect to stack detail page (which will show deployment progress)
 	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/web/stacks/%s", stack.ID))
 }
 
@@ -567,34 +577,34 @@ func (h *Handler) StopStack(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/web/stacks/%s", id))
 }
 
-// DeleteStack handles deleting a stack using JSON-LD deployer.
+// DeleteStack handles deleting a stack using agent-based task system.
 func (h *Handler) DeleteStack(c echo.Context) error {
-	ctx := c.Request().Context()
 	id := c.Param("id")
 	if id == "" {
 		return c.String(http.StatusBadRequest, "Stack ID is required")
 	}
 
-	// Get deployment state if it exists
-	deploymentState, err := h.storage.GetDeploymentState(id)
-	if err == nil && deploymentState != nil {
-		// Create deployer
-		resolver := &WebHostResolver{storage: h.storage}
-		dbAdapter := &WebDatabaseAdapter{storage: h.storage}
-		clientFactory := &WebDockerClientFactory{storage: h.storage}
-		deployer := stackpkg.NewDeployer(dbAdapter, resolver, clientFactory)
-
-		// Remove stack containers
-		if err := deployer.Remove(ctx, deploymentState, false); err != nil {
-			return c.String(http.StatusInternalServerError, "Failed to remove stack: "+err.Error())
-		}
+	// Get user
+	var username string = "web-user"
+	if claims, ok := c.Get("claims").(*auth.Claims); ok {
+		username = claims.Username
 	}
 
-	// Try old StackDeployment format if DeploymentState not found
-	if deploymentState == nil {
+	// Get stack
+	stack, err := h.storage.GetStack(id)
+	if err != nil {
+		return c.String(http.StatusNotFound, "Stack not found")
+	}
+
+	// Get deployment states for this stack (there may be multiple)
+	deploymentStates, err := h.storage.GetDeploymentsByStackID(id)
+
+	// If no deployment state exists, try old StackDeployment format
+	var deploymentState *models.DeploymentState
+	if err != nil || len(deploymentStates) == 0 {
 		oldDeployment, err := h.storage.GetDeployment(id)
 		if err == nil {
-			// Convert and remove using deployer
+			// Convert old format to DeploymentState
 			deploymentState = &models.DeploymentState{
 				StackID: oldDeployment.StackID,
 				Status:  oldDeployment.Status,
@@ -608,25 +618,38 @@ func (h *Handler) DeleteStack(c echo.Context) error {
 				}(),
 				StartedAt: oldDeployment.StartedAt,
 			}
-
-			resolver := &WebHostResolver{storage: h.storage}
-			dbAdapter := &WebDatabaseAdapter{storage: h.storage}
-			clientFactory := &WebDockerClientFactory{storage: h.storage}
-			deployer := stackpkg.NewDeployer(dbAdapter, resolver, clientFactory)
-
-			if err := deployer.Remove(ctx, deploymentState, false); err != nil {
-				return c.String(http.StatusInternalServerError, "Failed to remove stack: "+err.Error())
-			}
-
-			// Delete old deployment
-			h.storage.DeleteDeployment(id)
 		}
+	} else {
+		// Use the most recent deployment state
+		deploymentState = deploymentStates[len(deploymentStates)-1]
 	}
 
-	// Delete stack
-	if err := h.storage.DeleteStack(id); err != nil {
-		return c.String(http.StatusInternalServerError, "Failed to delete stack: "+err.Error())
+	// If no deployment state exists, just delete the stack metadata
+	if deploymentState == nil || len(deploymentState.Placements) == 0 {
+		if err := h.storage.DeleteStack(id); err != nil {
+			return c.String(http.StatusInternalServerError, "Failed to delete stack: "+err.Error())
+		}
+		return c.Redirect(http.StatusSeeOther, "/web/stacks")
 	}
+
+	// Update stack status to "deleting"
+	stack.Status = "deleting"
+	if err := h.storage.UpdateStack(stack); err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to update stack status: "+err.Error())
+	}
+
+	// Create deletion tasks for all containers
+	tasks, err := h.CreateDeletionTasksForStack(id, deploymentState, username)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to create deletion tasks: %v", err))
+	}
+
+	// Broadcast WebSocket event
+	h.broadcaster.BroadcastGraphEvent("stack_deleting", map[string]interface{}{
+		"stackId":    id,
+		"totalTasks": len(tasks),
+		"status":     "deleting",
+	})
 
 	// Redirect to stacks list
 	return c.Redirect(http.StatusSeeOther, "/web/stacks")
