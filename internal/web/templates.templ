@@ -3518,3 +3518,440 @@ func formatTimeAgo(t time.Time) string {
 	}
 	return fmt.Sprintf("%d days ago", days)
 }
+
+// ============================================================================
+// SCHEDULED ACTIONS TEMPLATES  
+// ============================================================================
+
+// Actions list page with user
+templ ActionsListWithUser(actions []*models.ScheduledAction, user *models.User) {
+	@LayoutWithUser("Scheduled Actions", user) {
+		<div class="page-header">
+			<h2>Scheduled Actions</h2>
+			<div class="filters">
+				<input
+					type="text"
+					name="search"
+					class="search-input"
+					placeholder="Search by name..."
+					hx-get="/web/actions/table"
+					hx-target="#actions-table"
+					hx-trigger="keyup changed delay:300ms"
+					hx-include="[name='status']"
+				/>
+				<select name="status" hx-get="/web/actions/table" hx-target="#actions-table" hx-trigger="change" hx-include="[name='search']">
+					<option value="">All Actions</option>
+					<option value="enabled">Enabled</option>
+					<option value="disabled">Disabled</option>
+				</select>
+				<a href="/web/actions/new" class="btn btn-primary">+ Create Action</a>
+			</div>
+		</div>
+
+		<div id="actions-table">
+			@ActionsTable(actions)
+		</div>
+	}
+}
+
+// Actions table component (for HTMX updates)
+templ ActionsTable(actions []*models.ScheduledAction) {
+	<div class="table-container">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Type</th>
+					<th>Agent</th>
+					<th>Schedule</th>
+					<th>Status</th>
+					<th>Last Run</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				if len(actions) == 0 {
+					<tr>
+						<td colspan="7" class="no-data">No scheduled actions found</td>
+					</tr>
+				}
+				for _, action := range actions {
+					<tr>
+						<td>
+							<strong>{ action.Name }</strong>
+							if action.Description != "" {
+								<br/><small class="text-muted">{ action.Description }</small>
+							}
+						</td>
+						<td>{ action.Type }</td>
+						<td>{ action.Agent }</td>
+						<td>
+							if action.Schedule != nil {
+								<span class="text-muted">{ action.Schedule.RepeatFrequency }</span>
+							}
+						</td>
+						<td>
+							<span class={ fmt.Sprintf("badge badge-%s", map[bool]string{true: "success", false: "secondary"}[action.Enabled]) }>
+								if action.Enabled {
+									Enabled
+								} else {
+									Disabled
+								}
+							</span>
+						</td>
+						<td>
+							if action.StartTime != nil {
+								<span class="text-muted">{ formatTimeAgo(*action.StartTime) }</span>
+							} else {
+								<span class="text-muted">Never</span>
+							}
+						</td>
+						<td>
+							<div class="action-buttons">
+								<a href={ templ.URL(fmt.Sprintf("/web/actions/%s", action.ID)) } class="btn-icon" title="View Details">👁️</a>
+								<button
+									class="btn-icon"
+									title="Execute Now"
+									hx-post={ fmt.Sprintf("/api/v1/actions/%s/execute", action.ID) }
+									hx-swap="none"
+								>▶️</button>
+								<button
+									class="btn-icon btn-danger"
+									title="Delete"
+									hx-delete={ fmt.Sprintf("/api/v1/actions/%s", action.ID) }
+									hx-target="#actions-table"
+									hx-swap="outerHTML"
+									hx-confirm="Are you sure you want to delete this action?"
+								>🗑️</button>
+							</div>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+		<div class="table-footer">
+			<p>Total: { fmt.Sprintf("%d", len(actions)) } actions</p>
+		</div>
+	</div>
+}
+
+// Action detail page
+templ ActionDetailWithUser(action *models.ScheduledAction, tasks []*models.AgentTask, user *models.User) {
+	@LayoutWithUser(fmt.Sprintf("Action: %s", action.Name), user) {
+		<div class="page-header">
+			<h2>{ action.Name }</h2>
+			<div class="flex-row" style="gap: 0.5rem;">
+				<a href="/web/actions" class="btn btn-secondary">← Back to Actions</a>
+				<button
+					class="btn btn-primary"
+					hx-post={ fmt.Sprintf("/api/v1/actions/%s/execute", action.ID) }
+					hx-swap="none"
+				>▶️ Execute Now</button>
+				<button
+					class="btn btn-danger"
+					hx-delete={ fmt.Sprintf("/api/v1/actions/%s", action.ID) }
+					hx-confirm="Are you sure you want to delete this action?"
+					hx-target="body"
+					hx-swap="outerHTML"
+				>🗑️ Delete</button>
+			</div>
+		</div>
+
+		<div class="detail-grid">
+			<div class="detail-card">
+				<h3>Configuration</h3>
+				<div class="detail-row">
+					<span class="detail-label">Name:</span>
+					<span class="detail-value">{ action.Name }</span>
+				</div>
+				if action.Description != "" {
+					<div class="detail-row">
+						<span class="detail-label">Description:</span>
+						<span class="detail-value">{ action.Description }</span>
+					</div>
+				}
+				<div class="detail-row">
+					<span class="detail-label">Type:</span>
+					<span class="detail-value">{ action.Type }</span>
+				</div>
+				<div class="detail-row">
+					<span class="detail-label">Agent:</span>
+					<span class="detail-value">{ action.Agent }</span>
+				</div>
+				<div class="detail-row">
+					<span class="detail-label">Status:</span>
+					<span class="detail-value">
+						<span class={ fmt.Sprintf("badge badge-%s", map[bool]string{true: "success", false: "secondary"}[action.Enabled]) }>
+							if action.Enabled {
+								Enabled
+							} else {
+								Disabled
+							}
+						</span>
+					</span>
+				</div>
+				<div class="detail-row">
+					<span class="detail-label">Action Status:</span>
+					<span class="detail-value">{ action.ActionStatus }</span>
+				</div>
+			</div>
+
+			<div class="detail-card">
+				<h3>Schedule</h3>
+				if action.Schedule != nil {
+					<div class="detail-row">
+						<span class="detail-label">Frequency:</span>
+						<span class="detail-value">{ action.Schedule.RepeatFrequency }</span>
+					</div>
+					if action.Schedule.ScheduleTimezone != "" {
+						<div class="detail-row">
+							<span class="detail-label">Timezone:</span>
+							<span class="detail-value">{ action.Schedule.ScheduleTimezone }</span>
+						</div>
+					}
+					if action.Schedule.StartDate != nil {
+						<div class="detail-row">
+							<span class="detail-label">Start Date:</span>
+							<span class="detail-value">{ action.Schedule.StartDate.Format("2006-01-02 15:04:05") }</span>
+						</div>
+					}
+					if action.Schedule.EndDate != nil {
+						<div class="detail-row">
+							<span class="detail-label">End Date:</span>
+							<span class="detail-value">{ action.Schedule.EndDate.Format("2006-01-02 15:04:05") }</span>
+						</div>
+					}
+				}
+			</div>
+		</div>
+
+		<div class="detail-card" style="margin-top: 2rem;">
+			<h3>Execution History</h3>
+			if len(tasks) == 0 {
+				<p class="text-muted">No executions yet</p>
+			} else {
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>Task ID</th>
+							<th>Status</th>
+							<th>Created</th>
+							<th>Completed</th>
+							<th>Duration</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, task := range tasks {
+							<tr>
+								<td><code>{ task.ID[:16] }...</code></td>
+								<td>
+									<span class={ fmt.Sprintf("badge badge-%s", task.Status) }>
+										{ task.Status }
+									</span>
+								</td>
+								<td>{ task.CreatedAt.Format("2006-01-02 15:04") }</td>
+								<td>
+									if task.CompletedAt != nil {
+										{ task.CompletedAt.Format("2006-01-02 15:04") }
+									} else {
+										<span class="text-muted">-</span>
+									}
+								</td>
+								<td>
+									if task.CompletedAt != nil && task.StartedAt != nil {
+										{ fmt.Sprintf("%.1fs", task.CompletedAt.Sub(*task.StartedAt).Seconds()) }
+									} else {
+										<span class="text-muted">-</span>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			}
+		</div>
+	}
+}
+
+// Create action form
+templ CreateActionFormWithUser(errorMsg string, user *models.User) {
+	@LayoutWithUser("Create Scheduled Action", user) {
+		<div class="page-header">
+			<h2>Create Scheduled Action</h2>
+			<div class="flex-row">
+				<a href="/web/actions" class="btn btn-secondary">← Back to Actions</a>
+			</div>
+		</div>
+
+		if errorMsg != "" {
+			<div class="alert alert-danger">{ errorMsg }</div>
+		}
+
+		<div class="form-container">
+			<form method="POST" action="/web/actions/create">
+				<div class="form-section">
+					<h3>Basic Information</h3>
+					<div class="form-group">
+						<label for="name">Name *</label>
+						<input
+							type="text"
+							id="name"
+							name="name"
+							required
+							placeholder="e.g., Nginx Health Check"
+						/>
+					</div>
+
+					<div class="form-group">
+						<label for="description">Description</label>
+						<textarea
+							id="description"
+							name="description"
+							rows="3"
+							placeholder="Describe what this action does..."
+						></textarea>
+					</div>
+
+					<div class="form-group">
+						<label for="type">Action Type *</label>
+						<select id="type" name="type" class="form-select" required>
+							<option value="CheckAction">CheckAction - Health checks, probes</option>
+							<option value="ControlAction">ControlAction - Start/stop operations</option>
+							<option value="CreateAction">CreateAction - Create resources</option>
+							<option value="UpdateAction">UpdateAction - Update existing resources</option>
+							<option value="TransferAction">TransferAction - Data transfers</option>
+						</select>
+					</div>
+
+					<div class="form-group">
+						<label for="agent">Target Agent/Host *</label>
+						<input
+							type="text"
+							id="agent"
+							name="agent"
+							required
+							placeholder="e.g., localhost-docker or host:vm1"
+						/>
+						<small class="form-help">Agent ID or Host ID that will execute this action</small>
+					</div>
+				</div>
+
+				<div class="form-section">
+					<h3>Schedule</h3>
+					<div class="form-group">
+						<label for="repeat_frequency">Repeat Frequency *</label>
+						<select id="repeat_frequency" name="repeat_frequency" class="form-select" required>
+							<option value="PT5M">Every 5 minutes</option>
+							<option value="PT15M">Every 15 minutes</option>
+							<option value="PT30M">Every 30 minutes</option>
+							<option value="PT1H">Every hour</option>
+							<option value="PT6H">Every 6 hours</option>
+							<option value="P1D">Daily</option>
+							<option value="P1W">Weekly</option>
+							<option value="custom">Custom (ISO 8601)</option>
+						</select>
+					</div>
+
+					<div class="form-group" id="custom-frequency" style="display: none;">
+						<label for="custom_frequency">Custom Frequency</label>
+						<input
+							type="text"
+							id="custom_frequency"
+							name="custom_frequency"
+							placeholder="e.g., PT10M or P2D"
+						/>
+						<small class="form-help">ISO 8601 duration format (PT5M = 5 minutes, P1D = 1 day)</small>
+					</div>
+
+					<div class="form-group">
+						<label for="timezone">Timezone</label>
+						<input
+							type="text"
+							id="timezone"
+							name="timezone"
+							value="UTC"
+							placeholder="e.g., UTC, America/New_York"
+						/>
+					</div>
+				</div>
+
+				<div class="form-section">
+					<h3>Action Parameters</h3>
+					<div class="form-group">
+						<label for="url">URL (for CheckAction) *</label>
+						<input
+							type="url"
+							id="url"
+							name="url"
+							placeholder="http://localhost:8080/health"
+						/>
+					</div>
+
+					<div class="form-group">
+						<label for="method">HTTP Method</label>
+						<select id="method" name="method" class="form-select">
+							<option value="GET">GET</option>
+							<option value="POST">POST</option>
+							<option value="HEAD">HEAD</option>
+						</select>
+					</div>
+
+					<div class="form-group">
+						<label for="expected_status">Expected Status Code</label>
+						<input
+							type="number"
+							id="expected_status"
+							name="expected_status"
+							value="200"
+							min="100"
+							max="599"
+						/>
+					</div>
+
+					<div class="form-group">
+						<label for="timeout">Timeout (seconds)</label>
+						<input
+							type="number"
+							id="timeout"
+							name="timeout"
+							value="5"
+							min="1"
+							max="60"
+						/>
+					</div>
+				</div>
+
+				<div class="form-section">
+					<h3>Options</h3>
+					<div class="form-group">
+						<label class="checkbox-label">
+							<input
+								type="checkbox"
+								name="enabled"
+								value="true"
+								checked
+							/>
+							<span>Enable on creation</span>
+						</label>
+					</div>
+				</div>
+
+				<div class="form-actions">
+					<button type="submit" class="btn btn-primary">Create Action</button>
+					<a href="/web/actions" class="btn btn-secondary">Cancel</a>
+				</div>
+			</form>
+		</div>
+
+		<script>
+			document.getElementById('repeat_frequency').addEventListener('change', function(e) {
+				const customDiv = document.getElementById('custom-frequency');
+				if (e.target.value === 'custom') {
+					customDiv.style.display = 'block';
+				} else {
+					customDiv.style.display = 'none';
+				}
+			});
+		</script>
+	}
+}

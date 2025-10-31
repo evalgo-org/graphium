@@ -387,6 +387,17 @@ func (s *Server) setupRoutes() {
 	webGroup.DELETE("/agents/:id", webHandler.DeleteAgentHandler)
 	webGroup.GET("/agents/:id/logs/download", webHandler.AgentLogsDownloadHandler)
 	webGroup.GET("/agents/:id/logs", webHandler.AgentLogsHandler)
+
+	// Scheduled Actions routes (web UI)
+	webGroup.GET("/actions", webHandler.ActionsPage)
+	webGroup.GET("/actions/new", webHandler.CreateActionFormHandler)
+	webGroup.POST("/actions/create", webHandler.CreateActionHandler)
+	webGroup.GET("/actions/table", webHandler.ActionsTableHandler)
+	webGroup.GET("/actions/:id", webHandler.ActionDetailPage)
+	webGroup.POST("/actions/:id/execute", webHandler.ExecuteActionHandler)
+	webGroup.POST("/actions/:id/toggle", webHandler.ToggleActionHandler)
+	webGroup.POST("/actions/:id/update", webHandler.UpdateActionHandler)
+	webGroup.POST("/actions/:id/delete", webHandler.DeleteActionHandler)
 }
 
 // runTaskMonitor watches for completed deletion tasks and cleans up stack metadata.
