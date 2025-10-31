@@ -74,15 +74,21 @@ import (
 // to the Graphium API, providing real-time visibility into container state across
 // distributed hosts.
 type Agent struct {
-	apiURL       string
-	hostID       string
-	datacenter   string
-	dockerSocket string
-	docker       *dockerclient.Client
-	httpClient   *http.Client
-	syncInterval time.Duration
-	hostInfo     *models.Host
-	authToken    string
+	apiURL        string
+	hostID        string
+	datacenter    string
+	dockerSocket  string
+	docker        *dockerclient.Client
+	httpClient    *http.Client
+	syncInterval  time.Duration
+	hostInfo      *models.Host
+	authToken     string
+	startTime     time.Time
+	syncCount     int64
+	failedSyncs   int64
+	eventsCount   int64
+	lastSyncTime  time.Time
+	lastSyncDuration time.Duration
 }
 
 // NewAgent creates a new agent instance.
@@ -99,10 +105,18 @@ func NewAgent(apiURL, hostID, datacenter, dockerSocket, agentToken string) (*Age
 		dockerSocket = "/var/run/docker.sock"
 	}
 
+	// Prepare Docker host URL
+	// If dockerSocket is already a URL (ssh://, tcp://, unix://), use it as-is
+	// Otherwise, assume it's a Unix socket path and prefix with unix://
+	dockerHost := dockerSocket
+	if !strings.Contains(dockerSocket, "://") {
+		dockerHost = "unix://" + dockerSocket
+	}
+
 	// Create Docker client
 	dockerClient, err := dockerclient.NewClientWithOpts(
 		dockerclient.FromEnv,
-		dockerclient.WithHost("unix://"+dockerSocket),
+		dockerclient.WithHost(dockerHost),
 		dockerclient.WithAPIVersionNegotiation(),
 	)
 	if err != nil {

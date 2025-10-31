@@ -23,7 +23,20 @@ agent:
   api_url: http://localhost:8095
   host_id: localhost-docker
   datacenter: local
+
+  # Docker connection - supports multiple protocols:
+  # - Local Unix socket: /var/run/docker.sock (default)
+  # - SSH connection: ssh://user@remote-host
+  # - SSH with port: ssh://user@remote-host:2222
+  # - TCP connection: tcp://remote-host:2376
+  # - Explicit Unix: unix:///var/run/docker.sock
   docker_socket: /var/run/docker.sock
+
+  # Examples for remote hosts:
+  # docker_socket: ssh://docker@prod-host1.example.com
+  # docker_socket: ssh://ubuntu@192.168.1.100:22
+  # docker_socket: tcp://docker.example.com:2376
+
   sync_interval: 30s
   agent_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYWdlbnQ6bG9jYWxob3N0LWRvY2tlciIsInVzZXJuYW1lIjoiYWdlbnQtbG9jYWxob3N0LWRvY2tlciIsInJvbGVzIjpbImFnZW50Il0sImlzcyI6ImdyYXBoaXVtLWFnZW50Iiwic3ViIjoibG9jYWxob3N0LWRvY2tlciIsImV4cCI6MTc5MzM0NTYyMiwibmJmIjoxNzYxODA5NjIyLCJpYXQiOjE3NjE4MDk2MjJ9.KtlVAj5soqGCzhBKTh3YWXkuq89TSb3tPLfbnxjxxhA
 
