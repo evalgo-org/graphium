@@ -1130,8 +1130,7 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 				<div class="graph-control-group">
 					<label for="layout-select">Layout:</label>
 					<select id="layout-select" name="layout">
-						<option value="cose-bilkent">Hierarchical (COSE-Bilkent)</option>
-						<option value="cose">Force Directed (COSE)</option>
+						<option value="cose" selected>Force Directed (COSE)</option>
 						<option value="breadthfirst">Breadthfirst</option>
 						<option value="grid">Grid</option>
 						<option value="circle">Circle</option>
@@ -1234,7 +1233,6 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 		</div>
 
 		<script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
-		<script src="https://unpkg.com/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.js"></script>
 		<script>
 		(function() {
 			let cy;
@@ -1242,11 +1240,6 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 			let currentFilters = { type: 'all', status: 'all', datacenter: 'all' };
 			let currentViewMode = 'stack';
 			let showOrphans = false;
-
-			// Register cose-bilkent layout
-			if (typeof cytoscape !== 'undefined' && typeof cytoscapeCoseBilkent !== 'undefined') {
-				cytoscape.use(cytoscapeCoseBilkent);
-			}
 
 			// Build API URL based on view mode
 			function getGraphAPIUrl() {
@@ -1261,7 +1254,7 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 			}
 
 			// Initialize Cytoscape
-			function initGraph(layout = 'cose-bilkent') {
+			function initGraph(layout = 'cose') {
 				const apiUrl = getGraphAPIUrl();
 
 				fetch(apiUrl)
@@ -1414,20 +1407,14 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 								fit: true,
 								padding: 50,
 								randomize: false,
+								// COSE layout options (supports compound nodes)
 								componentSpacing: 100,
 								nodeRepulsion: 400000,
 								idealEdgeLength: 100,
 								edgeElasticity: 100,
-								// Compound node options (for cose-bilkent)
 								nestingFactor: 0.1,
 								gravity: 0.25,
-								numIter: 2500,
-								tile: true,
-								tilingPaddingVertical: 10,
-								tilingPaddingHorizontal: 10,
-								gravityRangeCompound: 1.5,
-								gravityCompound: 1.0,
-								gravityRange: 3.8
+								numIter: 2500
 							}
 						});
 
@@ -1484,11 +1471,12 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 						animationDuration: 500,
 						fit: true,
 						padding: 50,
-						// Compound node options
+						// COSE compound node options
+						componentSpacing: 100,
+						nodeRepulsion: 400000,
 						nestingFactor: 0.1,
 						gravity: 0.25,
-						numIter: 2500,
-						tile: true
+						numIter: 2500
 					}).run();
 				}
 			});
