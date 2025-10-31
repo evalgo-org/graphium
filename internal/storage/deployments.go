@@ -72,3 +72,16 @@ func (s *Storage) GetDeploymentState(id string) (*models.DeploymentState, error)
 func (s *Storage) UpdateDeploymentState(state *models.DeploymentState) error {
 	return s.SaveDeploymentState(state)
 }
+
+// DeleteDeploymentState deletes a deployment state by ID.
+func (s *Storage) DeleteDeploymentState(id string) error {
+	// First get the document to get the revision
+	state, err := s.GetDeploymentState(id)
+	if err != nil {
+		// If document doesn't exist, consider it already deleted
+		return nil
+	}
+
+	// Delete the document
+	return s.service.DeleteDocument(id, state.Rev)
+}

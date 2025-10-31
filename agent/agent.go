@@ -251,6 +251,14 @@ func (a *Agent) Start(ctx context.Context) error {
 	// Start periodic metrics reporting
 	go a.periodicMetricsReport(ctx)
 
+	// Start task executor for deployment operations
+	taskExecutor := NewTaskExecutor(a, 5*time.Second)
+	go func() {
+		if err := taskExecutor.Start(ctx); err != nil && err != context.Canceled {
+			log.Printf("Task executor error: %v", err)
+		}
+	}()
+
 	// Monitor Docker events
 	return a.monitorEvents(ctx)
 }

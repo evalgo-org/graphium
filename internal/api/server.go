@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -80,6 +81,9 @@ func New(cfg *config.Config, store *storage.Storage, agentMgr *agents.Manager) *
 
 	// Start WebSocket hub in background
 	go hub.Run()
+
+	// Start task monitor for automatic cleanup
+	go server.runTaskMonitor()
 
 	// Setup middleware
 	server.setupMiddleware()
@@ -273,6 +277,19 @@ func (s *Server) setupRoutes() {
 	agentRoutes.POST("/:id/stop", s.stopAgent, ValidateIDFormat, s.authMiddle.RequireAdmin)
 	agentRoutes.POST("/:id/restart", s.restartAgent, ValidateIDFormat, s.authMiddle.RequireAdmin)
 
+	// Agent task routes (for agents to poll and update task status)
+	agentRoutes.GET("/:id/tasks", s.getAgentTasks, ValidateIDFormat, s.authMiddle.RequireAgentAuth)
+
+	// Task management routes
+	tasks := v1.Group("/tasks")
+	tasks.POST("", s.createTask, s.authMiddle.RequireWrite)
+	tasks.GET("", s.listTasks, s.authMiddle.RequireRead)
+	tasks.GET("/stats", s.getTaskStatistics, s.authMiddle.RequireRead)
+	tasks.GET("/:id", s.getTask, ValidateIDFormat, s.authMiddle.RequireRead)
+	tasks.PUT("/:id/status", s.updateTaskStatus, ValidateIDFormat, s.authMiddle.RequireAgentAuth)
+	tasks.POST("/:id/retry", s.retryTask, ValidateIDFormat, s.authMiddle.RequireWrite)
+	tasks.POST("/:id/cancel", s.cancelTask, ValidateIDFormat, s.authMiddle.RequireWrite)
+
 	// WebSocket routes (use web auth middleware for session cookie support)
 	ws := v1.Group("/ws")
 	ws.GET("/graph", s.HandleWebSocket, webHandler.WebAuthMiddleware)   // WebSocket connection for graph updates
@@ -361,6 +378,91 @@ func (s *Server) setupRoutes() {
 	webGroup.DELETE("/agents/:id", webHandler.DeleteAgentHandler)
 	webGroup.GET("/agents/:id/logs/download", webHandler.AgentLogsDownloadHandler)
 	webGroup.GET("/agents/:id/logs", webHandler.AgentLogsHandler)
+}
+
+// runTaskMonitor watches for completed deletion tasks and cleans up stack metadata.
+func (s *Server) runTaskMonitor() {
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	s.debugLog("Task monitor started")
+
+	for range ticker.C {
+		s.checkCompletedStackDeletions()
+	}
+}
+
+// checkCompletedStackDeletions checks for stacks with status="deleting" and cleans up
+// the stack metadata once all deletion tasks are complete.
+func (s *Server) checkCompletedStackDeletions() {
+	// Get all stacks with status="deleting"
+	stacks, err := s.storage.ListStacks(map[string]interface{}{
+		"status": "deleting",
+	})
+	if err != nil {
+		s.debugLog("Task monitor: Failed to list deleting stacks: %v", err)
+		return
+	}
+
+	if len(stacks) == 0 {
+		return
+	}
+
+	s.debugLog("Task monitor: Found %d stack(s) in deleting state", len(stacks))
+
+	for _, stack := range stacks {
+		// Get tasks for this stack
+		tasks, err := s.storage.GetTasksByStack(stack.ID)
+		if err != nil {
+			s.debugLog("Task monitor: Failed to get tasks for stack %s: %v", stack.ID, err)
+			continue
+		}
+
+		// Check if all tasks are complete (completed, failed, or cancelled)
+		allComplete := true
+		completedCount := 0
+		failedCount := 0
+		cancelledCount := 0
+
+		for _, task := range tasks {
+			switch task.Status {
+			case "completed":
+				completedCount++
+			case "failed":
+				failedCount++
+			case "cancelled":
+				cancelledCount++
+			default:
+				allComplete = false
+			}
+		}
+
+		if allComplete && len(tasks) > 0 {
+			s.debugLog("Task monitor: All %d task(s) complete for stack %s (completed: %d, failed: %d, cancelled: %d)",
+				len(tasks), stack.ID, completedCount, failedCount, cancelledCount)
+
+			// Delete deployment state
+			if err := s.storage.DeleteDeploymentState(stack.ID); err != nil {
+				s.debugLog("Task monitor: Failed to delete deployment state for stack %s: %v", stack.ID, err)
+			}
+
+			// Delete stack metadata
+			if err := s.storage.DeleteStack(stack.ID); err != nil {
+				s.debugLog("Task monitor: Failed to delete stack %s: %v", stack.ID, err)
+				continue
+			}
+
+			// Broadcast event
+			s.BroadcastGraphEvent("stack_deleted", map[string]interface{}{
+				"stackId": stack.ID,
+				"name":    stack.Name,
+			})
+
+			s.debugLog("Task monitor: Successfully deleted stack %s", stack.ID)
+		} else if !allComplete {
+			s.debugLog("Task monitor: Stack %s still has %d pending/running task(s)", stack.ID, len(tasks)-(completedCount+failedCount+cancelledCount))
+		}
+	}
 }
 
 // Start starts the HTTP server.

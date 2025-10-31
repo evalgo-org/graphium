@@ -131,7 +131,7 @@ func (m *Manager) StartAgent(configID string) error {
 
 	// Generate agent token
 	agentToken, err := auth.GenerateAgentToken(
-		m.config.Security.JWTSecret,
+		m.config.Security.AgentTokenSecret,
 		cfg.HostID,
 		365*24*time.Hour, // 1 year token for managed agents
 	)
