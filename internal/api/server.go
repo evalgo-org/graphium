@@ -247,16 +247,6 @@ func (s *Server) setupRoutes() {
 	v1.GET("/containers/:id/logs", s.getContainerLogs, ValidateIDFormat, webHandler.WebAuthMiddleware)
 	v1.GET("/containers/:id/logs/download", s.downloadContainerLogs, ValidateIDFormat, webHandler.WebAuthMiddleware)
 
-	// Graph visualization routes (support both JWT and session auth for web UI compatibility)
-	graph := v1.Group("/graph")
-	graph.GET("", s.GetGraphData, webHandler.WebAuthMiddleware)
-	graph.GET("/stack-view", s.GetGraphDataStackView, webHandler.WebAuthMiddleware) // New stack-centric view
-	graph.GET("/stats", s.GetGraphStats, webHandler.WebAuthMiddleware)
-	graph.GET("/layout", s.GetGraphLayout, webHandler.WebAuthMiddleware)
-	graph.GET("/containers/:id/dependencies", s.getContainerDependencies, ValidateIDFormat, webHandler.WebAuthMiddleware)
-	graph.GET("/containers/:id/dependents", s.getContainerDependents, ValidateIDFormat, webHandler.WebAuthMiddleware)
-	graph.GET("/containers/:id/graph", s.getContainerGraph, ValidateIDFormat, webHandler.WebAuthMiddleware)
-
 	// Integrity routes (database health and repair)
 	integrityRoutes := v1.Group("/integrity")
 	integrityRoutes.POST("/scan", s.scanIntegrity, s.authMiddle.RequireAdmin)
@@ -293,7 +283,6 @@ func (s *Server) setupRoutes() {
 
 	// WebSocket routes (use web auth middleware for session cookie support)
 	ws := v1.Group("/ws")
-	ws.GET("/graph", s.HandleWebSocket, webHandler.WebAuthMiddleware)   // WebSocket connection for graph updates
 	ws.GET("/stats", s.GetWebSocketStats, webHandler.WebAuthMiddleware) // WebSocket stats
 	s.echo.Static("/static", "static")
 
@@ -365,7 +354,6 @@ func (s *Server) setupRoutes() {
 	webGroup.GET("/stacks/jsonld/deployments/:id", webHandler.JSONLDDeploymentDetail)
 
 	webGroup.GET("/topology", webHandler.TopologyView)
-	webGroup.GET("/graph", webHandler.GraphView)
 
 	// Agent management routes (web UI)
 	webGroup.GET("/agents", webHandler.AgentsPage)

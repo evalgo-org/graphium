@@ -398,17 +398,6 @@ func (h *Handler) TopologyView(c echo.Context) error {
 	return Render(c, TopologyViewWithUser(singleTopology, topologies, datacenters, datacenter, user))
 }
 
-// GraphView renders the interactive graph visualization.
-func (h *Handler) GraphView(c echo.Context) error {
-	// Get current user from context (if authenticated)
-	var user *models.User
-	if claims, ok := c.Get("claims").(*auth.Claims); ok {
-		user, _ = h.storage.GetUser(claims.UserID)
-	}
-
-	return Render(c, GraphViewWithUser(h.config, user))
-}
-
 // ContainerDetail renders the container detail page.
 func (h *Handler) ContainerDetail(c echo.Context) error {
 	// Get current user from context (if authenticated)
