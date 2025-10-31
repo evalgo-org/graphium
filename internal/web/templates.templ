@@ -3722,17 +3722,6 @@ templ ActionsTable(actions []*models.ScheduledAction) {
 						<td>
 							<div class="action-buttons">
 								<a href={ templ.URL(fmt.Sprintf("/web/actions/%s", action.ID)) } class="btn-icon" title="View Details">👁️</a>
-								<button
-									class="btn-icon"
-									title="Execute Now"
-									hx-post={ fmt.Sprintf("/web/actions/%s/execute", action.ID) }
-									hx-swap="beforeend" hx-target="body"
-								>▶️</button>
-								<button
-									class="btn-icon btn-danger"
-									title="Delete"
-									onclick={ templ.ComponentScript{Call: fmt.Sprintf("showDeleteModal('%s', '%s')", action.ID, action.Name)} }
-								>🗑️</button>
 							</div>
 						</td>
 					</tr>

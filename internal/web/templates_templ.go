@@ -8568,55 +8568,25 @@ func ActionsTable(actions []*models.ScheduledAction) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 754, "\" class=\"btn-icon\" title=\"View Details\">👁️</a> <button class=\"btn-icon\" title=\"Execute Now\" hx-post=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var479 string
-			templ_7745c5c3_Var479, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/actions/%s/execute", action.ID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3728, Col: 68}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var479))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 755, "\" hx-swap=\"beforeend\" hx-target=\"body\">▶️</button> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.ComponentScript{Call: fmt.Sprintf("showDeleteModal('%s', '%s')", action.ID, action.Name)})
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 756, "<button class=\"btn-icon btn-danger\" title=\"Delete\" onclick=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var480 templ.ComponentScript = templ.ComponentScript{Call: fmt.Sprintf("showDeleteModal('%s', '%s')", action.ID, action.Name)}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var480.Call)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 757, "\">🗑️</button></div></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 754, "\" class=\"btn-icon\" title=\"View Details\">👁️</a></div></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 758, "</tbody></table><div class=\"table-footer\"><p>Total: ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 755, "</tbody></table><div class=\"table-footer\"><p>Total: ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var481 string
-		templ_7745c5c3_Var481, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(actions)))
+		var templ_7745c5c3_Var479 string
+		templ_7745c5c3_Var479, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(actions)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3743, Col: 46}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3732, Col: 46}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var481))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var479))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 759, " actions</p></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 756, " actions</p></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -8641,162 +8611,162 @@ func ExecutionHistoryRows(tasks []*TaskWithResult) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var482 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var482 == nil {
-			templ_7745c5c3_Var482 = templ.NopComponent
+		templ_7745c5c3_Var480 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var480 == nil {
+			templ_7745c5c3_Var480 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		for _, taskWrapper := range tasks {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 760, "<tr><td><code>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 757, "<tr><td><code>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var481 string
+			templ_7745c5c3_Var481, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.ID[:16])
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3741, Col: 39}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var481))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 758, "...</code></td><td>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var482 = []any{fmt.Sprintf("badge badge-%s", taskWrapper.Task.Status)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var482...)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 759, "<span class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var483 string
-			templ_7745c5c3_Var483, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.ID[:16])
+			templ_7745c5c3_Var483, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var482).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3752, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var483))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 761, "...</code></td><td>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 760, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var484 = []any{fmt.Sprintf("badge badge-%s", taskWrapper.Task.Status)}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var484...)
+			var templ_7745c5c3_Var484 string
+			templ_7745c5c3_Var484, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.Status)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3744, Col: 30}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var484))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 762, "<span class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 761, "</span></td><td>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var485 string
-			templ_7745c5c3_Var485, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var484).String())
+			templ_7745c5c3_Var485, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.CreatedAt.Format("2006-01-02 15:04"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3747, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var485))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 763, "\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var486 string
-			templ_7745c5c3_Var486, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.Status)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3755, Col: 30}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var486))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 764, "</span></td><td>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var487 string
-			templ_7745c5c3_Var487, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.CreatedAt.Format("2006-01-02 15:04"))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3758, Col: 62}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var487))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 765, "</td><td>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 762, "</td><td>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if taskWrapper.Task.CompletedAt != nil {
-				var templ_7745c5c3_Var488 string
-				templ_7745c5c3_Var488, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.CompletedAt.Format("2006-01-02 15:04"))
+				var templ_7745c5c3_Var486 string
+				templ_7745c5c3_Var486, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.CompletedAt.Format("2006-01-02 15:04"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3761, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3750, Col: 62}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var488))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var486))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 766, "<span class=\"text-muted\">-</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 763, "<span class=\"text-muted\">-</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 767, "</td><td>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 764, "</td><td>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if taskWrapper.Task.CompletedAt != nil && taskWrapper.Task.StartedAt != nil {
-				var templ_7745c5c3_Var489 string
-				templ_7745c5c3_Var489, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1fs", taskWrapper.Task.CompletedAt.Sub(*taskWrapper.Task.StartedAt).Seconds()))
+				var templ_7745c5c3_Var487 string
+				templ_7745c5c3_Var487, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1fs", taskWrapper.Task.CompletedAt.Sub(*taskWrapper.Task.StartedAt).Seconds()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3768, Col: 100}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3757, Col: 100}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var489))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var487))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 768, "<span class=\"text-muted\">-</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 765, "<span class=\"text-muted\">-</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 769, "</td><td>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 766, "</td><td>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if taskWrapper.Result != nil && taskWrapper.Result.Message != "" {
 				if taskWrapper.Result.Success {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 770, "<span style=\"color: #10b981;\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 767, "<span style=\"color: #10b981;\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var490 string
-					templ_7745c5c3_Var490, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Result.Message)
+					var templ_7745c5c3_Var488 string
+					templ_7745c5c3_Var488, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Result.Message)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3776, Col: 64}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3765, Col: 64}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var490))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var488))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 771, "</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 768, "</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 772, "<span style=\"color: #ef4444;\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 769, "<span style=\"color: #ef4444;\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var491 string
-					templ_7745c5c3_Var491, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Result.Message)
+					var templ_7745c5c3_Var489 string
+					templ_7745c5c3_Var489, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Result.Message)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3778, Col: 64}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3767, Col: 64}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var491))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var489))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 773, "</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 770, "</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 774, "<span class=\"text-muted\">-</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 771, "<span class=\"text-muted\">-</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 775, "</td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 772, "</td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -8822,12 +8792,12 @@ func ActionDetailWithUser(action *models.ScheduledAction, tasks []*TaskWithResul
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var492 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var492 == nil {
-			templ_7745c5c3_Var492 = templ.NopComponent
+		templ_7745c5c3_Var490 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var490 == nil {
+			templ_7745c5c3_Var490 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var493 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var491 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -8839,33 +8809,33 @@ func ActionDetailWithUser(action *models.ScheduledAction, tasks []*TaskWithResul
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 776, "<div class=\"page-header\"><h2>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 773, "<div class=\"page-header\"><h2>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var494 string
-			templ_7745c5c3_Var494, templ_7745c5c3_Err = templ.JoinStringErrs(action.Name)
+			var templ_7745c5c3_Var492 string
+			templ_7745c5c3_Var492, templ_7745c5c3_Err = templ.JoinStringErrs(action.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3792, Col: 20}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3781, Col: 20}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var494))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 777, "</h2><div class=\"flex-row\" style=\"gap: 0.5rem;\"><a href=\"/web/actions\" class=\"btn btn-secondary\">← Back to Actions</a> <button class=\"btn btn-primary\" hx-post=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var492))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var495 string
-			templ_7745c5c3_Var495, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/actions/%s/execute", action.ID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3797, Col: 64}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var495))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 774, "</h2><div class=\"flex-row\" style=\"gap: 0.5rem;\"><a href=\"/web/actions\" class=\"btn btn-secondary\">← Back to Actions</a> <button class=\"btn btn-primary\" hx-post=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 778, "\" hx-swap=\"innerHTML\" hx-target=\"#execution-response\" onclick=\"setTimeout(() => { htmx.ajax('GET', window.location.pathname + '/history', {target:'#execution-history-tbody', swap:'innerHTML'}); }, 3000);\">▶️ Execute Now</button> ")
+			var templ_7745c5c3_Var493 string
+			templ_7745c5c3_Var493, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/actions/%s/execute", action.ID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3786, Col: 64}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var493))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 775, "\" hx-swap=\"innerHTML\" hx-target=\"#execution-response\" onclick=\"setTimeout(() => { htmx.ajax('GET', window.location.pathname + '/history', {target:'#execution-history-tbody', swap:'innerHTML'}); }, 3000);\">▶️ Execute Now</button> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -8873,160 +8843,183 @@ func ActionDetailWithUser(action *models.ScheduledAction, tasks []*TaskWithResul
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 779, "<button class=\"btn btn-danger\" onclick=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 776, "<button class=\"btn btn-danger\" onclick=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var496 templ.ComponentScript = templ.ComponentScript{Call: fmt.Sprintf("showDeleteModalDetail('%s', '%s')", action.ID, action.Name)}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var496.Call)
+			var templ_7745c5c3_Var494 templ.ComponentScript = templ.ComponentScript{Call: fmt.Sprintf("showDeleteModalDetail('%s', '%s')", action.ID, action.Name)}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var494.Call)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 780, "\">🗑️ Delete</button></div></div><!-- Execution Response Container --> <div id=\"execution-response\" style=\"margin: 1rem 0;\"></div><!-- Delete Confirmation Modal --> <div id=\"deleteModalDetail\" class=\"modal\" style=\"display: none;\"><div class=\"modal-content\"><h3>Confirm Delete</h3><p id=\"deleteMessageDetail\">Are you sure you want to delete this action?</p><div class=\"modal-actions\"><button class=\"btn btn-secondary\" onclick=\"closeDeleteModalDetail()\">Cancel</button> <button id=\"confirmDeleteBtnDetail\" class=\"btn btn-danger\" hx-delete=\"\" hx-target=\"body\" hx-swap=\"outerHTML\" onclick=\"closeDeleteModalDetail()\">Delete</button></div></div></div><script>\n\t\t\tfunction showDeleteModalDetail(actionId, actionName) {\n\t\t\t\tconst modal = document.getElementById('deleteModalDetail');\n\t\t\t\tconst message = document.getElementById('deleteMessageDetail');\n\t\t\t\tconst confirmBtn = document.getElementById('confirmDeleteBtnDetail');\n\n\t\t\t\tmessage.textContent = `Are you sure you want to delete \"${actionName}\"? This action cannot be undone.`;\n\t\t\t\tconfirmBtn.setAttribute('hx-delete', `/web/actions/${actionId}/delete`);\n\n\t\t\t\t// Re-process HTMX attributes\n\t\t\t\thtmx.process(confirmBtn);\n\n\t\t\t\tmodal.style.display = 'flex';\n\t\t\t}\n\n\t\t\tfunction closeDeleteModalDetail() {\n\t\t\t\tconst modal = document.getElementById('deleteModalDetail');\n\t\t\t\tmodal.style.display = 'none';\n\t\t\t}\n\n\t\t\t// Close modal on click outside\n\t\t\tdocument.getElementById('deleteModalDetail')?.addEventListener('click', function(e) {\n\t\t\t\tif (e.target === this) {\n\t\t\t\t\tcloseDeleteModalDetail();\n\t\t\t\t}\n\t\t\t});\n\t\t</script> <div class=\"detail-grid\"><div class=\"detail-card\"><h3>Configuration</h3><div class=\"detail-row\"><span class=\"detail-label\">Name:</span> <span class=\"detail-value\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 777, "\">🗑️ Delete</button></div></div><!-- Execution Response Container --> <div id=\"execution-response\" style=\"margin: 1rem 0;\"></div><!-- Delete Confirmation Modal --> <div id=\"deleteModalDetail\" class=\"modal\" style=\"display: none;\"><div class=\"modal-content\"><h3>Confirm Delete</h3><p id=\"deleteMessageDetail\">Are you sure you want to delete this action?</p><div class=\"modal-actions\"><button class=\"btn btn-secondary\" onclick=\"closeDeleteModalDetail()\">Cancel</button> <button id=\"confirmDeleteBtnDetail\" class=\"btn btn-danger\" hx-delete=\"\" hx-target=\"body\" hx-swap=\"outerHTML\" onclick=\"closeDeleteModalDetail()\">Delete</button></div></div></div><script>\n\t\t\tfunction showDeleteModalDetail(actionId, actionName) {\n\t\t\t\tconst modal = document.getElementById('deleteModalDetail');\n\t\t\t\tconst message = document.getElementById('deleteMessageDetail');\n\t\t\t\tconst confirmBtn = document.getElementById('confirmDeleteBtnDetail');\n\n\t\t\t\tmessage.textContent = `Are you sure you want to delete \"${actionName}\"? This action cannot be undone.`;\n\t\t\t\tconfirmBtn.setAttribute('hx-delete', `/web/actions/${actionId}/delete`);\n\n\t\t\t\t// Re-process HTMX attributes\n\t\t\t\thtmx.process(confirmBtn);\n\n\t\t\t\tmodal.style.display = 'flex';\n\t\t\t}\n\n\t\t\tfunction closeDeleteModalDetail() {\n\t\t\t\tconst modal = document.getElementById('deleteModalDetail');\n\t\t\t\tmodal.style.display = 'none';\n\t\t\t}\n\n\t\t\t// Close modal on click outside\n\t\t\tdocument.getElementById('deleteModalDetail')?.addEventListener('click', function(e) {\n\t\t\t\tif (e.target === this) {\n\t\t\t\t\tcloseDeleteModalDetail();\n\t\t\t\t}\n\t\t\t});\n\t\t</script> <div class=\"detail-grid\"><div class=\"detail-card\"><h3>Configuration</h3><div class=\"detail-row\"><span class=\"detail-label\">Name:</span> <span class=\"detail-value\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var495 string
+			templ_7745c5c3_Var495, templ_7745c5c3_Err = templ.JoinStringErrs(action.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3853, Col: 45}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var495))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 778, "</span></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if action.Description != "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 779, "<div class=\"detail-row\"><span class=\"detail-label\">Description:</span> <span class=\"detail-value\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var496 string
+				templ_7745c5c3_Var496, templ_7745c5c3_Err = templ.JoinStringErrs(action.Description)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3858, Col: 53}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var496))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 780, "</span></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 781, "<div class=\"detail-row\"><span class=\"detail-label\">Type:</span> <span class=\"detail-value\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var497 string
-			templ_7745c5c3_Var497, templ_7745c5c3_Err = templ.JoinStringErrs(action.Name)
+			templ_7745c5c3_Var497, templ_7745c5c3_Err = templ.JoinStringErrs(action.Type)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3864, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3863, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var497))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 781, "</span></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 782, "</span></div><div class=\"detail-row\"><span class=\"detail-label\">Agent:</span> <span class=\"detail-value\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if action.Description != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 782, "<div class=\"detail-row\"><span class=\"detail-label\">Description:</span> <span class=\"detail-value\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var498 string
-				templ_7745c5c3_Var498, templ_7745c5c3_Err = templ.JoinStringErrs(action.Description)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3869, Col: 53}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var498))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 783, "</span></div>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
+			var templ_7745c5c3_Var498 string
+			templ_7745c5c3_Var498, templ_7745c5c3_Err = templ.JoinStringErrs(action.Agent)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3867, Col: 46}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 784, "<div class=\"detail-row\"><span class=\"detail-label\">Type:</span> <span class=\"detail-value\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var498))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var499 string
-			templ_7745c5c3_Var499, templ_7745c5c3_Err = templ.JoinStringErrs(action.Type)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3874, Col: 45}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var499))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 783, "</span></div><div class=\"detail-row\"><span class=\"detail-label\">Status:</span> <span class=\"detail-value\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 785, "</span></div><div class=\"detail-row\"><span class=\"detail-label\">Agent:</span> <span class=\"detail-value\">")
+			var templ_7745c5c3_Var499 = []any{fmt.Sprintf("badge badge-%s", map[bool]string{true: "success", false: "secondary"}[action.Enabled])}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var499...)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 784, "<span class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var500 string
-			templ_7745c5c3_Var500, templ_7745c5c3_Err = templ.JoinStringErrs(action.Agent)
+			templ_7745c5c3_Var500, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var499).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3878, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var500))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 786, "</span></div><div class=\"detail-row\"><span class=\"detail-label\">Status:</span> <span class=\"detail-value\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var501 = []any{fmt.Sprintf("badge badge-%s", map[bool]string{true: "success", false: "secondary"}[action.Enabled])}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var501...)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 787, "<span class=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var502 string
-			templ_7745c5c3_Var502, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var501).String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var502))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 788, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 785, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if action.Enabled {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 789, "Enabled")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 786, "Enabled")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 790, "Disabled")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 787, "Disabled")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 791, "</span></span></div><div class=\"detail-row\"><span class=\"detail-label\">Action Status:</span> <span class=\"detail-value\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 788, "</span></span></div><div class=\"detail-row\"><span class=\"detail-label\">Action Status:</span> <span class=\"detail-value\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var503 string
-			templ_7745c5c3_Var503, templ_7745c5c3_Err = templ.JoinStringErrs(action.ActionStatus)
+			var templ_7745c5c3_Var501 string
+			templ_7745c5c3_Var501, templ_7745c5c3_Err = templ.JoinStringErrs(action.ActionStatus)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3894, Col: 53}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3883, Col: 53}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var503))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var501))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 792, "</span></div></div><div class=\"detail-card\"><h3>Schedule</h3>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 789, "</span></div></div><div class=\"detail-card\"><h3>Schedule</h3>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if action.Schedule != nil {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 793, "<div class=\"detail-row\"><span class=\"detail-label\">Frequency:</span> <span class=\"detail-value\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 790, "<div class=\"detail-row\"><span class=\"detail-label\">Frequency:</span> <span class=\"detail-value\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var504 string
-				templ_7745c5c3_Var504, templ_7745c5c3_Err = templ.JoinStringErrs(action.Schedule.RepeatFrequency)
+				var templ_7745c5c3_Var502 string
+				templ_7745c5c3_Var502, templ_7745c5c3_Err = templ.JoinStringErrs(action.Schedule.RepeatFrequency)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3903, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3892, Col: 66}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var504))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var502))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 794, "</span></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 791, "</span></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if action.Schedule.ScheduleTimezone != "" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 795, "<div class=\"detail-row\"><span class=\"detail-label\">Timezone:</span> <span class=\"detail-value\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 792, "<div class=\"detail-row\"><span class=\"detail-label\">Timezone:</span> <span class=\"detail-value\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var505 string
-					templ_7745c5c3_Var505, templ_7745c5c3_Err = templ.JoinStringErrs(action.Schedule.ScheduleTimezone)
+					var templ_7745c5c3_Var503 string
+					templ_7745c5c3_Var503, templ_7745c5c3_Err = templ.JoinStringErrs(action.Schedule.ScheduleTimezone)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3908, Col: 68}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3897, Col: 68}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var505))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var503))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 793, "</span></div>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 794, " ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if action.Schedule.StartDate != nil {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 795, "<div class=\"detail-row\"><span class=\"detail-label\">Start Date:</span> <span class=\"detail-value\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var504 string
+					templ_7745c5c3_Var504, templ_7745c5c3_Err = templ.JoinStringErrs(action.Schedule.StartDate.Format("2006-01-02 15:04:05"))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3903, Col: 91}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var504))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -9039,17 +9032,17 @@ func ActionDetailWithUser(action *models.ScheduledAction, tasks []*TaskWithResul
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if action.Schedule.StartDate != nil {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 798, "<div class=\"detail-row\"><span class=\"detail-label\">Start Date:</span> <span class=\"detail-value\">")
+				if action.Schedule.EndDate != nil {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 798, "<div class=\"detail-row\"><span class=\"detail-label\">End Date:</span> <span class=\"detail-value\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var506 string
-					templ_7745c5c3_Var506, templ_7745c5c3_Err = templ.JoinStringErrs(action.Schedule.StartDate.Format("2006-01-02 15:04:05"))
+					var templ_7745c5c3_Var505 string
+					templ_7745c5c3_Var505, templ_7745c5c3_Err = templ.JoinStringErrs(action.Schedule.EndDate.Format("2006-01-02 15:04:05"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3914, Col: 91}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3909, Col: 89}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var506))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var505))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -9058,211 +9051,188 @@ func ActionDetailWithUser(action *models.ScheduledAction, tasks []*TaskWithResul
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 800, " ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				if action.Schedule.EndDate != nil {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 801, "<div class=\"detail-row\"><span class=\"detail-label\">End Date:</span> <span class=\"detail-value\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var507 string
-					templ_7745c5c3_Var507, templ_7745c5c3_Err = templ.JoinStringErrs(action.Schedule.EndDate.Format("2006-01-02 15:04:05"))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3920, Col: 89}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var507))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 802, "</span></div>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 803, "</div></div><div class=\"detail-card\" style=\"margin-top: 2rem;\" id=\"execution-history-card\"><h3>Execution History</h3>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 800, "</div></div><div class=\"detail-card\" style=\"margin-top: 2rem;\" id=\"execution-history-card\"><h3>Execution History</h3>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if len(tasks) == 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 804, "<p class=\"text-muted\">No executions yet</p>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 801, "<p class=\"text-muted\">No executions yet</p>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 805, "<table class=\"data-table\"><thead><tr><th>Task ID</th><th>Status</th><th>Created</th><th>Completed</th><th>Duration</th><th>Result</th></tr></thead> <tbody id=\"execution-history-tbody\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 802, "<table class=\"data-table\"><thead><tr><th>Task ID</th><th>Status</th><th>Created</th><th>Completed</th><th>Duration</th><th>Result</th></tr></thead> <tbody id=\"execution-history-tbody\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for _, taskWrapper := range tasks {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 806, "<tr><td><code>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 803, "<tr><td><code>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var506 string
+					templ_7745c5c3_Var506, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.ID[:16])
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3935, Col: 44}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var506))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 804, "...</code></td><td>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var507 = []any{fmt.Sprintf("badge badge-%s", taskWrapper.Task.Status)}
+					templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var507...)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 805, "<span class=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var508 string
-					templ_7745c5c3_Var508, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.ID[:16])
+					templ_7745c5c3_Var508, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var507).String())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3946, Col: 44}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var508))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 807, "...</code></td><td>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 806, "\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var509 = []any{fmt.Sprintf("badge badge-%s", taskWrapper.Task.Status)}
-					templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var509...)
+					var templ_7745c5c3_Var509 string
+					templ_7745c5c3_Var509, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.Status)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3938, Col: 35}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var509))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 808, "<span class=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 807, "</span></td><td>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var510 string
-					templ_7745c5c3_Var510, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var509).String())
+					templ_7745c5c3_Var510, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.CreatedAt.Format("2006-01-02 15:04"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 1, Col: 0}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3941, Col: 67}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var510))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 809, "\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var511 string
-					templ_7745c5c3_Var511, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.Status)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3949, Col: 35}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var511))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 810, "</span></td><td>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var512 string
-					templ_7745c5c3_Var512, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.CreatedAt.Format("2006-01-02 15:04"))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3952, Col: 67}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var512))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 811, "</td><td>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 808, "</td><td>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if taskWrapper.Task.CompletedAt != nil {
-						var templ_7745c5c3_Var513 string
-						templ_7745c5c3_Var513, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.CompletedAt.Format("2006-01-02 15:04"))
+						var templ_7745c5c3_Var511 string
+						templ_7745c5c3_Var511, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Task.CompletedAt.Format("2006-01-02 15:04"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3955, Col: 67}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3944, Col: 67}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var513))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var511))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 812, "<span class=\"text-muted\">-</span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 809, "<span class=\"text-muted\">-</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 813, "</td><td>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 810, "</td><td>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if taskWrapper.Task.CompletedAt != nil && taskWrapper.Task.StartedAt != nil {
-						var templ_7745c5c3_Var514 string
-						templ_7745c5c3_Var514, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1fs", taskWrapper.Task.CompletedAt.Sub(*taskWrapper.Task.StartedAt).Seconds()))
+						var templ_7745c5c3_Var512 string
+						templ_7745c5c3_Var512, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1fs", taskWrapper.Task.CompletedAt.Sub(*taskWrapper.Task.StartedAt).Seconds()))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3962, Col: 105}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3951, Col: 105}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var514))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var512))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 814, "<span class=\"text-muted\">-</span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 811, "<span class=\"text-muted\">-</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 815, "</td><td>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 812, "</td><td>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if taskWrapper.Result != nil && taskWrapper.Result.Message != "" {
 						if taskWrapper.Result.Success {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 816, "<span style=\"color: #10b981;\">")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 813, "<span style=\"color: #10b981;\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							var templ_7745c5c3_Var515 string
-							templ_7745c5c3_Var515, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Result.Message)
+							var templ_7745c5c3_Var513 string
+							templ_7745c5c3_Var513, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Result.Message)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3970, Col: 69}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3959, Col: 69}
 							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var515))
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var513))
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 817, "</span>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 814, "</span>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						} else {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 818, "<span style=\"color: #ef4444;\">")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 815, "<span style=\"color: #ef4444;\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							var templ_7745c5c3_Var516 string
-							templ_7745c5c3_Var516, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Result.Message)
+							var templ_7745c5c3_Var514 string
+							templ_7745c5c3_Var514, templ_7745c5c3_Err = templ.JoinStringErrs(taskWrapper.Result.Message)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3972, Col: 69}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3961, Col: 69}
 							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var516))
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var514))
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 819, "</span>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 816, "</span>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 820, "<span class=\"text-muted\">-</span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 817, "<span class=\"text-muted\">-</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 821, "</td></tr>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 818, "</td></tr>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 822, "</tbody></table>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 819, "</tbody></table>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 823, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 820, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = LayoutWithUser(fmt.Sprintf("Action: %s", action.Name), user).Render(templ.WithChildren(ctx, templ_7745c5c3_Var493), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = LayoutWithUser(fmt.Sprintf("Action: %s", action.Name), user).Render(templ.WithChildren(ctx, templ_7745c5c3_Var491), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -9287,12 +9257,12 @@ func CreateActionFormWithUser(errorMsg string, user *models.User) templ.Componen
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var517 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var517 == nil {
-			templ_7745c5c3_Var517 = templ.NopComponent
+		templ_7745c5c3_Var515 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var515 == nil {
+			templ_7745c5c3_Var515 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var518 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var516 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -9304,35 +9274,35 @@ func CreateActionFormWithUser(errorMsg string, user *models.User) templ.Componen
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 824, "<div class=\"page-header\"><h2>Create Scheduled Action</h2><div class=\"flex-row\"><a href=\"/web/actions\" class=\"btn btn-secondary\">← Back to Actions</a></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 821, "<div class=\"page-header\"><h2>Create Scheduled Action</h2><div class=\"flex-row\"><a href=\"/web/actions\" class=\"btn btn-secondary\">← Back to Actions</a></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if errorMsg != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 825, "<div class=\"alert alert-danger\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 822, "<div class=\"alert alert-danger\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var519 string
-				templ_7745c5c3_Var519, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
+				var templ_7745c5c3_Var517 string
+				templ_7745c5c3_Var517, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3998, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3987, Col: 45}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var519))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var517))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 826, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 823, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 827, " <div class=\"form-container\"><!-- Tab Navigation --><div class=\"tabs\"><button type=\"button\" class=\"tab-button active\" onclick=\"switchTab(event, 'form-tab')\">Form</button> <button type=\"button\" class=\"tab-button\" onclick=\"switchTab(event, 'jsonld-tab')\">JSON-LD</button></div><form method=\"POST\" action=\"/web/actions/create\"><!-- Tab 1: Form Input --><div id=\"form-tab\" class=\"tab-content active\"><div class=\"form-section\"><h3>Basic Information</h3><div class=\"form-group\"><label for=\"name\">Name *</label> <input type=\"text\" id=\"name\" name=\"name\" placeholder=\"e.g., Nginx Health Check\"></div><div class=\"form-group\"><label for=\"description\">Description</label> <textarea id=\"description\" name=\"description\" rows=\"3\" placeholder=\"Describe what this action does...\"></textarea></div><div class=\"form-group\"><label for=\"action_type\">Action Type *</label> <select id=\"action_type\" name=\"action_type\" class=\"form-select\"><option value=\"CheckAction\">CheckAction - Health checks, probes</option> <option value=\"ControlAction\">ControlAction - Start/stop operations</option> <option value=\"CreateAction\">CreateAction - Create resources</option> <option value=\"UpdateAction\">UpdateAction - Update existing resources</option> <option value=\"TransferAction\">TransferAction - Data transfers</option></select></div><div class=\"form-group\"><label for=\"agent_id\">Target Agent/Host *</label> <input type=\"text\" id=\"agent_id\" name=\"agent_id\" placeholder=\"e.g., localhost-docker or host:vm1\"> <small class=\"form-help\">Agent ID or Host ID that will execute this action</small></div></div><div class=\"form-section\"><h3>Schedule</h3><div class=\"form-group\"><label for=\"repeat_frequency\">Repeat Frequency *</label> <select id=\"repeat_frequency\" name=\"repeat_frequency\" class=\"form-select\"><option value=\"PT5M\">Every 5 minutes</option> <option value=\"PT15M\">Every 15 minutes</option> <option value=\"PT30M\">Every 30 minutes</option> <option value=\"PT1H\">Every hour</option> <option value=\"PT6H\">Every 6 hours</option> <option value=\"P1D\">Daily</option> <option value=\"P1W\">Weekly</option> <option value=\"custom\">Custom (ISO 8601)</option></select></div><div class=\"form-group\" id=\"custom-frequency\" style=\"display: none;\"><label for=\"custom_frequency\">Custom Frequency</label> <input type=\"text\" id=\"custom_frequency\" name=\"custom_frequency\" placeholder=\"e.g., PT10M or P2D\"> <small class=\"form-help\">ISO 8601 duration format (PT5M = 5 minutes, P1D = 1 day)</small></div><div class=\"form-group\"><label for=\"timezone\">Timezone</label> <input type=\"text\" id=\"timezone\" name=\"timezone\" value=\"UTC\" placeholder=\"e.g., UTC, America/New_York\"></div></div><div class=\"form-section\"><h3>Action Parameters (for CheckAction)</h3><div class=\"form-group\"><label for=\"check_url\">URL *</label> <input type=\"url\" id=\"check_url\" name=\"check_url\" placeholder=\"http://localhost:8080/health\"></div><div class=\"form-group\"><label for=\"check_method\">HTTP Method</label> <select id=\"check_method\" name=\"check_method\" class=\"form-select\"><option value=\"GET\">GET</option> <option value=\"POST\">POST</option> <option value=\"HEAD\">HEAD</option></select></div><div class=\"form-group\"><label for=\"check_expected_status\">Expected Status Code</label> <input type=\"number\" id=\"check_expected_status\" name=\"check_expected_status\" value=\"200\" min=\"100\" max=\"599\"></div><div class=\"form-group\"><label for=\"check_timeout\">Timeout (seconds)</label> <input type=\"number\" id=\"check_timeout\" name=\"check_timeout\" value=\"5\" min=\"1\" max=\"60\"></div></div><div class=\"form-section\"><h3>Options</h3><div class=\"form-group\"><label class=\"checkbox-label\"><input type=\"checkbox\" name=\"enabled\" value=\"true\" checked> <span>Enable on creation</span></label></div></div></div><!-- Tab 2: JSON-LD Input --><div id=\"jsonld-tab\" class=\"tab-content\" style=\"display: none;\"><div class=\"form-section\"><h3>JSON-LD Action Definition</h3><p class=\"form-help\">Paste a JSON-LD scheduled action definition. See examples in the <code>examples/</code> directory.</p><div class=\"form-group\"><label for=\"action_json\">Action Definition (JSON-LD)</label> <textarea id=\"action_json\" name=\"action_json\" rows=\"25\" class=\"form-textarea code-editor\" placeholder=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 824, " <div class=\"form-container\"><!-- Tab Navigation --><div class=\"tabs\"><button type=\"button\" class=\"tab-button active\" onclick=\"switchTab(event, 'form-tab')\">Form</button> <button type=\"button\" class=\"tab-button\" onclick=\"switchTab(event, 'jsonld-tab')\">JSON-LD</button></div><form method=\"POST\" action=\"/web/actions/create\"><!-- Tab 1: Form Input --><div id=\"form-tab\" class=\"tab-content active\"><div class=\"form-section\"><h3>Basic Information</h3><div class=\"form-group\"><label for=\"name\">Name *</label> <input type=\"text\" id=\"name\" name=\"name\" placeholder=\"e.g., Nginx Health Check\"></div><div class=\"form-group\"><label for=\"description\">Description</label> <textarea id=\"description\" name=\"description\" rows=\"3\" placeholder=\"Describe what this action does...\"></textarea></div><div class=\"form-group\"><label for=\"action_type\">Action Type *</label> <select id=\"action_type\" name=\"action_type\" class=\"form-select\"><option value=\"CheckAction\">CheckAction - Health checks, probes</option> <option value=\"ControlAction\">ControlAction - Start/stop operations</option> <option value=\"CreateAction\">CreateAction - Create resources</option> <option value=\"UpdateAction\">UpdateAction - Update existing resources</option> <option value=\"TransferAction\">TransferAction - Data transfers</option></select></div><div class=\"form-group\"><label for=\"agent_id\">Target Agent/Host *</label> <input type=\"text\" id=\"agent_id\" name=\"agent_id\" placeholder=\"e.g., localhost-docker or host:vm1\"> <small class=\"form-help\">Agent ID or Host ID that will execute this action</small></div></div><div class=\"form-section\"><h3>Schedule</h3><div class=\"form-group\"><label for=\"repeat_frequency\">Repeat Frequency *</label> <select id=\"repeat_frequency\" name=\"repeat_frequency\" class=\"form-select\"><option value=\"PT5M\">Every 5 minutes</option> <option value=\"PT15M\">Every 15 minutes</option> <option value=\"PT30M\">Every 30 minutes</option> <option value=\"PT1H\">Every hour</option> <option value=\"PT6H\">Every 6 hours</option> <option value=\"P1D\">Daily</option> <option value=\"P1W\">Weekly</option> <option value=\"custom\">Custom (ISO 8601)</option></select></div><div class=\"form-group\" id=\"custom-frequency\" style=\"display: none;\"><label for=\"custom_frequency\">Custom Frequency</label> <input type=\"text\" id=\"custom_frequency\" name=\"custom_frequency\" placeholder=\"e.g., PT10M or P2D\"> <small class=\"form-help\">ISO 8601 duration format (PT5M = 5 minutes, P1D = 1 day)</small></div><div class=\"form-group\"><label for=\"timezone\">Timezone</label> <input type=\"text\" id=\"timezone\" name=\"timezone\" value=\"UTC\" placeholder=\"e.g., UTC, America/New_York\"></div></div><div class=\"form-section\"><h3>Action Parameters (for CheckAction)</h3><div class=\"form-group\"><label for=\"check_url\">URL *</label> <input type=\"url\" id=\"check_url\" name=\"check_url\" placeholder=\"http://localhost:8080/health\"></div><div class=\"form-group\"><label for=\"check_method\">HTTP Method</label> <select id=\"check_method\" name=\"check_method\" class=\"form-select\"><option value=\"GET\">GET</option> <option value=\"POST\">POST</option> <option value=\"HEAD\">HEAD</option></select></div><div class=\"form-group\"><label for=\"check_expected_status\">Expected Status Code</label> <input type=\"number\" id=\"check_expected_status\" name=\"check_expected_status\" value=\"200\" min=\"100\" max=\"599\"></div><div class=\"form-group\"><label for=\"check_timeout\">Timeout (seconds)</label> <input type=\"number\" id=\"check_timeout\" name=\"check_timeout\" value=\"5\" min=\"1\" max=\"60\"></div></div><div class=\"form-section\"><h3>Options</h3><div class=\"form-group\"><label class=\"checkbox-label\"><input type=\"checkbox\" name=\"enabled\" value=\"true\" checked> <span>Enable on creation</span></label></div></div></div><!-- Tab 2: JSON-LD Input --><div id=\"jsonld-tab\" class=\"tab-content\" style=\"display: none;\"><div class=\"form-section\"><h3>JSON-LD Action Definition</h3><p class=\"form-help\">Paste a JSON-LD scheduled action definition. See examples in the <code>examples/</code> directory.</p><div class=\"form-group\"><label for=\"action_json\">Action Definition (JSON-LD)</label> <textarea id=\"action_json\" name=\"action_json\" rows=\"25\" class=\"form-textarea code-editor\" placeholder=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var520 string
-			templ_7745c5c3_Var520, templ_7745c5c3_Err = templ.JoinStringErrs(`{
+			var templ_7745c5c3_Var518 string
+			templ_7745c5c3_Var518, templ_7745c5c3_Err = templ.JoinStringErrs(`{
   "@context": "https://schema.org",
   "@type": "CheckAction",
   "name": "Web Service Health Check",
@@ -9353,19 +9323,19 @@ func CreateActionFormWithUser(errorMsg string, user *models.User) templ.Componen
   }
 }`)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4188, Col: 2}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4177, Col: 2}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var520))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var518))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 828, "\"></textarea></div></div></div><div class=\"form-actions\"><button type=\"submit\" class=\"btn btn-primary\">Create Action</button> <a href=\"/web/actions\" class=\"btn btn-secondary\">Cancel</a></div></form></div><style>\n\t\t\t/* Tab styling */\n\t\t\t.tabs {\n\t\t\t\tdisplay: flex;\n\t\t\t\tborder-bottom: 2px solid var(--border-color, #333);\n\t\t\t\tmargin-bottom: 1.5rem;\n\t\t\t}\n\n\t\t\t.tab-button {\n\t\t\t\tpadding: 0.75rem 1.5rem;\n\t\t\t\tbackground: transparent;\n\t\t\t\tborder: none;\n\t\t\t\tborder-bottom: 3px solid transparent;\n\t\t\t\tcolor: var(--text-muted, #888);\n\t\t\t\tfont-size: 1rem;\n\t\t\t\tfont-weight: 500;\n\t\t\t\tcursor: pointer;\n\t\t\t\ttransition: all 0.2s ease;\n\t\t\t}\n\n\t\t\t.tab-button:hover {\n\t\t\t\tcolor: var(--text-primary, #fff);\n\t\t\t\tbackground: rgba(255, 255, 255, 0.05);\n\t\t\t}\n\n\t\t\t.tab-button.active {\n\t\t\t\tcolor: var(--primary-color, #4a9eff);\n\t\t\t\tborder-bottom-color: var(--primary-color, #4a9eff);\n\t\t\t}\n\n\t\t\t.tab-content {\n\t\t\t\tdisplay: none;\n\t\t\t}\n\n\t\t\t.tab-content.active {\n\t\t\t\tdisplay: block;\n\t\t\t}\n\n\t\t\t.code-editor {\n\t\t\t\tfont-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;\n\t\t\t\tfont-size: 0.9rem;\n\t\t\t\tline-height: 1.5;\n\t\t\t\tbackground: var(--bg-secondary, #1a1a1a);\n\t\t\t\tborder: 1px solid var(--border-color, #333);\n\t\t\t\tborder-radius: 4px;\n\t\t\t\tpadding: 1rem;\n\t\t\t\tresize: vertical;\n\t\t\t}\n\t\t</style> <script>\n\t\t\t// Tab switching\n\t\t\tfunction switchTab(evt, tabName) {\n\t\t\t\t// Hide all tab content\n\t\t\t\tconst tabContents = document.getElementsByClassName('tab-content');\n\t\t\t\tfor (let i = 0; i < tabContents.length; i++) {\n\t\t\t\t\ttabContents[i].style.display = 'none';\n\t\t\t\t\ttabContents[i].classList.remove('active');\n\t\t\t\t}\n\n\t\t\t\t// Remove active class from all buttons\n\t\t\t\tconst tabButtons = document.getElementsByClassName('tab-button');\n\t\t\t\tfor (let i = 0; i < tabButtons.length; i++) {\n\t\t\t\t\ttabButtons[i].classList.remove('active');\n\t\t\t\t}\n\n\t\t\t\t// Show the selected tab and mark button as active\n\t\t\t\tdocument.getElementById(tabName).style.display = 'block';\n\t\t\t\tdocument.getElementById(tabName).classList.add('active');\n\t\t\t\tevt.currentTarget.classList.add('active');\n\n\t\t\t\t// Clear the other tab's required fields to avoid validation issues\n\t\t\t\tif (tabName === 'form-tab') {\n\t\t\t\t\tdocument.getElementById('action_json').value = '';\n\t\t\t\t} else {\n\t\t\t\t\t// Optional: clear form fields when switching to JSON-LD\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Custom frequency toggle\n\t\t\tdocument.getElementById('repeat_frequency').addEventListener('change', function(e) {\n\t\t\t\tconst customDiv = document.getElementById('custom-frequency');\n\t\t\t\tif (e.target.value === 'custom') {\n\t\t\t\t\tcustomDiv.style.display = 'block';\n\t\t\t\t} else {\n\t\t\t\t\tcustomDiv.style.display = 'none';\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// JSON-LD validation\n\t\t\tlet validationTimeout;\n\t\t\tconst actionJsonTextarea = document.getElementById('action_json');\n\n\t\t\tif (actionJsonTextarea) {\n\t\t\t\t// Auto-validate on input with debounce\n\t\t\t\tactionJsonTextarea.addEventListener('input', function() {\n\t\t\t\t\tclearTimeout(validationTimeout);\n\t\t\t\t\tvalidationTimeout = setTimeout(validateActionJSON, 500);\n\t\t\t\t});\n\n\t\t\t\t// Validate on tab switch\n\t\t\t\tdocument.querySelectorAll('.tab-button').forEach(button => {\n\t\t\t\t\tbutton.addEventListener('click', function() {\n\t\t\t\t\t\tif (this.textContent.includes('JSON-LD')) {\n\t\t\t\t\t\t\tsetTimeout(validateActionJSON, 100);\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tfunction validateActionJSON() {\n\t\t\t\tconst jsonStr = actionJsonTextarea.value.trim();\n\n\t\t\t\t// Remove any existing validation messages\n\t\t\t\tconst existingMsg = document.getElementById('json-validation');\n\t\t\t\tif (existingMsg) {\n\t\t\t\t\texistingMsg.remove();\n\t\t\t\t}\n\n\t\t\t\tif (!jsonStr) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\tconst validationDiv = document.createElement('div');\n\t\t\t\tvalidationDiv.id = 'json-validation';\n\t\t\t\tvalidationDiv.style.marginTop = '10px';\n\t\t\t\tvalidationDiv.style.padding = '10px';\n\t\t\t\tvalidationDiv.style.borderRadius = '4px';\n\n\t\t\t\ttry {\n\t\t\t\t\tconst parsed = JSON.parse(jsonStr);\n\n\t\t\t\t\t// Check required fields for ScheduledAction\n\t\t\t\t\tconst errors = [];\n\t\t\t\t\tconst warnings = [];\n\n\t\t\t\t\t// Required fields\n\t\t\t\t\tif (!parsed.name) {\n\t\t\t\t\t\terrors.push('Missing required field: \"name\"');\n\t\t\t\t\t}\n\t\t\t\t\tif (!parsed.agent) {\n\t\t\t\t\t\terrors.push('Missing required field: \"agent\"');\n\t\t\t\t\t}\n\t\t\t\t\tif (!parsed.schedule) {\n\t\t\t\t\t\terrors.push('Missing required field: \"schedule\"');\n\t\t\t\t\t} else {\n\t\t\t\t\t\tif (!parsed.schedule.repeatFrequency) {\n\t\t\t\t\t\t\terrors.push('Missing required field in schedule: \"repeatFrequency\"');\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\n\t\t\t\t\t// Type validation\n\t\t\t\t\tif (!parsed['@type']) {\n\t\t\t\t\t\twarnings.push('Missing \"@type\" field (will default to \"CheckAction\")');\n\t\t\t\t\t}\n\t\t\t\t\tif (!parsed['@context']) {\n\t\t\t\t\t\twarnings.push('Missing \"@context\" field (will default to \"https://schema.org\")');\n\t\t\t\t\t}\n\n\t\t\t\t\t// Action-specific validation\n\t\t\t\t\tif (parsed['@type'] === 'CheckAction' && parsed.instrument) {\n\t\t\t\t\t\tif (!parsed.instrument.url) {\n\t\t\t\t\t\t\terrors.push('CheckAction requires \"instrument.url\"');\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\n\t\t\t\t\tif (errors.length > 0) {\n\t\t\t\t\t\tvalidationDiv.className = 'alert alert-error';\n\t\t\t\t\t\tvalidationDiv.innerHTML = '<strong>Validation Errors:</strong><ul style=\"margin: 5px 0 0 20px;\">' +\n\t\t\t\t\t\t\terrors.map(e => '<li>' + e + '</li>').join('') + '</ul>';\n\t\t\t\t\t} else if (warnings.length > 0) {\n\t\t\t\t\t\tvalidationDiv.className = 'alert alert-warning';\n\t\t\t\t\t\tvalidationDiv.innerHTML = '<strong>Validation Warnings:</strong><ul style=\"margin: 5px 0 0 20px;\">' +\n\t\t\t\t\t\t\twarnings.map(w => '<li>' + w + '</li>').join('') + '</ul>';\n\t\t\t\t\t} else {\n\t\t\t\t\t\tvalidationDiv.className = 'alert alert-success';\n\t\t\t\t\t\tconst actionType = parsed['@type'] || 'Action';\n\t\t\t\t\t\tconst frequency = parsed.schedule?.repeatFrequency || 'N/A';\n\t\t\t\t\t\tvalidationDiv.innerHTML = '✓ Valid ' + actionType + ' (frequency: ' + frequency + ')';\n\t\t\t\t\t}\n\t\t\t\t} catch (e) {\n\t\t\t\t\tvalidationDiv.className = 'alert alert-error';\n\t\t\t\t\tvalidationDiv.innerHTML = '<strong>JSON Syntax Error:</strong> ' + e.message;\n\t\t\t\t}\n\n\t\t\t\tactionJsonTextarea.parentNode.appendChild(validationDiv);\n\t\t\t}\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 825, "\"></textarea></div></div></div><div class=\"form-actions\"><button type=\"submit\" class=\"btn btn-primary\">Create Action</button> <a href=\"/web/actions\" class=\"btn btn-secondary\">Cancel</a></div></form></div><style>\n\t\t\t/* Tab styling */\n\t\t\t.tabs {\n\t\t\t\tdisplay: flex;\n\t\t\t\tborder-bottom: 2px solid var(--border-color, #333);\n\t\t\t\tmargin-bottom: 1.5rem;\n\t\t\t}\n\n\t\t\t.tab-button {\n\t\t\t\tpadding: 0.75rem 1.5rem;\n\t\t\t\tbackground: transparent;\n\t\t\t\tborder: none;\n\t\t\t\tborder-bottom: 3px solid transparent;\n\t\t\t\tcolor: var(--text-muted, #888);\n\t\t\t\tfont-size: 1rem;\n\t\t\t\tfont-weight: 500;\n\t\t\t\tcursor: pointer;\n\t\t\t\ttransition: all 0.2s ease;\n\t\t\t}\n\n\t\t\t.tab-button:hover {\n\t\t\t\tcolor: var(--text-primary, #fff);\n\t\t\t\tbackground: rgba(255, 255, 255, 0.05);\n\t\t\t}\n\n\t\t\t.tab-button.active {\n\t\t\t\tcolor: var(--primary-color, #4a9eff);\n\t\t\t\tborder-bottom-color: var(--primary-color, #4a9eff);\n\t\t\t}\n\n\t\t\t.tab-content {\n\t\t\t\tdisplay: none;\n\t\t\t}\n\n\t\t\t.tab-content.active {\n\t\t\t\tdisplay: block;\n\t\t\t}\n\n\t\t\t.code-editor {\n\t\t\t\tfont-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;\n\t\t\t\tfont-size: 0.9rem;\n\t\t\t\tline-height: 1.5;\n\t\t\t\tbackground: var(--bg-secondary, #1a1a1a);\n\t\t\t\tborder: 1px solid var(--border-color, #333);\n\t\t\t\tborder-radius: 4px;\n\t\t\t\tpadding: 1rem;\n\t\t\t\tresize: vertical;\n\t\t\t}\n\t\t</style> <script>\n\t\t\t// Tab switching\n\t\t\tfunction switchTab(evt, tabName) {\n\t\t\t\t// Hide all tab content\n\t\t\t\tconst tabContents = document.getElementsByClassName('tab-content');\n\t\t\t\tfor (let i = 0; i < tabContents.length; i++) {\n\t\t\t\t\ttabContents[i].style.display = 'none';\n\t\t\t\t\ttabContents[i].classList.remove('active');\n\t\t\t\t}\n\n\t\t\t\t// Remove active class from all buttons\n\t\t\t\tconst tabButtons = document.getElementsByClassName('tab-button');\n\t\t\t\tfor (let i = 0; i < tabButtons.length; i++) {\n\t\t\t\t\ttabButtons[i].classList.remove('active');\n\t\t\t\t}\n\n\t\t\t\t// Show the selected tab and mark button as active\n\t\t\t\tdocument.getElementById(tabName).style.display = 'block';\n\t\t\t\tdocument.getElementById(tabName).classList.add('active');\n\t\t\t\tevt.currentTarget.classList.add('active');\n\n\t\t\t\t// Clear the other tab's required fields to avoid validation issues\n\t\t\t\tif (tabName === 'form-tab') {\n\t\t\t\t\tdocument.getElementById('action_json').value = '';\n\t\t\t\t} else {\n\t\t\t\t\t// Optional: clear form fields when switching to JSON-LD\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Custom frequency toggle\n\t\t\tdocument.getElementById('repeat_frequency').addEventListener('change', function(e) {\n\t\t\t\tconst customDiv = document.getElementById('custom-frequency');\n\t\t\t\tif (e.target.value === 'custom') {\n\t\t\t\t\tcustomDiv.style.display = 'block';\n\t\t\t\t} else {\n\t\t\t\t\tcustomDiv.style.display = 'none';\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// JSON-LD validation\n\t\t\tlet validationTimeout;\n\t\t\tconst actionJsonTextarea = document.getElementById('action_json');\n\n\t\t\tif (actionJsonTextarea) {\n\t\t\t\t// Auto-validate on input with debounce\n\t\t\t\tactionJsonTextarea.addEventListener('input', function() {\n\t\t\t\t\tclearTimeout(validationTimeout);\n\t\t\t\t\tvalidationTimeout = setTimeout(validateActionJSON, 500);\n\t\t\t\t});\n\n\t\t\t\t// Validate on tab switch\n\t\t\t\tdocument.querySelectorAll('.tab-button').forEach(button => {\n\t\t\t\t\tbutton.addEventListener('click', function() {\n\t\t\t\t\t\tif (this.textContent.includes('JSON-LD')) {\n\t\t\t\t\t\t\tsetTimeout(validateActionJSON, 100);\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tfunction validateActionJSON() {\n\t\t\t\tconst jsonStr = actionJsonTextarea.value.trim();\n\n\t\t\t\t// Remove any existing validation messages\n\t\t\t\tconst existingMsg = document.getElementById('json-validation');\n\t\t\t\tif (existingMsg) {\n\t\t\t\t\texistingMsg.remove();\n\t\t\t\t}\n\n\t\t\t\tif (!jsonStr) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\tconst validationDiv = document.createElement('div');\n\t\t\t\tvalidationDiv.id = 'json-validation';\n\t\t\t\tvalidationDiv.style.marginTop = '10px';\n\t\t\t\tvalidationDiv.style.padding = '10px';\n\t\t\t\tvalidationDiv.style.borderRadius = '4px';\n\n\t\t\t\ttry {\n\t\t\t\t\tconst parsed = JSON.parse(jsonStr);\n\n\t\t\t\t\t// Check required fields for ScheduledAction\n\t\t\t\t\tconst errors = [];\n\t\t\t\t\tconst warnings = [];\n\n\t\t\t\t\t// Required fields\n\t\t\t\t\tif (!parsed.name) {\n\t\t\t\t\t\terrors.push('Missing required field: \"name\"');\n\t\t\t\t\t}\n\t\t\t\t\tif (!parsed.agent) {\n\t\t\t\t\t\terrors.push('Missing required field: \"agent\"');\n\t\t\t\t\t}\n\t\t\t\t\tif (!parsed.schedule) {\n\t\t\t\t\t\terrors.push('Missing required field: \"schedule\"');\n\t\t\t\t\t} else {\n\t\t\t\t\t\tif (!parsed.schedule.repeatFrequency) {\n\t\t\t\t\t\t\terrors.push('Missing required field in schedule: \"repeatFrequency\"');\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\n\t\t\t\t\t// Type validation\n\t\t\t\t\tif (!parsed['@type']) {\n\t\t\t\t\t\twarnings.push('Missing \"@type\" field (will default to \"CheckAction\")');\n\t\t\t\t\t}\n\t\t\t\t\tif (!parsed['@context']) {\n\t\t\t\t\t\twarnings.push('Missing \"@context\" field (will default to \"https://schema.org\")');\n\t\t\t\t\t}\n\n\t\t\t\t\t// Action-specific validation\n\t\t\t\t\tif (parsed['@type'] === 'CheckAction' && parsed.instrument) {\n\t\t\t\t\t\tif (!parsed.instrument.url) {\n\t\t\t\t\t\t\terrors.push('CheckAction requires \"instrument.url\"');\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\n\t\t\t\t\tif (errors.length > 0) {\n\t\t\t\t\t\tvalidationDiv.className = 'alert alert-error';\n\t\t\t\t\t\tvalidationDiv.innerHTML = '<strong>Validation Errors:</strong><ul style=\"margin: 5px 0 0 20px;\">' +\n\t\t\t\t\t\t\terrors.map(e => '<li>' + e + '</li>').join('') + '</ul>';\n\t\t\t\t\t} else if (warnings.length > 0) {\n\t\t\t\t\t\tvalidationDiv.className = 'alert alert-warning';\n\t\t\t\t\t\tvalidationDiv.innerHTML = '<strong>Validation Warnings:</strong><ul style=\"margin: 5px 0 0 20px;\">' +\n\t\t\t\t\t\t\twarnings.map(w => '<li>' + w + '</li>').join('') + '</ul>';\n\t\t\t\t\t} else {\n\t\t\t\t\t\tvalidationDiv.className = 'alert alert-success';\n\t\t\t\t\t\tconst actionType = parsed['@type'] || 'Action';\n\t\t\t\t\t\tconst frequency = parsed.schedule?.repeatFrequency || 'N/A';\n\t\t\t\t\t\tvalidationDiv.innerHTML = '✓ Valid ' + actionType + ' (frequency: ' + frequency + ')';\n\t\t\t\t\t}\n\t\t\t\t} catch (e) {\n\t\t\t\t\tvalidationDiv.className = 'alert alert-error';\n\t\t\t\t\tvalidationDiv.innerHTML = '<strong>JSON Syntax Error:</strong> ' + e.message;\n\t\t\t\t}\n\n\t\t\t\tactionJsonTextarea.parentNode.appendChild(validationDiv);\n\t\t\t}\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = LayoutWithUser("Create Scheduled Action", user).Render(templ.WithChildren(ctx, templ_7745c5c3_Var518), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = LayoutWithUser("Create Scheduled Action", user).Render(templ.WithChildren(ctx, templ_7745c5c3_Var516), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
