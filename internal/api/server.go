@@ -345,6 +345,8 @@ func (s *Server) setupRoutes() {
 
 	// Agent management routes (web UI)
 	webGroup.GET("/agents", webHandler.AgentsPage)
+	webGroup.GET("/agents/new", webHandler.CreateAgentFormHandler)
+	webGroup.POST("/agents/create", webHandler.CreateAgentHandler)
 	webGroup.GET("/agents/table", webHandler.AgentsTableHandler)
 	webGroup.GET("/agents/:id", webHandler.AgentDetailPage)
 	webGroup.POST("/agents/:id/start", webHandler.StartAgentHandler)

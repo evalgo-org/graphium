@@ -169,6 +169,76 @@ func (h *Handler) RestartAgentHandler(c echo.Context) error {
 	return Render(c, AgentsTable(agents))
 }
 
+// CreateAgentFormHandler renders the create agent form
+func (h *Handler) CreateAgentFormHandler(c echo.Context) error {
+	// Get current user from context
+	var user *models.User
+	if claims, ok := c.Get("claims").(*auth.Claims); ok {
+		user, _ = h.storage.GetUser(claims.UserID)
+	}
+
+	return Render(c, CreateAgentFormWithUser("", user))
+}
+
+// CreateAgentHandler handles creating a new agent
+func (h *Handler) CreateAgentHandler(c echo.Context) error {
+	// Get current user from context
+	var user *models.User
+	if claims, ok := c.Get("claims").(*auth.Claims); ok {
+		user, _ = h.storage.GetUser(claims.UserID)
+	}
+
+	// Parse form data
+	name := c.FormValue("name")
+	hostID := c.FormValue("hostid")
+	dockerSocket := c.FormValue("docker_socket")
+	datacenter := c.FormValue("datacenter")
+	syncInterval := 30
+	if c.FormValue("sync_interval") != "" {
+		fmt.Sscanf(c.FormValue("sync_interval"), "%d", &syncInterval)
+	}
+	enabled := c.FormValue("enabled") == "true"
+	autoStart := c.FormValue("auto_start") == "true"
+
+	// Validate required fields
+	if name == "" || hostID == "" {
+		return Render(c, CreateAgentFormWithUser("Name and Host ID are required", user))
+	}
+
+	// Set defaults
+	if dockerSocket == "" {
+		dockerSocket = "/var/run/docker.sock"
+	}
+
+	// Create agent configuration
+	config := &models.AgentConfig{
+		Name:         name,
+		HostID:       hostID,
+		DockerSocket: dockerSocket,
+		Datacenter:   datacenter,
+		SyncInterval: syncInterval,
+		Enabled:      enabled,
+		AutoStart:    autoStart,
+	}
+
+	// Save configuration
+	if err := h.storage.SaveAgentConfig(config); err != nil {
+		return Render(c, CreateAgentFormWithUser(fmt.Sprintf("Failed to create agent: %v", err), user))
+	}
+
+	// If enabled, start the agent via API
+	if enabled {
+		apiURL := fmt.Sprintf("http://localhost:%d/api/v1/agents/%s/start", h.config.Server.Port, config.ID)
+		req, err := http.NewRequest("POST", apiURL, nil)
+		if err == nil {
+			http.DefaultClient.Do(req)
+		}
+	}
+
+	// Redirect to agents list
+	return c.Redirect(http.StatusSeeOther, "/web/agents")
+}
+
 // DeleteAgentHandler handles deleting an agent
 func (h *Handler) DeleteAgentHandler(c echo.Context) error {
 	agentID := c.Param("id")

@@ -4030,9 +4030,7 @@ templ JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *mode
 templ AgentsListWithUser(agents []AgentInfo, user *models.User) {
 	@LayoutWithUser("Agents", user) {
 		<div class="page-header">
-			<div class="flex-row">
-				<h2>Agents</h2>
-			</div>
+			<h2>Agents</h2>
 			<div class="filters">
 				<input
 					type="text"
@@ -4050,6 +4048,7 @@ templ AgentsListWithUser(agents []AgentInfo, user *models.User) {
 					<option value="stopped">Stopped</option>
 					<option value="failed">Failed</option>
 				</select>
+				<a href="/web/agents/new" class="btn btn-primary">+ Create Agent</a>
 			</div>
 		</div>
 
@@ -4309,6 +4308,115 @@ templ AgentDetailWithUser(agent AgentInfo, user *models.User) {
 				hx-target="body"
 				hx-swap="outerHTML"
 			>🗑️ Delete Agent</button>
+		</div>
+	}
+}
+
+// Create agent form page
+templ CreateAgentFormWithUser(errorMsg string, user *models.User) {
+	@LayoutWithUser("Create Agent", user) {
+		<div class="page-header">
+			<h2>Create New Agent</h2>
+			<div class="flex-row">
+				<a href="/web/agents" class="btn btn-secondary">← Back to Agents</a>
+			</div>
+		</div>
+
+		if errorMsg != "" {
+			<div class="alert alert-danger">{ errorMsg }</div>
+		}
+
+		<div class="form-container">
+			<form method="POST" action="/web/agents/create">
+				<div class="form-group">
+					<label for="name">Agent Name *</label>
+					<input
+						type="text"
+						id="name"
+						name="name"
+						required
+						placeholder="e.g., production-docker-1"
+					/>
+				</div>
+
+				<div class="form-group">
+					<label for="hostid">Host ID *</label>
+					<input
+						type="text"
+						id="hostid"
+						name="hostid"
+						required
+						placeholder="e.g., prod-host-01"
+					/>
+					<small class="form-help">Unique identifier for the host this agent monitors</small>
+				</div>
+
+				<div class="form-group">
+					<label for="docker_socket">Docker Socket</label>
+					<input
+						type="text"
+						id="docker_socket"
+						name="docker_socket"
+						value="/var/run/docker.sock"
+					/>
+					<small class="form-help">Path to Docker socket (default: /var/run/docker.sock)</small>
+				</div>
+
+				<div class="form-group">
+					<label for="datacenter">Datacenter</label>
+					<input
+						type="text"
+						id="datacenter"
+						name="datacenter"
+						placeholder="e.g., us-west-1"
+					/>
+					<small class="form-help">Optional datacenter location</small>
+				</div>
+
+				<div class="form-group">
+					<label for="sync_interval">Sync Interval (seconds)</label>
+					<input
+						type="number"
+						id="sync_interval"
+						name="sync_interval"
+						value="30"
+						min="10"
+						max="3600"
+					/>
+					<small class="form-help">How often to sync container state (default: 30 seconds)</small>
+				</div>
+
+				<div class="form-group">
+					<label class="checkbox-label">
+						<input
+							type="checkbox"
+							name="enabled"
+							value="true"
+							checked
+						/>
+						<span>Enable agent on creation</span>
+					</label>
+					<small class="form-help">If enabled, agent will start automatically</small>
+				</div>
+
+				<div class="form-group">
+					<label class="checkbox-label">
+						<input
+							type="checkbox"
+							name="auto_start"
+							value="true"
+							checked
+						/>
+						<span>Auto-start on server restart</span>
+					</label>
+					<small class="form-help">Agent will start automatically when Graphium server starts</small>
+				</div>
+
+				<div class="form-actions">
+					<button type="submit" class="btn btn-primary">Create Agent</button>
+					<a href="/web/agents" class="btn btn-secondary">Cancel</a>
+				</div>
+			</form>
 		</div>
 	}
 }
