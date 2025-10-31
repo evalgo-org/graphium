@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"eve.evalgo.org/db"
@@ -75,36 +76,56 @@ func (s *Storage) GetScheduledAction(id string) (*models.ScheduledAction, error)
 func (s *Storage) ListScheduledActions(filters map[string]interface{}) ([]*models.ScheduledAction, error) {
 	s.debugLog("Listing scheduled actions with filters: %+v\n", filters)
 
-	// Build query
-	qb := db.NewQueryBuilder().
-		Where("schedule", "$exists", true) // Actions must have a schedule
+	// Build query using direct MangoQuery since QueryBuilder doesn't handle $in properly
+	selector := map[string]interface{}{
+		"@type": map[string]interface{}{
+			"$in": []string{"Action", "CreateAction", "UpdateAction", "CheckAction", "ControlAction", "TransferAction"},
+		},
+	}
 
 	// Add filters
 	if filters != nil {
 		if actionType, ok := filters["@type"].(string); ok && actionType != "" {
-			qb = qb.And().Where("@type", "$eq", actionType)
+			selector["@type"] = actionType // Override with specific type
 		}
 		if enabled, ok := filters["enabled"].(bool); ok {
-			qb = qb.And().Where("enabled", "$eq", enabled)
+			selector["enabled"] = enabled
 		}
 		if agent, ok := filters["agent"].(string); ok && agent != "" {
-			qb = qb.And().Where("agent", "$eq", agent)
+			selector["agent"] = agent
 		}
 		if actionStatus, ok := filters["actionStatus"].(string); ok && actionStatus != "" {
-			qb = qb.And().Where("actionStatus", "$eq", actionStatus)
+			selector["actionStatus"] = actionStatus
 		}
 	}
 
-	query := qb.Build()
+	query := db.MangoQuery{
+		Selector: selector,
+	}
 	s.debugLog("ListScheduledActions query: %+v\n", query)
 
-	// Execute query
-	actions, err := db.FindTyped[models.ScheduledAction](s.service, query)
+	// Execute query - use non-typed Find to debug unmarshaling issues
+	rawResults, err := s.service.Find(query)
 	if err != nil {
+		s.debugLog("Find ERROR: %v\n", err)
 		return nil, fmt.Errorf("failed to find actions: %w", err)
 	}
 
-	s.debugLog("ListScheduledActions returning %d actions\n", len(actions))
+	s.debugLog("Find returned %d raw results\n", len(rawResults))
+
+	// Manually unmarshal to see errors
+	actions := make([]models.ScheduledAction, 0, len(rawResults))
+	for i, raw := range rawResults {
+		var action models.ScheduledAction
+		if err := json.Unmarshal(raw, &action); err != nil {
+			s.debugLog("UNMARSHAL ERROR for document %d: %v\n", i, err)
+			s.debugLog("Raw JSON: %s\n", string(raw))
+			continue // Skip documents that fail to unmarshal
+		}
+		actions = append(actions, action)
+	}
+
+	s.debugLog("Successfully unmarshaled %d actions out of %d\n", len(actions), len(rawResults))
 
 	// Convert to pointer slice
 	result := make([]*models.ScheduledAction, len(actions))
