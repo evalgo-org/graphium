@@ -800,3 +800,91 @@ func (s *Storage) SaveDocument(doc interface{}) error {
 func (s *Storage) GetDocument(id string, result interface{}) error {
 	return s.service.GetGenericDocument(id, result)
 }
+
+// ===============================================================
+// Agent Configuration Operations
+// ===============================================================
+
+// SaveAgentConfig saves an agent configuration to the database.
+func (s *Storage) SaveAgentConfig(config *models.AgentConfig) error {
+	// Set JSON-LD context and type if not set
+	if config.Context == "" {
+		config.Context = "https://schema.org"
+	}
+	if config.Type == "" {
+		config.Type = "datacenter:AgentConfig"
+	}
+
+	// Set timestamps
+	now := time.Now()
+	if config.Created.IsZero() {
+		config.Created = now
+	}
+	config.Modified = now
+
+	_, err := s.service.SaveGenericDocument(config)
+
+	// If we get a conflict, fetch the existing document and retry with its revision
+	if err != nil {
+		if couchErr, ok := err.(*db.CouchDBError); ok && couchErr.IsConflict() {
+			// Get the existing document to retrieve its revision
+			existing, getErr := s.GetAgentConfig(config.ID)
+			if getErr == nil {
+				// Update with the existing revision and retry
+				config.Rev = existing.Rev
+				_, err = s.service.SaveGenericDocument(config)
+			}
+		}
+	}
+
+	return err
+}
+
+// GetAgentConfig retrieves an agent configuration by ID.
+func (s *Storage) GetAgentConfig(id string) (*models.AgentConfig, error) {
+	var config models.AgentConfig
+	err := s.service.GetGenericDocument(id, &config)
+	if err != nil {
+		return nil, err
+	}
+	return &config, nil
+}
+
+// ListAgentConfigs retrieves all agent configurations matching the given filters.
+func (s *Storage) ListAgentConfigs(filters map[string]interface{}) ([]*models.AgentConfig, error) {
+	// Build query with filters
+	qb := db.NewQueryBuilder().
+		Where("@type", "$eq", "datacenter:AgentConfig")
+
+	// Apply additional filters
+	for field, value := range filters {
+		qb = qb.And().Where(field, "$eq", value)
+	}
+
+	query := qb.Build()
+
+	// Execute query
+	configs, err := db.FindTyped[models.AgentConfig](s.service, query)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to pointer slice
+	result := make([]*models.AgentConfig, len(configs))
+	for i := range configs {
+		result[i] = &configs[i]
+	}
+
+	return result, nil
+}
+
+// DeleteAgentConfig deletes an agent configuration by ID and revision.
+func (s *Storage) DeleteAgentConfig(id, rev string) error {
+	return s.service.DeleteDocument(id, rev)
+}
+
+// UpdateAgentConfig updates an existing agent configuration in the database.
+// This is an alias for SaveAgentConfig which handles both create and update operations.
+func (s *Storage) UpdateAgentConfig(config *models.AgentConfig) error {
+	return s.SaveAgentConfig(config)
+}

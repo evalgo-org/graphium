@@ -70,3 +70,15 @@ type WebSocketMessage struct {
 	Timestamp string      `json:"timestamp"`
 	Data      interface{} `json:"data"`
 }
+
+// AgentInfo represents combined agent configuration and runtime state.
+type AgentInfo struct {
+	Config *models.AgentConfig `json:"config"`
+	State  *models.AgentState  `json:"state"`
+}
+
+// AgentListResponse represents a list of agents with their states.
+type AgentListResponse struct {
+	Count  int         `json:"count"`
+	Agents []AgentInfo `json:"agents"`
+}

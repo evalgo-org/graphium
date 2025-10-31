@@ -2,9 +2,9 @@ package models
 
 import "time"
 
-// AgentState represents the state and metadata of a Graphium agent process.
-// Agents monitor Docker hosts and sync container information to the API server.
-type AgentState struct {
+// AgentConfig represents the configuration for an agent managed by the Graphium server.
+// This is the persistent configuration stored in the database.
+type AgentConfig struct {
 	// ID is the agent identifier (agent:{host_id})
 	ID string `json:"@id" couchdb:"_id"`
 
@@ -14,14 +14,14 @@ type AgentState struct {
 	// Context is the JSON-LD @context
 	Context string `json:"@context"`
 
-	// Type is the JSON-LD @type
+	// Type is the JSON-LD @type (datacenter:AgentConfig)
 	Type string `json:"@type"`
 
-	// HostID is the Docker host this agent is monitoring
-	HostID string `json:"hostId"`
+	// Name is a friendly name for the agent
+	Name string `json:"name"`
 
-	// Status is the agent status (running, stopped, failed, starting, stopping)
-	Status string `json:"status"`
+	// HostID is the Docker host this agent monitors
+	HostID string `json:"hostId"`
 
 	// DockerSocket is the Docker connection string (unix://, ssh://, tcp://)
 	DockerSocket string `json:"dockerSocket"`
@@ -29,8 +29,30 @@ type AgentState struct {
 	// Datacenter is the datacenter location
 	Datacenter string `json:"datacenter,omitempty"`
 
-	// Version is the agent version
-	Version string `json:"version,omitempty"`
+	// SyncInterval is the sync interval in seconds (default: 30)
+	SyncInterval int `json:"syncInterval,omitempty"`
+
+	// AutoStart determines if agent should start with server
+	AutoStart bool `json:"autoStart"`
+
+	// Enabled determines if agent is enabled
+	Enabled bool `json:"enabled"`
+
+	// Created is when the agent config was created
+	Created time.Time `json:"dateCreated"`
+
+	// Modified is when the agent config was last modified
+	Modified time.Time `json:"dateModified"`
+}
+
+// AgentState represents the runtime state of an agent process.
+// This tracks the current state of a running (or stopped) agent.
+type AgentState struct {
+	// ConfigID is the reference to AgentConfig
+	ConfigID string `json:"configId"`
+
+	// Status is the agent status (running, stopped, failed, starting, stopping)
+	Status string `json:"status"`
 
 	// StartedAt is when the agent was started
 	StartedAt *time.Time `json:"startedAt,omitempty"`
@@ -39,7 +61,7 @@ type AgentState struct {
 	StoppedAt *time.Time `json:"stoppedAt,omitempty"`
 
 	// LastHeartbeat is the last time the agent checked in
-	LastHeartbeat *time.Time `json:"lastHeartbeat"`
+	LastHeartbeat *time.Time `json:"lastHeartbeat,omitempty"`
 
 	// LastSyncAt is the last time containers were synced
 	LastSyncAt *time.Time `json:"lastSyncAt,omitempty"`
@@ -52,12 +74,6 @@ type AgentState struct {
 
 	// ProcessID is the OS process ID (PID)
 	ProcessID int `json:"processId,omitempty"`
-
-	// Hostname is the machine hostname where agent is running
-	Hostname string `json:"hostname,omitempty"`
-
-	// SyncInterval is the sync interval in seconds
-	SyncInterval int `json:"syncInterval,omitempty"`
 
 	// Metrics contains agent performance metrics
 	Metrics *AgentMetrics `json:"metrics,omitempty"`

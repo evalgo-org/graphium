@@ -15,6 +15,7 @@ import (
 	"golang.org/x/time/rate"
 
 	_ "evalgo.org/graphium/docs" // Import generated docs
+	"evalgo.org/graphium/internal/agents"
 	"evalgo.org/graphium/internal/auth"
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/internal/integrity"
@@ -24,12 +25,13 @@ import (
 
 // Server represents the Graphium API server.
 type Server struct {
-	echo       *echo.Echo
-	storage    *storage.Storage
-	config     *config.Config
-	wsHub      *Hub // WebSocket hub for real-time updates
-	authMiddle *auth.Middleware
-	integrity  *integrity.Service // Database integrity service
+	echo         *echo.Echo
+	storage      *storage.Storage
+	config       *config.Config
+	wsHub        *Hub // WebSocket hub for real-time updates
+	authMiddle   *auth.Middleware
+	integrity    *integrity.Service // Database integrity service
+	agentManager *agents.Manager    // Agent process manager
 }
 
 // debugLog logs a message only if debug mode is enabled in config
@@ -40,7 +42,7 @@ func (s *Server) debugLog(format string, args ...interface{}) {
 }
 
 // New creates a new API server instance.
-func New(cfg *config.Config, store *storage.Storage) *Server {
+func New(cfg *config.Config, store *storage.Storage, agentMgr *agents.Manager) *Server {
 	e := echo.New()
 
 	// Configure Echo
@@ -67,12 +69,13 @@ func New(cfg *config.Config, store *storage.Storage) *Server {
 
 	// Create server instance
 	server := &Server{
-		echo:       e,
-		storage:    store,
-		config:     cfg,
-		wsHub:      hub,
-		authMiddle: authMiddle,
-		integrity:  integrityService,
+		echo:         e,
+		storage:      store,
+		config:       cfg,
+		wsHub:        hub,
+		authMiddle:   authMiddle,
+		integrity:    integrityService,
+		agentManager: agentMgr,
 	}
 
 	// Start WebSocket hub in background
@@ -253,6 +256,17 @@ func (s *Server) setupRoutes() {
 	integrityRoutes.POST("/execute", s.executeRepairPlan, s.authMiddle.RequireAdmin)
 	integrityRoutes.GET("/audit", s.getAuditLog, s.authMiddle.RequireAdmin)
 
+	// Agent management routes
+	agentRoutes := v1.Group("/agents")
+	agentRoutes.GET("", s.listAgents, s.authMiddle.RequireRead)
+	agentRoutes.GET("/:id", s.getAgent, ValidateIDFormat, s.authMiddle.RequireRead)
+	agentRoutes.POST("", s.createAgent, s.authMiddle.RequireAdmin)
+	agentRoutes.PUT("/:id", s.updateAgent, ValidateIDFormat, s.authMiddle.RequireAdmin)
+	agentRoutes.DELETE("/:id", s.deleteAgent, ValidateIDFormat, s.authMiddle.RequireAdmin)
+	agentRoutes.POST("/:id/start", s.startAgent, ValidateIDFormat, s.authMiddle.RequireAdmin)
+	agentRoutes.POST("/:id/stop", s.stopAgent, ValidateIDFormat, s.authMiddle.RequireAdmin)
+	agentRoutes.POST("/:id/restart", s.restartAgent, ValidateIDFormat, s.authMiddle.RequireAdmin)
+
 	// WebSocket routes (use web auth middleware for session cookie support)
 	ws := v1.Group("/ws")
 	ws.GET("/graph", s.HandleWebSocket, webHandler.WebAuthMiddleware)   // WebSocket connection for graph updates
@@ -328,6 +342,15 @@ func (s *Server) setupRoutes() {
 
 	webGroup.GET("/topology", webHandler.TopologyView)
 	webGroup.GET("/graph", webHandler.GraphView)
+
+	// Agent management routes (web UI)
+	webGroup.GET("/agents", webHandler.AgentsPage)
+	webGroup.GET("/agents/table", webHandler.AgentsTableHandler)
+	webGroup.GET("/agents/:id", webHandler.AgentDetailPage)
+	webGroup.POST("/agents/:id/start", webHandler.StartAgentHandler)
+	webGroup.POST("/agents/:id/stop", webHandler.StopAgentHandler)
+	webGroup.POST("/agents/:id/restart", webHandler.RestartAgentHandler)
+	webGroup.DELETE("/agents/:id", webHandler.DeleteAgentHandler)
 }
 
 // Start starts the HTTP server.

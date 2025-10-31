@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"evalgo.org/graphium/internal/agents"
 	"evalgo.org/graphium/internal/api"
 	"evalgo.org/graphium/internal/storage"
 )
@@ -28,8 +30,20 @@ func runServer(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to initialize storage: %w", err)
 	}
 
+	// Initialize agent manager
+	agentManager, err := agents.NewManager(store, cfg)
+	if err != nil {
+		return fmt.Errorf("failed to initialize agent manager: %w", err)
+	}
+
+	// Start agent manager (auto-starts enabled agents)
+	if err := agentManager.Start(); err != nil {
+		return fmt.Errorf("failed to start agent manager: %w", err)
+	}
+	log.Println("Agent manager started")
+
 	// Create API server
-	server := api.New(cfg, store)
+	server := api.New(cfg, store, agentManager)
 
 	// Setup graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(),
@@ -52,6 +66,12 @@ func runServer(cmd *cobra.Command, args []string) error {
 	case <-ctx.Done():
 		fmt.Println("\n⚠️  Shutdown signal received")
 
+		// Stop agent manager first
+		log.Println("Stopping agent manager...")
+		if err := agentManager.Stop(); err != nil {
+			log.Printf("Warning: agent manager shutdown error: %v", err)
+		}
+
 		// Create shutdown context with timeout
 		shutdownCtx, cancel := context.WithTimeout(
 			context.Background(),
@@ -67,6 +87,11 @@ func runServer(cmd *cobra.Command, args []string) error {
 		return nil
 
 	case err := <-errChan:
+		// Stop agent manager on error
+		log.Println("Stopping agent manager due to server error...")
+		if stopErr := agentManager.Stop(); stopErr != nil {
+			log.Printf("Warning: agent manager shutdown error: %v", stopErr)
+		}
 		return fmt.Errorf("server error: %w", err)
 	}
 }
