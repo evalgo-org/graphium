@@ -1,0 +1,4729 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "Graphium is a semantic container orchestration platform that uses knowledge graphs and JSON-LD to manage multi-host Docker infrastructure with intelligent querying, graph traversal, and real-time insights.\n\n## Features\n- JSON-LD/Schema.org semantic models\n- REST API for container and host management\n- Graph visualization and traversal\n- Real-time Docker agent integration\n- WebSocket support for live updates\n\n## Authentication\nAll API endpoints require JWT token authentication. Use the /api/v1/auth/login endpoint to obtain a token.\nInclude the token in the Authorization header: `Authorization: Bearer \u003ctoken\u003e`",
+        "title": "Graphium API",
+        "contact": {
+            "name": "Graphium API Support",
+            "url": "https://github.com/[org]/graphium",
+            "email": "support@graphium.io"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "0.1.0"
+    },
+    "host": "localhost:8095",
+    "basePath": "/api/v1",
+    "paths": {
+        "/api/v1/stacks": {
+            "get": {
+                "description": "Get a list of all stacks in the system",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stacks"
+                ],
+                "summary": "List all stacks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Stack"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/stacks/jsonld": {
+            "post": {
+                "description": "Deploy a stack using JSON-LD @graph format with full container specifications",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stacks"
+                ],
+                "summary": "Deploy JSON-LD stack",
+                "parameters": [
+                    {
+                        "description": "JSON-LD stack deployment configuration",
+                        "name": "stack",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.DeployJSONLDStackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/api.DeploymentStateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/stacks/jsonld/deployments": {
+            "get": {
+                "description": "List all JSON-LD stack deployments with optional status filter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stacks"
+                ],
+                "summary": "List JSON-LD deployments",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by status",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.DeploymentStateResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/stacks/jsonld/deployments/{id}": {
+            "get": {
+                "description": "Get detailed deployment state including progress, events, and placements",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stacks"
+                ],
+                "summary": "Get JSON-LD deployment state",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Deployment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.DeploymentStateResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/stacks/jsonld/validate": {
+            "post": {
+                "description": "Validate a JSON-LD stack definition and return any errors or warnings",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stacks"
+                ],
+                "summary": "Validate JSON-LD stack",
+                "parameters": [
+                    {
+                        "description": "JSON-LD stack definition",
+                        "name": "definition",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.StackDefinition"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ParseResultResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/stacks/{id}": {
+            "get": {
+                "description": "Get detailed information about a specific stack",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stacks"
+                ],
+                "summary": "Get stack by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Stack"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/stacks/{id}/deployment": {
+            "get": {
+                "description": "Get the current deployment state and container placements for a stack",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stacks"
+                ],
+                "summary": "Get stack deployment state",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeploymentState"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Authenticate user with username and password, returns JWT tokens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "User login",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully logged in",
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - Invalid credentials format",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid username or password",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Revoke refresh token and logout user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Logout user",
+                "responses": {
+                    "200": {
+                        "description": "Successfully logged out",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get information about the currently authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get current user",
+                "responses": {
+                    "200": {
+                        "description": "Current user information",
+                        "schema": {
+                            "$ref": "#/definitions/api.UserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Get a new access token using a refresh token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Refresh access token",
+                "parameters": [
+                    {
+                        "description": "Refresh token",
+                        "name": "refresh",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully refreshed token",
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - Invalid refresh token format",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or expired refresh token",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Register a new user account (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Register new user",
+                "parameters": [
+                    {
+                        "description": "User registration data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully created user",
+                        "schema": {
+                            "$ref": "#/definitions/api.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - Invalid data or validation errors",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Username or email already exists",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/containers": {
+            "get": {
+                "description": "Get a paginated list of containers with optional filtering by status, host, or datacenter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Containers"
+                ],
+                "summary": "List containers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by container status (running, stopped, paused, etc.)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by host ID",
+                        "name": "host",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by datacenter location",
+                        "name": "datacenter",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 1000,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "Maximum number of items to return (default: 100, max: 1000)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "Number of items to skip (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved containers",
+                        "schema": {
+                            "$ref": "#/definitions/api.PaginatedContainersResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new container with the provided JSON-LD data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Containers"
+                ],
+                "summary": "Create a new container",
+                "parameters": [
+                    {
+                        "description": "Container object (JSON-LD format)",
+                        "name": "container",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Container"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully created container",
+                        "schema": {
+                            "$ref": "#/definitions/models.Container"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - Invalid request body or validation errors",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/containers/bulk": {
+            "post": {
+                "description": "Create multiple containers in a single request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Containers"
+                ],
+                "summary": "Bulk create containers",
+                "parameters": [
+                    {
+                        "description": "Array of container objects (JSON-LD format)",
+                        "name": "containers",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Container"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully created containers",
+                        "schema": {
+                            "$ref": "#/definitions/api.BulkResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - Invalid request body or validation errors",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/containers/ignored": {
+            "get": {
+                "description": "Get a list of all containers in the ignore list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Containers"
+                ],
+                "summary": "List ignored containers",
+                "responses": {
+                    "200": {
+                        "description": "List of ignored containers",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.IgnoreListEntry"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/containers/{id}": {
+            "get": {
+                "description": "Get detailed information about a specific container by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Containers"
+                ],
+                "summary": "Get container by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Container ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved container",
+                        "schema": {
+                            "$ref": "#/definitions/models.Container"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - Container ID is required",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Container not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an existing container with new JSON-LD data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Containers"
+                ],
+                "summary": "Update a container",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Container ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated container object (JSON-LD format)",
+                        "name": "container",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Container"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully updated container",
+                        "schema": {
+                            "$ref": "#/definitions/models.Container"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - Invalid request body or validation errors",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Container not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an existing container by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Containers"
+                ],
+                "summary": "Delete a container",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Container ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully deleted container",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - Container ID is required",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Container not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/containers/{id}/logs": {
+            "get": {
+                "description": "Get logs from a container via the agent's Docker socket",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "containers"
+                ],
+                "summary": "Get container logs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Container ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 100,
+                        "description": "Number of lines",
+                        "name": "lines",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Stream logs",
+                        "name": "follow",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Include timestamps",
+                        "name": "timestamps",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "\"100\"",
+                        "description": "Lines from end",
+                        "name": "tail",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Container logs",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/graph": {
+            "get": {
+                "description": "Get graph visualization data with nodes and edges",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Graph"
+                ],
+                "summary": "Get graph data",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.GraphData"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/graph/containers/{id}/dependencies": {
+            "get": {
+                "description": "Get all containers that the specified container depends on",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Graph"
+                ],
+                "summary": "Get container dependencies",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Container ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ContainersResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/graph/containers/{id}/dependents": {
+            "get": {
+                "description": "Get all containers that depend on the specified container",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Graph"
+                ],
+                "summary": "Get container dependents",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Container ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ContainersResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/graph/containers/{id}/graph": {
+            "get": {
+                "description": "Get the full dependency graph for a container (dependencies and dependents)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Graph"
+                ],
+                "summary": "Get container dependency graph",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Container ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Maximum depth to traverse (default: unlimited)",
+                        "name": "depth",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.DependencyGraphResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/graph/layout": {
+            "get": {
+                "description": "Get graph visualization data with specified layout algorithm applied",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Graph"
+                ],
+                "summary": "Get graph layout",
+                "parameters": [
+                    {
+                        "enum": [
+                            "force",
+                            "hierarchical",
+                            "circle",
+                            "grid"
+                        ],
+                        "type": "string",
+                        "description": "Layout algorithm",
+                        "name": "layout",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.GraphData"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/graph/stats": {
+            "get": {
+                "description": "Get statistics about graph nodes and edges",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Graph"
+                ],
+                "summary": "Get graph stats",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/hosts": {
+            "get": {
+                "description": "Get a paginated list of hosts with optional filtering by status and datacenter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hosts"
+                ],
+                "summary": "List hosts",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Maximum number of items to return",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Number of items to skip",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by host status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by datacenter location",
+                        "name": "datacenter",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.PaginatedHostsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new host with the provided information. ID will be auto-generated if not provided.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hosts"
+                ],
+                "summary": "Create a new host",
+                "parameters": [
+                    {
+                        "description": "Host object to create",
+                        "name": "host",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Host"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Host"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/hosts/bulk": {
+            "post": {
+                "description": "Create multiple hosts in a single request. Returns success/failure counts and detailed results.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hosts"
+                ],
+                "summary": "Bulk create hosts",
+                "parameters": [
+                    {
+                        "description": "Array of host objects to create",
+                        "name": "hosts",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Host"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.BulkResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/hosts/{id}": {
+            "get": {
+                "description": "Retrieve detailed information about a specific host",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hosts"
+                ],
+                "summary": "Get a host by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Host ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Host"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an existing host with new information. ID and revision are preserved.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hosts"
+                ],
+                "summary": "Update a host",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Host ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated host object",
+                        "name": "host",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Host"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Host"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a host by its ID. This operation broadcasts a WebSocket event.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hosts"
+                ],
+                "summary": "Delete a host",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Host ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/hosts/{id}/metrics": {
+            "put": {
+                "description": "Update CPU and memory usage metrics for a host",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hosts"
+                ],
+                "summary": "Update host metrics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Host ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Metrics update",
+                        "name": "metrics",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Host"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/integrity/audit": {
+            "get": {
+                "description": "Retrieve audit log entries for integrity operations",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Integrity"
+                ],
+                "summary": "Get integrity audit log",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 100,
+                        "description": "Maximum number of entries to return",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start time (RFC3339 format)",
+                        "name": "start_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End time (RFC3339 format)",
+                        "name": "end_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by operation type",
+                        "name": "operation_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by user",
+                        "name": "user",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by success status",
+                        "name": "success",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/integrity/execute": {
+            "post": {
+                "description": "Execute repairs based on a generated plan",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Integrity"
+                ],
+                "summary": "Execute a repair plan",
+                "parameters": [
+                    {
+                        "description": "Execution request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ExecuteRepairPlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/integrity.RepairResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/integrity/health": {
+            "get": {
+                "description": "Get comprehensive database health metrics including issue counts, health score, and recommendations",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Integrity"
+                ],
+                "summary": "Get database health status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/integrity.DatabaseHealth"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/integrity/repair-plans": {
+            "post": {
+                "description": "Generate a repair plan for detected integrity issues",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Integrity"
+                ],
+                "summary": "Create a repair plan",
+                "parameters": [
+                    {
+                        "description": "Repair plan options",
+                        "name": "plan",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateRepairPlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/integrity.RepairPlan"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/integrity/scan": {
+            "post": {
+                "description": "Perform a comprehensive integrity scan checking for duplicates, conflicts, broken references, and schema violations",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Integrity"
+                ],
+                "summary": "Scan database for integrity issues",
+                "parameters": [
+                    {
+                        "description": "Scan options",
+                        "name": "options",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.IntegrityScanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/integrity.ScanReport"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/integrity/scans": {
+            "get": {
+                "description": "Get a list of all integrity scan reports",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Integrity"
+                ],
+                "summary": "List integrity scans",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Maximum number of scans to return",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Number of scans to skip",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/integrity.ScanListResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/integrity/scans/{id}": {
+            "get": {
+                "description": "Retrieve a specific integrity scan report",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Integrity"
+                ],
+                "summary": "Get scan report by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/integrity.ScanReport"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats": {
+            "get": {
+                "description": "Get overall system statistics including container and host counts",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Statistics"
+                ],
+                "summary": "Get overall statistics",
+                "responses": {
+                    "200": {
+                        "description": "Statistics with container and host information",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/containers/count": {
+            "get": {
+                "description": "Get the count of containers with optional filters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Statistics"
+                ],
+                "summary": "Get container count",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by container status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by host",
+                        "name": "host",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Container count with applied filters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/distribution": {
+            "get": {
+                "description": "Get the distribution of containers across hosts with statistics",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Statistics"
+                ],
+                "summary": "Get host container distribution",
+                "responses": {
+                    "200": {
+                        "description": "Container distribution with min, max, and average containers per host",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/hosts/count": {
+            "get": {
+                "description": "Get the count of hosts with optional filters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Statistics"
+                ],
+                "summary": "Get host count",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by host status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by datacenter location",
+                        "name": "datacenter",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Host count with applied filters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of all users (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "List all users",
+                "responses": {
+                    "200": {
+                        "description": "List of users",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.UserResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Admin access required",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/api-keys": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generate a new API key for the current user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Generate API key",
+                "responses": {
+                    "200": {
+                        "description": "API key generated",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/api-keys/{index}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Revoke an API key by its index",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Revoke API key",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "API key index",
+                        "name": "index",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "API key revoked",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/password": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Change current user's password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Change password",
+                "parameters": [
+                    {
+                        "description": "Password change data",
+                        "name": "password",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Password changed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a user by their ID (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get user by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User information",
+                        "schema": {
+                            "$ref": "#/definitions/api.UserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Admin access required",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update a user's information (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User update data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UpdateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated user",
+                        "schema": {
+                            "$ref": "#/definitions/api.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Admin access required",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a user (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Delete user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully deleted",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Admin access required",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/ws/graph": {
+            "get": {
+                "description": "Establishes a WebSocket connection for receiving real-time graph events",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "websocket"
+                ],
+                "summary": "WebSocket endpoint for real-time graph updates",
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/ws/stats": {
+            "get": {
+                "description": "Returns statistics about WebSocket connections",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "websocket"
+                ],
+                "summary": "Get WebSocket statistics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.APIError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "context": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "details": {
+                    "type": "string"
+                },
+                "field_errors": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.BulkResponse": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "type": "integer"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.BulkResult"
+                    }
+                },
+                "success": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.BulkResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "rev": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.ChangePasswordRequest": {
+            "type": "object",
+            "required": [
+                "current_password",
+                "new_password"
+            ],
+            "properties": {
+                "current_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
+        "api.ContainersResponse": {
+            "type": "object",
+            "properties": {
+                "containers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Container"
+                    }
+                },
+                "count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.CreateRepairPlanRequest": {
+            "type": "object",
+            "properties": {
+                "dry_run": {
+                    "type": "boolean"
+                },
+                "risk_filter": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/integrity.RiskLevel"
+                    }
+                },
+                "scan_id": {
+                    "type": "string"
+                },
+                "strategy": {
+                    "$ref": "#/definitions/integrity.ResolutionStrategy"
+                }
+            }
+        },
+        "api.DependencyGraphResponse": {
+            "type": "object",
+            "properties": {
+                "container": {
+                    "$ref": "#/definitions/models.Container"
+                },
+                "dependencies": {
+                    "description": "Containers this one depends on",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.DependencyNode"
+                    }
+                },
+                "dependents": {
+                    "description": "Containers that depend on this one",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.DependencyNode"
+                    }
+                }
+            }
+        },
+        "api.DependencyNode": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.DependencyNode"
+                    }
+                },
+                "container": {
+                    "$ref": "#/definitions/models.Container"
+                },
+                "depth": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.DeployJSONLDStackRequest": {
+            "type": "object",
+            "required": [
+                "stackDefinition"
+            ],
+            "properties": {
+                "pullImages": {
+                    "description": "Pull images before deployment (default: false)",
+                    "type": "boolean"
+                },
+                "rollbackOnError": {
+                    "description": "Auto-rollback on error (default: true)",
+                    "type": "boolean"
+                },
+                "stackDefinition": {
+                    "description": "StackDefinition contains the complete JSON-LD @graph structure",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.StackDefinition"
+                        }
+                    ]
+                },
+                "timeout": {
+                    "description": "Options for deployment",
+                    "type": "integer"
+                }
+            }
+        },
+        "api.DeploymentStateResponse": {
+            "type": "object",
+            "properties": {
+                "completedAt": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.DeploymentEvent"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "networkInfo": {
+                    "$ref": "#/definitions/models.DeployedNetworkInfo"
+                },
+                "phase": {
+                    "type": "string"
+                },
+                "placements": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/models.ContainerPlacement"
+                    }
+                },
+                "progress": {
+                    "type": "integer"
+                },
+                "rollbackState": {
+                    "$ref": "#/definitions/models.RollbackState"
+                },
+                "stackId": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "volumeInfo": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/models.VolumeInfo"
+                    }
+                }
+            }
+        },
+        "api.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.ExecuteRepairPlanRequest": {
+            "type": "object",
+            "properties": {
+                "dry_run": {
+                    "type": "boolean"
+                },
+                "plan_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.GraphData": {
+            "type": "object",
+            "properties": {
+                "edges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.GraphEdge"
+                    }
+                },
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.GraphNode"
+                    }
+                }
+            }
+        },
+        "api.GraphEdge": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api.GraphEdgeData"
+                }
+            }
+        },
+        "api.GraphEdgeData": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "target": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "\"hosted_on\", \"connects_to\", \"depends_on\"",
+                    "type": "string"
+                }
+            }
+        },
+        "api.GraphNode": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api.GraphNodeData"
+                }
+            }
+        },
+        "api.GraphNodeData": {
+            "type": "object",
+            "properties": {
+                "cpu": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "memory": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "\"host\", \"container\"",
+                    "type": "string"
+                }
+            }
+        },
+        "api.IntegrityScanRequest": {
+            "type": "object",
+            "properties": {
+                "scan_conflicts": {
+                    "type": "boolean"
+                },
+                "scan_duplicates": {
+                    "type": "boolean"
+                },
+                "scan_references": {
+                    "type": "boolean"
+                },
+                "scan_schemas": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.LoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/api.UserResponse"
+                }
+            }
+        },
+        "api.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.PaginatedContainersResponse": {
+            "type": "object",
+            "properties": {
+                "containers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Container"
+                    }
+                },
+                "count": {
+                    "description": "Number of items in current page",
+                    "type": "integer"
+                },
+                "limit": {
+                    "description": "Items per page",
+                    "type": "integer"
+                },
+                "offset": {
+                    "description": "Current offset",
+                    "type": "integer"
+                },
+                "total": {
+                    "description": "Total number of items",
+                    "type": "integer"
+                }
+            }
+        },
+        "api.PaginatedHostsResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "description": "Number of items in current page",
+                    "type": "integer"
+                },
+                "hosts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Host"
+                    }
+                },
+                "limit": {
+                    "description": "Items per page",
+                    "type": "integer"
+                },
+                "offset": {
+                    "description": "Current offset",
+                    "type": "integer"
+                },
+                "total": {
+                    "description": "Total number of items",
+                    "type": "integer"
+                }
+            }
+        },
+        "api.ParseResultResponse": {
+            "type": "object",
+            "properties": {
+                "containerCount": {
+                    "type": "integer"
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "hasNetwork": {
+                    "type": "boolean"
+                },
+                "stackName": {
+                    "type": "string"
+                },
+                "valid": {
+                    "type": "boolean"
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "waveCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.RefreshRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Role"
+                    }
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                }
+            }
+        },
+        "api.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Role"
+                    }
+                }
+            }
+        },
+        "api.UserResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_login_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Role"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "integrity.DatabaseHealth": {
+            "type": "object",
+            "properties": {
+                "average_revisions": {
+                    "description": "AverageRevisions per document",
+                    "type": "number"
+                },
+                "database_size_bytes": {
+                    "description": "DatabaseSize in bytes",
+                    "type": "integer"
+                },
+                "disk_usage": {
+                    "description": "DiskUsage as a percentage (0.0 to 1.0)",
+                    "type": "number"
+                },
+                "health_score": {
+                    "description": "HealthScore is a 0-100 score",
+                    "type": "integer"
+                },
+                "issue_count": {
+                    "description": "IssueCount is the total number of issues",
+                    "type": "integer"
+                },
+                "issues_by_severity": {
+                    "description": "IssuesBySeverity breaks down issues by severity",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "issues_by_type": {
+                    "description": "IssuesByType breaks down issues by type",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "recommend_compaction": {
+                    "description": "RecommendCompaction indicates if compaction is advised",
+                    "type": "boolean"
+                },
+                "recommendations": {
+                    "description": "Recommendations for improving health",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "timestamp": {
+                    "description": "Timestamp when health was checked",
+                    "type": "string"
+                },
+                "total_documents": {
+                    "description": "TotalDocuments in the database",
+                    "type": "integer"
+                }
+            }
+        },
+        "integrity.Issue": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "Description provides human-readable details",
+                    "type": "string"
+                },
+                "details": {
+                    "description": "Details contains additional structured information",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "detected_at": {
+                    "description": "DetectedAt is when this issue was found",
+                    "type": "string"
+                },
+                "document_id": {
+                    "description": "DocumentID is the ID of the affected document",
+                    "type": "string"
+                },
+                "document_type": {
+                    "description": "DocumentType is the @type of the document (e.g., SoftwareApplication)",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID uniquely identifies this issue",
+                    "type": "string"
+                },
+                "severity": {
+                    "description": "Severity indicates how critical this issue is",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/integrity.Severity"
+                        }
+                    ]
+                },
+                "suggested_resolution": {
+                    "description": "SuggestedResolution recommends how to fix this issue",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/integrity.Resolution"
+                        }
+                    ]
+                },
+                "type": {
+                    "description": "Type categorizes the issue",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/integrity.IssueType"
+                        }
+                    ]
+                }
+            }
+        },
+        "integrity.IssueType": {
+            "type": "string",
+            "enum": [
+                "duplicate",
+                "conflict",
+                "invalid_reference",
+                "invalid_schema",
+                "orphaned"
+            ],
+            "x-enum-varnames": [
+                "IssueTypeDuplicate",
+                "IssueTypeConflict",
+                "IssueTypeInvalidReference",
+                "IssueTypeInvalidSchema",
+                "IssueTypeOrphaned"
+            ]
+        },
+        "integrity.OperationResult": {
+            "type": "object",
+            "properties": {
+                "changes": {
+                    "description": "Changes made by this operation",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "dry_run": {
+                    "description": "DryRun indicates if this was a simulation",
+                    "type": "boolean"
+                },
+                "end_time": {
+                    "description": "EndTime when this operation completed",
+                    "type": "string"
+                },
+                "error": {
+                    "description": "Error contains any error that occurred"
+                },
+                "operation": {
+                    "description": "Operation that was executed",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/integrity.RepairOperation"
+                        }
+                    ]
+                },
+                "start_time": {
+                    "description": "StartTime when this operation began",
+                    "type": "string"
+                },
+                "success": {
+                    "description": "Success indicates if the operation completed successfully",
+                    "type": "boolean"
+                }
+            }
+        },
+        "integrity.OperationType": {
+            "type": "string",
+            "enum": [
+                "delete_duplicate",
+                "resolve_conflict",
+                "fix_reference",
+                "update_schema",
+                "delete_orphaned"
+            ],
+            "x-enum-varnames": [
+                "OpDeleteDuplicate",
+                "OpResolveConflict",
+                "OpFixReference",
+                "OpUpdateSchema",
+                "OpDeleteOrphaned"
+            ]
+        },
+        "integrity.RepairOperation": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "Action describes what will be done",
+                    "type": "string"
+                },
+                "document_id": {
+                    "description": "DocumentID is the document to operate on",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID uniquely identifies this operation",
+                    "type": "string"
+                },
+                "new_value": {
+                    "description": "NewValue is the target state"
+                },
+                "old_value": {
+                    "description": "OldValue is the current state (for rollback)"
+                },
+                "risk": {
+                    "description": "Risk indicates the risk level",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/integrity.RiskLevel"
+                        }
+                    ]
+                },
+                "type": {
+                    "description": "Type categorizes the operation",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/integrity.OperationType"
+                        }
+                    ]
+                }
+            }
+        },
+        "integrity.RepairPlan": {
+            "type": "object",
+            "properties": {
+                "dry_run": {
+                    "description": "DryRun indicates if this is a simulation",
+                    "type": "boolean"
+                },
+                "estimated_duration_ms": {
+                    "description": "EstimatedDuration in milliseconds",
+                    "type": "integer"
+                },
+                "id": {
+                    "description": "ID uniquely identifies this plan",
+                    "type": "string"
+                },
+                "operations": {
+                    "description": "Operations to perform",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/integrity.RepairOperation"
+                    }
+                },
+                "risk_filter": {
+                    "description": "RiskFilter limits operations to certain risk levels",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/integrity.RiskLevel"
+                    }
+                },
+                "scan_id": {
+                    "description": "ScanID references the scan that generated this plan",
+                    "type": "string"
+                },
+                "strategy": {
+                    "description": "Strategy used for resolving conflicts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/integrity.ResolutionStrategy"
+                        }
+                    ]
+                },
+                "timestamp": {
+                    "description": "Timestamp when the plan was created",
+                    "type": "string"
+                }
+            }
+        },
+        "integrity.RepairResult": {
+            "type": "object",
+            "properties": {
+                "abort_reason": {
+                    "description": "AbortReason explains why execution was aborted"
+                },
+                "aborted": {
+                    "description": "Aborted indicates if execution was stopped early",
+                    "type": "boolean"
+                },
+                "dry_run": {
+                    "description": "DryRun indicates if this was a simulation",
+                    "type": "boolean"
+                },
+                "duration": {
+                    "description": "Duration of the execution",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "end_time": {
+                    "description": "EndTime when execution completed",
+                    "type": "string"
+                },
+                "execution_id": {
+                    "description": "ExecutionID uniquely identifies this execution",
+                    "type": "string"
+                },
+                "failure_count": {
+                    "description": "FailureCount is the number of failed operations",
+                    "type": "integer"
+                },
+                "operations": {
+                    "description": "Operations contains results for each operation",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/integrity.OperationResult"
+                    }
+                },
+                "plan_id": {
+                    "description": "PlanID references the executed plan",
+                    "type": "string"
+                },
+                "start_time": {
+                    "description": "StartTime when execution began",
+                    "type": "string"
+                },
+                "success_count": {
+                    "description": "SuccessCount is the number of successful operations",
+                    "type": "integer"
+                }
+            }
+        },
+        "integrity.Resolution": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "Description explains what the resolution will do",
+                    "type": "string"
+                },
+                "operations": {
+                    "description": "Operations contains the specific steps to perform",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/integrity.RepairOperation"
+                    }
+                },
+                "requires_approval": {
+                    "description": "RequiresApproval indicates if manual approval is needed",
+                    "type": "boolean"
+                },
+                "risk": {
+                    "description": "Risk indicates the risk level of this resolution",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/integrity.RiskLevel"
+                        }
+                    ]
+                },
+                "strategy": {
+                    "description": "Strategy indicates the resolution method",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/integrity.ResolutionStrategy"
+                        }
+                    ]
+                }
+            }
+        },
+        "integrity.ResolutionStrategy": {
+            "type": "string",
+            "enum": [
+                "latest_wins",
+                "highest_rev",
+                "merge",
+                "manual"
+            ],
+            "x-enum-varnames": [
+                "StrategyLatestWins",
+                "StrategyHighestRev",
+                "StrategyMerge",
+                "StrategyManual"
+            ]
+        },
+        "integrity.RiskLevel": {
+            "type": "string",
+            "enum": [
+                "low",
+                "medium",
+                "high"
+            ],
+            "x-enum-varnames": [
+                "RiskLow",
+                "RiskMedium",
+                "RiskHigh"
+            ]
+        },
+        "integrity.ScanListResult": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "description": "Limit is the maximum number of scans returned",
+                    "type": "integer"
+                },
+                "offset": {
+                    "description": "Offset is the number of scans skipped",
+                    "type": "integer"
+                },
+                "scans": {
+                    "description": "Scans is the list of scan reports",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/integrity.ScanReport"
+                    }
+                },
+                "total": {
+                    "description": "Total is the total number of scans available",
+                    "type": "integer"
+                }
+            }
+        },
+        "integrity.ScanReport": {
+            "type": "object",
+            "properties": {
+                "documents_scanned": {
+                    "description": "DocumentsScanned is the total number of documents checked",
+                    "type": "integer"
+                },
+                "duration": {
+                    "description": "Duration of the scan",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "id": {
+                    "description": "ID uniquely identifies this scan",
+                    "type": "string"
+                },
+                "issues_found": {
+                    "description": "IssuesFound contains all detected issues",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/integrity.Issue"
+                    }
+                },
+                "summary": {
+                    "description": "Summary provides aggregated statistics",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/integrity.ScanSummary"
+                        }
+                    ]
+                },
+                "timestamp": {
+                    "description": "Timestamp when the scan was performed",
+                    "type": "string"
+                }
+            }
+        },
+        "integrity.ScanSummary": {
+            "type": "object",
+            "properties": {
+                "by_severity": {
+                    "description": "BySeverity breaks down issues by severity",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "by_type": {
+                    "description": "ByType breaks down issues by type",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "health_score": {
+                    "description": "HealthScore is a 0-100 score indicating database health",
+                    "type": "integer"
+                },
+                "total_issues": {
+                    "description": "TotalIssues is the count of all issues found",
+                    "type": "integer"
+                }
+            }
+        },
+        "integrity.Severity": {
+            "type": "string",
+            "enum": [
+                "low",
+                "medium",
+                "high",
+                "critical"
+            ],
+            "x-enum-varnames": [
+                "SeverityLow",
+                "SeverityMedium",
+                "SeverityHigh",
+                "SeverityCritical"
+            ]
+        },
+        "models.BindOptions": {
+            "type": "object",
+            "properties": {
+                "nonRecursive": {
+                    "description": "NonRecursive disables recursive bind mounting",
+                    "type": "boolean"
+                },
+                "propagation": {
+                    "description": "Propagation is the bind propagation mode (rprivate, private, rshared, shared, rslave, slave)",
+                    "type": "string"
+                }
+            }
+        },
+        "models.Container": {
+            "type": "object",
+            "properties": {
+                "@context": {
+                    "description": "Context is the JSON-LD @context URL (typically https://schema.org)",
+                    "type": "string"
+                },
+                "@id": {
+                    "description": "ID is the unique container identifier (maps to CouchDB _id)",
+                    "type": "string"
+                },
+                "@type": {
+                    "description": "Type is the JSON-LD @type (SoftwareApplication for containers)",
+                    "type": "string"
+                },
+                "_rev": {
+                    "description": "Rev is the CouchDB document revision for optimistic locking",
+                    "type": "string"
+                },
+                "dateCreated": {
+                    "description": "Created is the ISO 8601 timestamp when the container was created",
+                    "type": "string"
+                },
+                "dependsOn": {
+                    "description": "DependsOn lists container names/IDs that this container depends on\nThese dependencies are used for startup ordering and graph relationships",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "environment": {
+                    "description": "Env contains environment variables passed to the container",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "executableName": {
+                    "description": "Image is the container image name (executableName in Schema.org)",
+                    "type": "string"
+                },
+                "hostedOn": {
+                    "description": "HostedOn is the ID of the host running this container (creates graph relationship)",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name is the human-readable container name (required, indexed)",
+                    "type": "string"
+                },
+                "ports": {
+                    "description": "Ports are the network port mappings for this container",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Port"
+                    }
+                },
+                "status": {
+                    "description": "Status is the container runtime status (running, stopped, paused, etc.)",
+                    "type": "string"
+                }
+            }
+        },
+        "models.ContainerPlacement": {
+            "type": "object",
+            "properties": {
+                "containerId": {
+                    "description": "ContainerID is the Docker container ID",
+                    "type": "string"
+                },
+                "containerName": {
+                    "description": "ContainerName is the container name",
+                    "type": "string"
+                },
+                "hostId": {
+                    "description": "HostID is the host where the container is running",
+                    "type": "string"
+                },
+                "ipAddress": {
+                    "description": "IPAddress is the host IP address",
+                    "type": "string"
+                },
+                "ports": {
+                    "description": "Ports maps container ports to exposed host ports",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "startedAt": {
+                    "description": "StartedAt is when the container started",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the container status",
+                    "type": "string"
+                }
+            }
+        },
+        "models.ContainerSpec": {
+            "type": "object",
+            "properties": {
+                "@id": {
+                    "description": "ID is the unique identifier for this container",
+                    "type": "string"
+                },
+                "@type": {
+                    "description": "Type is the JSON-LD @type (e.g., [\"datacenter:Container\", \"SoftwareApplication\"])"
+                },
+                "applicationCategory": {
+                    "description": "ApplicationCategory describes the container role (e.g., \"DatabaseApplication\")",
+                    "type": "string"
+                },
+                "args": {
+                    "description": "Args provides arguments to the command",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "command": {
+                    "description": "Command overrides the default container command",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "dependsOn": {
+                    "description": "DependsOn lists container dependencies (for startup ordering)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "environment": {
+                    "description": "Environment contains environment variables as array of objects",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.EnvironmentVariable"
+                    }
+                },
+                "healthCheck": {
+                    "description": "HealthCheck defines the health check configuration",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.HealthCheck"
+                        }
+                    ]
+                },
+                "image": {
+                    "description": "Image is the Docker image (e.g., \"postgres:15\", \"nginx:alpine\")",
+                    "type": "string"
+                },
+                "labels": {
+                    "description": "Labels are custom container labels",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "locatedInHost": {
+                    "description": "LocatedInHost specifies the target host (for multi-host deployments)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.Reference"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "Name is the container name (will be prefixed with stack name)",
+                    "type": "string"
+                },
+                "ports": {
+                    "description": "Ports defines port mappings",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PortMapping"
+                    }
+                },
+                "resourceRequirements": {
+                    "description": "ResourceRequirements defines resource constraints for placement",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ResourceRequirements"
+                        }
+                    ]
+                },
+                "resources": {
+                    "description": "Resources defines resource constraints",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ResourceConstraints"
+                        }
+                    ]
+                },
+                "restartPolicy": {
+                    "description": "RestartPolicy defines the restart behavior (no, always, on-failure, unless-stopped)",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "User specifies the user to run as",
+                    "type": "string"
+                },
+                "volumeMounts": {
+                    "description": "VolumeMounts defines volume mounts",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VolumeMount"
+                    }
+                },
+                "workingDir": {
+                    "description": "WorkingDir sets the working directory",
+                    "type": "string"
+                }
+            }
+        },
+        "models.DeployedNetworkInfo": {
+            "type": "object",
+            "properties": {
+                "driver": {
+                    "description": "Driver is the network driver",
+                    "type": "string"
+                },
+                "gateway": {
+                    "description": "Gateway is the network gateway",
+                    "type": "string"
+                },
+                "networkId": {
+                    "description": "NetworkID is the Docker network ID",
+                    "type": "string"
+                },
+                "networkName": {
+                    "description": "NetworkName is the network name",
+                    "type": "string"
+                },
+                "scope": {
+                    "description": "Scope is the network scope (local, swarm, global)",
+                    "type": "string"
+                },
+                "subnet": {
+                    "description": "Subnet is the network subnet",
+                    "type": "string"
+                }
+            }
+        },
+        "models.DeploymentConfig": {
+            "type": "object",
+            "properties": {
+                "@type": {
+                    "description": "Type is the JSON-LD type",
+                    "type": "string"
+                },
+                "comment": {
+                    "description": "Comment is a human-readable comment about the deployment strategy",
+                    "type": "string"
+                },
+                "hostConstraints": {
+                    "description": "HostConstraints define placement rules per container (for YAML deployments)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.HostConstraint"
+                    }
+                },
+                "mode": {
+                    "description": "Mode is the deployment mode: \"single-host\" or \"multi-host\"",
+                    "type": "string"
+                },
+                "networkMode": {
+                    "description": "NetworkMode defines cross-host networking\nValues: \"host-port\" (exposed ports), \"overlay\" (Docker overlay network)",
+                    "type": "string"
+                },
+                "placementStrategy": {
+                    "description": "PlacementStrategy defines how containers are placed on hosts\nValues: \"auto\", \"manual\", \"datacenter\", \"spread\"",
+                    "type": "string"
+                },
+                "targetDatacenter": {
+                    "description": "TargetDatacenter specifies which datacenter to deploy to (optional, for JSON-LD deployments)",
+                    "type": "string"
+                }
+            }
+        },
+        "models.DeploymentEvent": {
+            "type": "object",
+            "properties": {
+                "container": {
+                    "description": "Container is the container name (if applicable)",
+                    "type": "string"
+                },
+                "details": {
+                    "description": "Details contains additional event details",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "message": {
+                    "description": "Message is the event message",
+                    "type": "string"
+                },
+                "phase": {
+                    "description": "Phase is the deployment phase when event occurred",
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "Timestamp is when the event occurred",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type is the event type (info, warning, error)",
+                    "type": "string"
+                }
+            }
+        },
+        "models.DeploymentState": {
+            "type": "object",
+            "properties": {
+                "@id": {
+                    "description": "ID is the deployment ID (maps to CouchDB _id)",
+                    "type": "string"
+                },
+                "@type": {
+                    "description": "Type is the JSON-LD @type",
+                    "type": "string"
+                },
+                "_rev": {
+                    "description": "Rev is the CouchDB document revision",
+                    "type": "string"
+                },
+                "completedAt": {
+                    "description": "CompletedAt is when deployment completed",
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "description": "ErrorMessage contains error details if deployment failed",
+                    "type": "string"
+                },
+                "events": {
+                    "description": "Events tracks deployment events",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.DeploymentEvent"
+                    }
+                },
+                "networkInfo": {
+                    "description": "NetworkInfo contains network configuration details",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.DeployedNetworkInfo"
+                        }
+                    ]
+                },
+                "phase": {
+                    "description": "Phase is the current deployment phase",
+                    "type": "string"
+                },
+                "placements": {
+                    "description": "Placements maps container names to their placements",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/models.ContainerPlacement"
+                    }
+                },
+                "progress": {
+                    "description": "Progress is the deployment progress (0-100)",
+                    "type": "integer"
+                },
+                "rollbackState": {
+                    "description": "RollbackState tracks rollback if needed",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.RollbackState"
+                        }
+                    ]
+                },
+                "stackId": {
+                    "description": "StackID is the stack identifier",
+                    "type": "string"
+                },
+                "startedAt": {
+                    "description": "StartedAt is when deployment started",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the deployment status (deploying, running, stopping, stopped, failed, rolling-back)",
+                    "type": "string"
+                },
+                "volumeInfo": {
+                    "description": "VolumeInfo contains volume information",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/models.VolumeInfo"
+                    }
+                }
+            }
+        },
+        "models.EnvironmentVariable": {
+            "type": "object",
+            "properties": {
+                "@type": {
+                    "description": "Type is the JSON-LD type",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name is the environment variable name",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "Value is the environment variable value",
+                    "type": "string"
+                }
+            }
+        },
+        "models.GraphNode": {
+            "type": "object",
+            "properties": {
+                "@id": {
+                    "description": "ID is the unique identifier (@id in JSON-LD)",
+                    "type": "string"
+                },
+                "@type": {
+                    "description": "Type is the JSON-LD @type (can be string or array)"
+                },
+                "creator": {
+                    "type": "string"
+                },
+                "dateCreated": {
+                    "description": "Additional metadata",
+                    "type": "string"
+                },
+                "dateModified": {
+                    "type": "string"
+                },
+                "deployment": {
+                    "$ref": "#/definitions/models.DeploymentConfig"
+                },
+                "description": {
+                    "description": "Description is the human-readable description",
+                    "type": "string"
+                },
+                "hasPart": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ContainerSpec"
+                    }
+                },
+                "locatedInDatacenter": {
+                    "$ref": "#/definitions/models.Reference"
+                },
+                "locatedInHost": {
+                    "description": "Stack-specific fields",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.Reference"
+                        }
+                    ]
+                },
+                "locatedInRack": {
+                    "$ref": "#/definitions/models.Reference"
+                },
+                "name": {
+                    "description": "Name is the human-readable name",
+                    "type": "string"
+                },
+                "network": {
+                    "$ref": "#/definitions/models.NetworkSpec"
+                },
+                "rackPosition": {
+                    "description": "Rack-specific fields",
+                    "type": "string"
+                },
+                "uPosition": {
+                    "description": "Host-specific fields",
+                    "type": "string"
+                }
+            }
+        },
+        "models.HealthCheck": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "description": "Command is the command to execute for exec checks",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "headers": {
+                    "description": "Headers are HTTP headers for http checks",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "interval": {
+                    "description": "Interval is the time between health checks in seconds",
+                    "type": "integer"
+                },
+                "path": {
+                    "description": "Path is the HTTP path for http checks (e.g., \"/health\")",
+                    "type": "string"
+                },
+                "port": {
+                    "description": "Port is the port to check",
+                    "type": "integer"
+                },
+                "retries": {
+                    "description": "Retries is the number of consecutive failures before unhealthy",
+                    "type": "integer"
+                },
+                "startPeriod": {
+                    "description": "StartPeriod is the initialization time before health checks start (seconds)",
+                    "type": "integer"
+                },
+                "timeout": {
+                    "description": "Timeout is the health check timeout in seconds",
+                    "type": "integer"
+                },
+                "type": {
+                    "description": "Type is the health check type (http, tcp, exec, grpc)",
+                    "type": "string"
+                }
+            }
+        },
+        "models.Host": {
+            "type": "object",
+            "properties": {
+                "@context": {
+                    "description": "Context is the JSON-LD @context URL (typically https://schema.org)",
+                    "type": "string"
+                },
+                "@id": {
+                    "description": "ID is the unique host identifier (maps to CouchDB _id)",
+                    "type": "string"
+                },
+                "@type": {
+                    "description": "Type is the JSON-LD @type (ComputerSystem for hosts)",
+                    "type": "string"
+                },
+                "_rev": {
+                    "description": "Rev is the CouchDB document revision for optimistic locking",
+                    "type": "string"
+                },
+                "cpu": {
+                    "description": "CPU is the number of CPU cores available",
+                    "type": "integer"
+                },
+                "cpuUsage": {
+                    "description": "CPUUsage is the current CPU usage percentage (0-100)",
+                    "type": "number"
+                },
+                "ipAddress": {
+                    "description": "IPAddress is the host's IP address (required, indexed)",
+                    "type": "string"
+                },
+                "lastMetricsUpdate": {
+                    "description": "LastMetricsUpdate is the timestamp when metrics were last updated",
+                    "type": "string"
+                },
+                "location": {
+                    "description": "Datacenter is the physical or logical location of the host",
+                    "type": "string"
+                },
+                "memory": {
+                    "description": "Memory is the total memory in bytes",
+                    "type": "integer"
+                },
+                "memoryUsage": {
+                    "description": "MemoryUsage is the current memory usage in bytes",
+                    "type": "integer"
+                },
+                "memoryUsagePercent": {
+                    "description": "MemoryUsagePercent is the current memory usage percentage (0-100)",
+                    "type": "number"
+                },
+                "name": {
+                    "description": "Name is the human-readable host name (required, indexed)",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the host operational status (active, maintenance, offline)",
+                    "type": "string"
+                }
+            }
+        },
+        "models.HostConstraint": {
+            "type": "object",
+            "properties": {
+                "containerName": {
+                    "description": "ContainerName is the name of the container to constrain",
+                    "type": "string"
+                },
+                "labels": {
+                    "description": "Labels are custom labels that the host must have",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "minCpu": {
+                    "description": "MinCPU is the minimum CPU cores required",
+                    "type": "integer"
+                },
+                "minMemory": {
+                    "description": "MinMemory is the minimum memory in bytes required",
+                    "type": "integer"
+                },
+                "requiredDatacenter": {
+                    "description": "RequiredDatacenter requires the container to be in this datacenter",
+                    "type": "string"
+                },
+                "targetHost": {
+                    "description": "TargetHostID is the specific host ID (for manual placement)",
+                    "type": "string"
+                }
+            }
+        },
+        "models.IgnoreListEntry": {
+            "type": "object",
+            "properties": {
+                "@context": {
+                    "description": "Context is the JSON-LD context",
+                    "type": "string"
+                },
+                "@type": {
+                    "description": "Type is the JSON-LD type",
+                    "type": "string"
+                },
+                "_id": {
+                    "description": "ID is the unique identifier for this entry (container ID)",
+                    "type": "string"
+                },
+                "_rev": {
+                    "description": "Rev is the CouchDB document revision",
+                    "type": "string"
+                },
+                "container_id": {
+                    "description": "ContainerID is the Docker container ID to ignore",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt is when this entry was added",
+                    "type": "string"
+                },
+                "created_by": {
+                    "description": "CreatedBy is the user who added this entry",
+                    "type": "string"
+                },
+                "expires_at": {
+                    "description": "ExpiresAt is optional expiration time (for temporary ignores)",
+                    "type": "string"
+                },
+                "host_id": {
+                    "description": "HostID is the host where this container was located",
+                    "type": "string"
+                },
+                "reason": {
+                    "description": "Reason explains why this container is ignored",
+                    "type": "string"
+                }
+            }
+        },
+        "models.NetworkSpec": {
+            "type": "object",
+            "properties": {
+                "createIfNotExists": {
+                    "description": "CreateIfNotExists creates the network if it doesn't exist",
+                    "type": "boolean"
+                },
+                "driver": {
+                    "description": "Driver is the network driver (bridge, overlay, host, macvlan)",
+                    "type": "string"
+                },
+                "external": {
+                    "description": "External indicates this is an externally managed network",
+                    "type": "boolean"
+                },
+                "gateway": {
+                    "description": "Gateway is the network gateway IP",
+                    "type": "string"
+                },
+                "ipRange": {
+                    "description": "IPRange is the IP address range for containers",
+                    "type": "string"
+                },
+                "labels": {
+                    "description": "Labels are custom network labels",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "description": "Name is the network name",
+                    "type": "string"
+                },
+                "options": {
+                    "description": "Options are driver-specific options",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "subnet": {
+                    "description": "Subnet is the network subnet (e.g., \"172.18.0.0/16\")",
+                    "type": "string"
+                }
+            }
+        },
+        "models.Port": {
+            "type": "object",
+            "properties": {
+                "containerPort": {
+                    "description": "ContainerPort is the port number inside the container",
+                    "type": "integer"
+                },
+                "hostPort": {
+                    "description": "HostPort is the port number on the host machine",
+                    "type": "integer"
+                },
+                "protocol": {
+                    "description": "Protocol is the network protocol (tcp, udp, sctp)",
+                    "type": "string"
+                }
+            }
+        },
+        "models.PortMapping": {
+            "type": "object",
+            "properties": {
+                "containerPort": {
+                    "description": "ContainerPort is the port inside the container",
+                    "type": "integer"
+                },
+                "hostIP": {
+                    "description": "HostIP binds to a specific host IP (empty for all interfaces)",
+                    "type": "string"
+                },
+                "hostPort": {
+                    "description": "HostPort is the port on the host (0 for dynamic allocation)",
+                    "type": "integer"
+                },
+                "protocol": {
+                    "description": "Protocol is the port protocol (tcp, udp, sctp)",
+                    "type": "string"
+                }
+            }
+        },
+        "models.Reference": {
+            "type": "object",
+            "properties": {
+                "@id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ResourceConstraints": {
+            "type": "object",
+            "properties": {
+                "limits": {
+                    "description": "Limits defines maximum resource usage",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ResourceLimits"
+                        }
+                    ]
+                },
+                "reservations": {
+                    "description": "Reservations defines guaranteed resource allocation",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ResourceReservations"
+                        }
+                    ]
+                }
+            }
+        },
+        "models.ResourceLimits": {
+            "type": "object",
+            "properties": {
+                "cpus": {
+                    "description": "CPUs is the maximum CPU cores (e.g., 0.5, 2.0)",
+                    "type": "number"
+                },
+                "memory": {
+                    "description": "Memory is the maximum memory in bytes",
+                    "type": "integer"
+                },
+                "memorySwap": {
+                    "description": "MemorySwap is the maximum memory + swap in bytes (-1 for unlimited)",
+                    "type": "integer"
+                },
+                "pids": {
+                    "description": "Pids is the maximum number of PIDs",
+                    "type": "integer"
+                }
+            }
+        },
+        "models.ResourceRequirements": {
+            "type": "object",
+            "properties": {
+                "@type": {
+                    "description": "Type is the JSON-LD type",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "Description is a human-readable description of the requirements",
+                    "type": "string"
+                },
+                "maxCPU": {
+                    "description": "MaxCPU is the maximum number of CPU cores to allocate",
+                    "type": "integer"
+                },
+                "maxMemory": {
+                    "description": "MaxMemory is the maximum memory in bytes",
+                    "type": "integer"
+                },
+                "minCPU": {
+                    "description": "MinCPU is the minimum number of CPU cores required",
+                    "type": "integer"
+                },
+                "minMemory": {
+                    "description": "MinMemory is the minimum memory in bytes",
+                    "type": "integer"
+                },
+                "preferredDatacenter": {
+                    "description": "PreferredDatacenter is a soft constraint for datacenter placement",
+                    "type": "string"
+                },
+                "requiredLabels": {
+                    "description": "RequiredLabels are host labels that must match for placement",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models.ResourceReservations": {
+            "type": "object",
+            "properties": {
+                "cpus": {
+                    "description": "CPUs is the guaranteed CPU cores",
+                    "type": "number"
+                },
+                "memory": {
+                    "description": "Memory is the guaranteed memory in bytes",
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Role": {
+            "type": "string",
+            "enum": [
+                "admin",
+                "user",
+                "viewer",
+                "agent"
+            ],
+            "x-enum-varnames": [
+                "RoleAdmin",
+                "RoleUser",
+                "RoleViewer",
+                "RoleAgent"
+            ]
+        },
+        "models.RollbackState": {
+            "type": "object",
+            "properties": {
+                "completedAt": {
+                    "description": "CompletedAt is when rollback completed",
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "description": "ErrorMessage contains error details if rollback failed",
+                    "type": "string"
+                },
+                "removedContainers": {
+                    "description": "RemovedContainers lists containers removed during rollback",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "startedAt": {
+                    "description": "StartedAt is when rollback started",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the rollback status (rolling-back, rolled-back, rollback-failed)",
+                    "type": "string"
+                }
+            }
+        },
+        "models.Stack": {
+            "type": "object",
+            "properties": {
+                "@context": {
+                    "description": "Context is the JSON-LD @context URL",
+                    "type": "string"
+                },
+                "@id": {
+                    "description": "ID is the unique stack identifier (maps to CouchDB _id)",
+                    "type": "string"
+                },
+                "@type": {
+                    "description": "Type is the JSON-LD @type (ItemList for stacks)",
+                    "type": "string"
+                },
+                "_rev": {
+                    "description": "Rev is the CouchDB document revision",
+                    "type": "string"
+                },
+                "containers": {
+                    "description": "Containers is a list of container references in this stack",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "dateCreated": {
+                    "description": "CreatedAt is the stack creation timestamp",
+                    "type": "string"
+                },
+                "dateModified": {
+                    "description": "UpdatedAt is the last update timestamp",
+                    "type": "string"
+                },
+                "definitionPath": {
+                    "description": "DefinitionPath is the path to the stack definition file",
+                    "type": "string"
+                },
+                "deployedAt": {
+                    "description": "DeployedAt is the deployment timestamp",
+                    "type": "string"
+                },
+                "deployment": {
+                    "description": "Deployment contains deployment configuration",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.DeploymentConfig"
+                        }
+                    ]
+                },
+                "deploymentId": {
+                    "description": "DeploymentID is the Docker deployment identifier",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "Description is the human-readable stack description",
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "description": "ErrorMessage contains error details if status is \"error\"",
+                    "type": "string"
+                },
+                "labels": {
+                    "description": "Labels are custom key-value labels",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "location": {
+                    "description": "Datacenter is the primary datacenter for this stack (optional)",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name is the stack name (required, indexed, DNS-compatible)",
+                    "type": "string"
+                },
+                "owner": {
+                    "description": "Owner is the user who created the stack",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the stack operational status\nValues: pending, deploying, running, stopping, stopped, error",
+                    "type": "string"
+                }
+            }
+        },
+        "models.StackDefinition": {
+            "type": "object",
+            "properties": {
+                "@context": {
+                    "description": "Context is the JSON-LD @context (can be string, array, or object)"
+                },
+                "@graph": {
+                    "description": "Graph is the array of JSON-LD graph nodes",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.GraphNode"
+                    }
+                }
+            }
+        },
+        "models.VolumeDriverConfig": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Name is the driver name",
+                    "type": "string"
+                },
+                "options": {
+                    "description": "Options are driver-specific options",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models.VolumeInfo": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "description": "CreatedAt is when the volume was created",
+                    "type": "string"
+                },
+                "driver": {
+                    "description": "Driver is the volume driver",
+                    "type": "string"
+                },
+                "mountpoint": {
+                    "description": "Mountpoint is the volume mount point on the host",
+                    "type": "string"
+                },
+                "scope": {
+                    "description": "Scope is the volume scope",
+                    "type": "string"
+                },
+                "volumeName": {
+                    "description": "VolumeName is the volume name",
+                    "type": "string"
+                }
+            }
+        },
+        "models.VolumeMount": {
+            "type": "object",
+            "properties": {
+                "bindOptions": {
+                    "description": "BindOptions are options for bind mounts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.BindOptions"
+                        }
+                    ]
+                },
+                "readOnly": {
+                    "description": "ReadOnly makes the mount read-only",
+                    "type": "boolean"
+                },
+                "source": {
+                    "description": "Source is the volume name or host path",
+                    "type": "string"
+                },
+                "target": {
+                    "description": "Target is the container mount path",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type is the mount type (volume, bind, tmpfs, npipe)",
+                    "type": "string"
+                },
+                "volumeOptions": {
+                    "description": "VolumeOptions are options for volume mounts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.VolumeOptions"
+                        }
+                    ]
+                }
+            }
+        },
+        "models.VolumeOptions": {
+            "type": "object",
+            "properties": {
+                "driverConfig": {
+                    "description": "DriverConfig specifies the volume driver",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.VolumeDriverConfig"
+                        }
+                    ]
+                },
+                "labels": {
+                    "description": "Labels are custom volume labels",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "noCopy": {
+                    "description": "NoCopy disables copying data from container to volume",
+                    "type": "boolean"
+                }
+            }
+        },
+        "time.Duration": {
+            "type": "integer",
+            "format": "int64",
+            "enum": [
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000
+            ],
+            "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour"
+            ]
+        }
+    },
+    "tags": [
+        {
+            "description": "Operations related to container management",
+            "name": "Containers"
+        },
+        {
+            "description": "Operations related to host management",
+            "name": "Hosts"
+        },
+        {
+            "description": "Graph query and traversal operations",
+            "name": "Queries"
+        },
+        {
+            "description": "Statistics and metrics endpoints",
+            "name": "Statistics"
+        },
+        {
+            "description": "Graph visualization endpoints",
+            "name": "Graph"
+        },
+        {
+            "description": "WebSocket endpoints for real-time updates",
+            "name": "WebSocket"
+        }
+    ]
+}

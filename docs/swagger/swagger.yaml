@@ -1,0 +1,3211 @@
+basePath: /api/v1
+definitions:
+  api.APIError:
+    properties:
+      code:
+        type: integer
+      context:
+        additionalProperties: true
+        type: object
+      details:
+        type: string
+      field_errors:
+        additionalProperties:
+          type: string
+        type: object
+      message:
+        type: string
+    type: object
+  api.BulkResponse:
+    properties:
+      failed:
+        type: integer
+      results:
+        items:
+          $ref: '#/definitions/api.BulkResult'
+        type: array
+      success:
+        type: integer
+      total:
+        type: integer
+    type: object
+  api.BulkResult:
+    properties:
+      error:
+        type: string
+      id:
+        type: string
+      reason:
+        type: string
+      rev:
+        type: string
+      success:
+        type: boolean
+    type: object
+  api.ChangePasswordRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        minLength: 8
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
+  api.ContainersResponse:
+    properties:
+      containers:
+        items:
+          $ref: '#/definitions/models.Container'
+        type: array
+      count:
+        type: integer
+    type: object
+  api.CreateRepairPlanRequest:
+    properties:
+      dry_run:
+        type: boolean
+      risk_filter:
+        items:
+          $ref: '#/definitions/integrity.RiskLevel'
+        type: array
+      scan_id:
+        type: string
+      strategy:
+        $ref: '#/definitions/integrity.ResolutionStrategy'
+    type: object
+  api.DependencyGraphResponse:
+    properties:
+      container:
+        $ref: '#/definitions/models.Container'
+      dependencies:
+        description: Containers this one depends on
+        items:
+          $ref: '#/definitions/api.DependencyNode'
+        type: array
+      dependents:
+        description: Containers that depend on this one
+        items:
+          $ref: '#/definitions/api.DependencyNode'
+        type: array
+    type: object
+  api.DependencyNode:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/api.DependencyNode'
+        type: array
+      container:
+        $ref: '#/definitions/models.Container'
+      depth:
+        type: integer
+    type: object
+  api.DeployJSONLDStackRequest:
+    properties:
+      pullImages:
+        description: 'Pull images before deployment (default: false)'
+        type: boolean
+      rollbackOnError:
+        description: 'Auto-rollback on error (default: true)'
+        type: boolean
+      stackDefinition:
+        allOf:
+        - $ref: '#/definitions/models.StackDefinition'
+        description: StackDefinition contains the complete JSON-LD @graph structure
+      timeout:
+        description: Options for deployment
+        type: integer
+    required:
+    - stackDefinition
+    type: object
+  api.DeploymentStateResponse:
+    properties:
+      completedAt:
+        type: string
+      errorMessage:
+        type: string
+      events:
+        items:
+          $ref: '#/definitions/models.DeploymentEvent'
+        type: array
+      id:
+        type: string
+      networkInfo:
+        $ref: '#/definitions/models.DeployedNetworkInfo'
+      phase:
+        type: string
+      placements:
+        additionalProperties:
+          $ref: '#/definitions/models.ContainerPlacement'
+        type: object
+      progress:
+        type: integer
+      rollbackState:
+        $ref: '#/definitions/models.RollbackState'
+      stackId:
+        type: string
+      startedAt:
+        type: string
+      status:
+        type: string
+      volumeInfo:
+        additionalProperties:
+          $ref: '#/definitions/models.VolumeInfo'
+        type: object
+    type: object
+  api.ErrorResponse:
+    properties:
+      details:
+        type: string
+      error:
+        type: string
+    type: object
+  api.ExecuteRepairPlanRequest:
+    properties:
+      dry_run:
+        type: boolean
+      plan_id:
+        type: string
+    type: object
+  api.GraphData:
+    properties:
+      edges:
+        items:
+          $ref: '#/definitions/api.GraphEdge'
+        type: array
+      nodes:
+        items:
+          $ref: '#/definitions/api.GraphNode'
+        type: array
+    type: object
+  api.GraphEdge:
+    properties:
+      data:
+        $ref: '#/definitions/api.GraphEdgeData'
+    type: object
+  api.GraphEdgeData:
+    properties:
+      id:
+        type: string
+      label:
+        type: string
+      source:
+        type: string
+      target:
+        type: string
+      type:
+        description: '"hosted_on", "connects_to", "depends_on"'
+        type: string
+    type: object
+  api.GraphNode:
+    properties:
+      data:
+        $ref: '#/definitions/api.GraphNodeData'
+    type: object
+  api.GraphNodeData:
+    properties:
+      cpu:
+        type: integer
+      id:
+        type: string
+      image:
+        type: string
+      ip:
+        type: string
+      label:
+        type: string
+      location:
+        type: string
+      memory:
+        type: integer
+      metadata:
+        additionalProperties:
+          type: string
+        type: object
+      status:
+        type: string
+      type:
+        description: '"host", "container"'
+        type: string
+    type: object
+  api.IntegrityScanRequest:
+    properties:
+      scan_conflicts:
+        type: boolean
+      scan_duplicates:
+        type: boolean
+      scan_references:
+        type: boolean
+      scan_schemas:
+        type: boolean
+    type: object
+  api.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  api.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      expires_at:
+        type: string
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+      user:
+        $ref: '#/definitions/api.UserResponse'
+    type: object
+  api.MessageResponse:
+    properties:
+      id:
+        type: string
+      message:
+        type: string
+    type: object
+  api.PaginatedContainersResponse:
+    properties:
+      containers:
+        items:
+          $ref: '#/definitions/models.Container'
+        type: array
+      count:
+        description: Number of items in current page
+        type: integer
+      limit:
+        description: Items per page
+        type: integer
+      offset:
+        description: Current offset
+        type: integer
+      total:
+        description: Total number of items
+        type: integer
+    type: object
+  api.PaginatedHostsResponse:
+    properties:
+      count:
+        description: Number of items in current page
+        type: integer
+      hosts:
+        items:
+          $ref: '#/definitions/models.Host'
+        type: array
+      limit:
+        description: Items per page
+        type: integer
+      offset:
+        description: Current offset
+        type: integer
+      total:
+        description: Total number of items
+        type: integer
+    type: object
+  api.ParseResultResponse:
+    properties:
+      containerCount:
+        type: integer
+      errors:
+        items:
+          type: string
+        type: array
+      hasNetwork:
+        type: boolean
+      stackName:
+        type: string
+      valid:
+        type: boolean
+      warnings:
+        items:
+          type: string
+        type: array
+      waveCount:
+        type: integer
+    type: object
+  api.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  api.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/models.Role'
+        type: array
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  api.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      enabled:
+        type: boolean
+      name:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/models.Role'
+        type: array
+    type: object
+  api.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: string
+      last_login_at:
+        type: string
+      name:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/models.Role'
+        type: array
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  integrity.DatabaseHealth:
+    properties:
+      average_revisions:
+        description: AverageRevisions per document
+        type: number
+      database_size_bytes:
+        description: DatabaseSize in bytes
+        type: integer
+      disk_usage:
+        description: DiskUsage as a percentage (0.0 to 1.0)
+        type: number
+      health_score:
+        description: HealthScore is a 0-100 score
+        type: integer
+      issue_count:
+        description: IssueCount is the total number of issues
+        type: integer
+      issues_by_severity:
+        additionalProperties:
+          type: integer
+        description: IssuesBySeverity breaks down issues by severity
+        type: object
+      issues_by_type:
+        additionalProperties:
+          type: integer
+        description: IssuesByType breaks down issues by type
+        type: object
+      recommend_compaction:
+        description: RecommendCompaction indicates if compaction is advised
+        type: boolean
+      recommendations:
+        description: Recommendations for improving health
+        items:
+          type: string
+        type: array
+      timestamp:
+        description: Timestamp when health was checked
+        type: string
+      total_documents:
+        description: TotalDocuments in the database
+        type: integer
+    type: object
+  integrity.Issue:
+    properties:
+      description:
+        description: Description provides human-readable details
+        type: string
+      details:
+        additionalProperties: true
+        description: Details contains additional structured information
+        type: object
+      detected_at:
+        description: DetectedAt is when this issue was found
+        type: string
+      document_id:
+        description: DocumentID is the ID of the affected document
+        type: string
+      document_type:
+        description: DocumentType is the @type of the document (e.g., SoftwareApplication)
+        type: string
+      id:
+        description: ID uniquely identifies this issue
+        type: string
+      severity:
+        allOf:
+        - $ref: '#/definitions/integrity.Severity'
+        description: Severity indicates how critical this issue is
+      suggested_resolution:
+        allOf:
+        - $ref: '#/definitions/integrity.Resolution'
+        description: SuggestedResolution recommends how to fix this issue
+      type:
+        allOf:
+        - $ref: '#/definitions/integrity.IssueType'
+        description: Type categorizes the issue
+    type: object
+  integrity.IssueType:
+    enum:
+    - duplicate
+    - conflict
+    - invalid_reference
+    - invalid_schema
+    - orphaned
+    type: string
+    x-enum-varnames:
+    - IssueTypeDuplicate
+    - IssueTypeConflict
+    - IssueTypeInvalidReference
+    - IssueTypeInvalidSchema
+    - IssueTypeOrphaned
+  integrity.OperationResult:
+    properties:
+      changes:
+        additionalProperties: true
+        description: Changes made by this operation
+        type: object
+      dry_run:
+        description: DryRun indicates if this was a simulation
+        type: boolean
+      end_time:
+        description: EndTime when this operation completed
+        type: string
+      error:
+        description: Error contains any error that occurred
+      operation:
+        allOf:
+        - $ref: '#/definitions/integrity.RepairOperation'
+        description: Operation that was executed
+      start_time:
+        description: StartTime when this operation began
+        type: string
+      success:
+        description: Success indicates if the operation completed successfully
+        type: boolean
+    type: object
+  integrity.OperationType:
+    enum:
+    - delete_duplicate
+    - resolve_conflict
+    - fix_reference
+    - update_schema
+    - delete_orphaned
+    type: string
+    x-enum-varnames:
+    - OpDeleteDuplicate
+    - OpResolveConflict
+    - OpFixReference
+    - OpUpdateSchema
+    - OpDeleteOrphaned
+  integrity.RepairOperation:
+    properties:
+      action:
+        description: Action describes what will be done
+        type: string
+      document_id:
+        description: DocumentID is the document to operate on
+        type: string
+      id:
+        description: ID uniquely identifies this operation
+        type: string
+      new_value:
+        description: NewValue is the target state
+      old_value:
+        description: OldValue is the current state (for rollback)
+      risk:
+        allOf:
+        - $ref: '#/definitions/integrity.RiskLevel'
+        description: Risk indicates the risk level
+      type:
+        allOf:
+        - $ref: '#/definitions/integrity.OperationType'
+        description: Type categorizes the operation
+    type: object
+  integrity.RepairPlan:
+    properties:
+      dry_run:
+        description: DryRun indicates if this is a simulation
+        type: boolean
+      estimated_duration_ms:
+        description: EstimatedDuration in milliseconds
+        type: integer
+      id:
+        description: ID uniquely identifies this plan
+        type: string
+      operations:
+        description: Operations to perform
+        items:
+          $ref: '#/definitions/integrity.RepairOperation'
+        type: array
+      risk_filter:
+        description: RiskFilter limits operations to certain risk levels
+        items:
+          $ref: '#/definitions/integrity.RiskLevel'
+        type: array
+      scan_id:
+        description: ScanID references the scan that generated this plan
+        type: string
+      strategy:
+        allOf:
+        - $ref: '#/definitions/integrity.ResolutionStrategy'
+        description: Strategy used for resolving conflicts
+      timestamp:
+        description: Timestamp when the plan was created
+        type: string
+    type: object
+  integrity.RepairResult:
+    properties:
+      abort_reason:
+        description: AbortReason explains why execution was aborted
+      aborted:
+        description: Aborted indicates if execution was stopped early
+        type: boolean
+      dry_run:
+        description: DryRun indicates if this was a simulation
+        type: boolean
+      duration:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: Duration of the execution
+      end_time:
+        description: EndTime when execution completed
+        type: string
+      execution_id:
+        description: ExecutionID uniquely identifies this execution
+        type: string
+      failure_count:
+        description: FailureCount is the number of failed operations
+        type: integer
+      operations:
+        description: Operations contains results for each operation
+        items:
+          $ref: '#/definitions/integrity.OperationResult'
+        type: array
+      plan_id:
+        description: PlanID references the executed plan
+        type: string
+      start_time:
+        description: StartTime when execution began
+        type: string
+      success_count:
+        description: SuccessCount is the number of successful operations
+        type: integer
+    type: object
+  integrity.Resolution:
+    properties:
+      description:
+        description: Description explains what the resolution will do
+        type: string
+      operations:
+        description: Operations contains the specific steps to perform
+        items:
+          $ref: '#/definitions/integrity.RepairOperation'
+        type: array
+      requires_approval:
+        description: RequiresApproval indicates if manual approval is needed
+        type: boolean
+      risk:
+        allOf:
+        - $ref: '#/definitions/integrity.RiskLevel'
+        description: Risk indicates the risk level of this resolution
+      strategy:
+        allOf:
+        - $ref: '#/definitions/integrity.ResolutionStrategy'
+        description: Strategy indicates the resolution method
+    type: object
+  integrity.ResolutionStrategy:
+    enum:
+    - latest_wins
+    - highest_rev
+    - merge
+    - manual
+    type: string
+    x-enum-varnames:
+    - StrategyLatestWins
+    - StrategyHighestRev
+    - StrategyMerge
+    - StrategyManual
+  integrity.RiskLevel:
+    enum:
+    - low
+    - medium
+    - high
+    type: string
+    x-enum-varnames:
+    - RiskLow
+    - RiskMedium
+    - RiskHigh
+  integrity.ScanListResult:
+    properties:
+      limit:
+        description: Limit is the maximum number of scans returned
+        type: integer
+      offset:
+        description: Offset is the number of scans skipped
+        type: integer
+      scans:
+        description: Scans is the list of scan reports
+        items:
+          $ref: '#/definitions/integrity.ScanReport'
+        type: array
+      total:
+        description: Total is the total number of scans available
+        type: integer
+    type: object
+  integrity.ScanReport:
+    properties:
+      documents_scanned:
+        description: DocumentsScanned is the total number of documents checked
+        type: integer
+      duration:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: Duration of the scan
+      id:
+        description: ID uniquely identifies this scan
+        type: string
+      issues_found:
+        description: IssuesFound contains all detected issues
+        items:
+          $ref: '#/definitions/integrity.Issue'
+        type: array
+      summary:
+        allOf:
+        - $ref: '#/definitions/integrity.ScanSummary'
+        description: Summary provides aggregated statistics
+      timestamp:
+        description: Timestamp when the scan was performed
+        type: string
+    type: object
+  integrity.ScanSummary:
+    properties:
+      by_severity:
+        additionalProperties:
+          type: integer
+        description: BySeverity breaks down issues by severity
+        type: object
+      by_type:
+        additionalProperties:
+          type: integer
+        description: ByType breaks down issues by type
+        type: object
+      health_score:
+        description: HealthScore is a 0-100 score indicating database health
+        type: integer
+      total_issues:
+        description: TotalIssues is the count of all issues found
+        type: integer
+    type: object
+  integrity.Severity:
+    enum:
+    - low
+    - medium
+    - high
+    - critical
+    type: string
+    x-enum-varnames:
+    - SeverityLow
+    - SeverityMedium
+    - SeverityHigh
+    - SeverityCritical
+  models.BindOptions:
+    properties:
+      nonRecursive:
+        description: NonRecursive disables recursive bind mounting
+        type: boolean
+      propagation:
+        description: Propagation is the bind propagation mode (rprivate, private,
+          rshared, shared, rslave, slave)
+        type: string
+    type: object
+  models.Container:
+    properties:
+      '@context':
+        description: Context is the JSON-LD @context URL (typically https://schema.org)
+        type: string
+      '@id':
+        description: ID is the unique container identifier (maps to CouchDB _id)
+        type: string
+      '@type':
+        description: Type is the JSON-LD @type (SoftwareApplication for containers)
+        type: string
+      _rev:
+        description: Rev is the CouchDB document revision for optimistic locking
+        type: string
+      dateCreated:
+        description: Created is the ISO 8601 timestamp when the container was created
+        type: string
+      dependsOn:
+        description: |-
+          DependsOn lists container names/IDs that this container depends on
+          These dependencies are used for startup ordering and graph relationships
+        items:
+          type: string
+        type: array
+      environment:
+        additionalProperties:
+          type: string
+        description: Env contains environment variables passed to the container
+        type: object
+      executableName:
+        description: Image is the container image name (executableName in Schema.org)
+        type: string
+      hostedOn:
+        description: HostedOn is the ID of the host running this container (creates
+          graph relationship)
+        type: string
+      name:
+        description: Name is the human-readable container name (required, indexed)
+        type: string
+      ports:
+        description: Ports are the network port mappings for this container
+        items:
+          $ref: '#/definitions/models.Port'
+        type: array
+      status:
+        description: Status is the container runtime status (running, stopped, paused,
+          etc.)
+        type: string
+    type: object
+  models.ContainerPlacement:
+    properties:
+      containerId:
+        description: ContainerID is the Docker container ID
+        type: string
+      containerName:
+        description: ContainerName is the container name
+        type: string
+      hostId:
+        description: HostID is the host where the container is running
+        type: string
+      ipAddress:
+        description: IPAddress is the host IP address
+        type: string
+      ports:
+        additionalProperties:
+          type: integer
+        description: Ports maps container ports to exposed host ports
+        type: object
+      startedAt:
+        description: StartedAt is when the container started
+        type: string
+      status:
+        description: Status is the container status
+        type: string
+    type: object
+  models.ContainerSpec:
+    properties:
+      '@id':
+        description: ID is the unique identifier for this container
+        type: string
+      '@type':
+        description: Type is the JSON-LD @type (e.g., ["datacenter:Container", "SoftwareApplication"])
+      applicationCategory:
+        description: ApplicationCategory describes the container role (e.g., "DatabaseApplication")
+        type: string
+      args:
+        description: Args provides arguments to the command
+        items:
+          type: string
+        type: array
+      command:
+        description: Command overrides the default container command
+        items:
+          type: string
+        type: array
+      dependsOn:
+        description: DependsOn lists container dependencies (for startup ordering)
+        items:
+          type: string
+        type: array
+      environment:
+        description: Environment contains environment variables as array of objects
+        items:
+          $ref: '#/definitions/models.EnvironmentVariable'
+        type: array
+      healthCheck:
+        allOf:
+        - $ref: '#/definitions/models.HealthCheck'
+        description: HealthCheck defines the health check configuration
+      image:
+        description: Image is the Docker image (e.g., "postgres:15", "nginx:alpine")
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        description: Labels are custom container labels
+        type: object
+      locatedInHost:
+        allOf:
+        - $ref: '#/definitions/models.Reference'
+        description: LocatedInHost specifies the target host (for multi-host deployments)
+      name:
+        description: Name is the container name (will be prefixed with stack name)
+        type: string
+      ports:
+        description: Ports defines port mappings
+        items:
+          $ref: '#/definitions/models.PortMapping'
+        type: array
+      resourceRequirements:
+        allOf:
+        - $ref: '#/definitions/models.ResourceRequirements'
+        description: ResourceRequirements defines resource constraints for placement
+      resources:
+        allOf:
+        - $ref: '#/definitions/models.ResourceConstraints'
+        description: Resources defines resource constraints
+      restartPolicy:
+        description: RestartPolicy defines the restart behavior (no, always, on-failure,
+          unless-stopped)
+        type: string
+      user:
+        description: User specifies the user to run as
+        type: string
+      volumeMounts:
+        description: VolumeMounts defines volume mounts
+        items:
+          $ref: '#/definitions/models.VolumeMount'
+        type: array
+      workingDir:
+        description: WorkingDir sets the working directory
+        type: string
+    type: object
+  models.DeployedNetworkInfo:
+    properties:
+      driver:
+        description: Driver is the network driver
+        type: string
+      gateway:
+        description: Gateway is the network gateway
+        type: string
+      networkId:
+        description: NetworkID is the Docker network ID
+        type: string
+      networkName:
+        description: NetworkName is the network name
+        type: string
+      scope:
+        description: Scope is the network scope (local, swarm, global)
+        type: string
+      subnet:
+        description: Subnet is the network subnet
+        type: string
+    type: object
+  models.DeploymentConfig:
+    properties:
+      '@type':
+        description: Type is the JSON-LD type
+        type: string
+      comment:
+        description: Comment is a human-readable comment about the deployment strategy
+        type: string
+      hostConstraints:
+        description: HostConstraints define placement rules per container (for YAML
+          deployments)
+        items:
+          $ref: '#/definitions/models.HostConstraint'
+        type: array
+      mode:
+        description: 'Mode is the deployment mode: "single-host" or "multi-host"'
+        type: string
+      networkMode:
+        description: |-
+          NetworkMode defines cross-host networking
+          Values: "host-port" (exposed ports), "overlay" (Docker overlay network)
+        type: string
+      placementStrategy:
+        description: |-
+          PlacementStrategy defines how containers are placed on hosts
+          Values: "auto", "manual", "datacenter", "spread"
+        type: string
+      targetDatacenter:
+        description: TargetDatacenter specifies which datacenter to deploy to (optional,
+          for JSON-LD deployments)
+        type: string
+    type: object
+  models.DeploymentEvent:
+    properties:
+      container:
+        description: Container is the container name (if applicable)
+        type: string
+      details:
+        additionalProperties: true
+        description: Details contains additional event details
+        type: object
+      message:
+        description: Message is the event message
+        type: string
+      phase:
+        description: Phase is the deployment phase when event occurred
+        type: string
+      timestamp:
+        description: Timestamp is when the event occurred
+        type: string
+      type:
+        description: Type is the event type (info, warning, error)
+        type: string
+    type: object
+  models.DeploymentState:
+    properties:
+      '@id':
+        description: ID is the deployment ID (maps to CouchDB _id)
+        type: string
+      '@type':
+        description: Type is the JSON-LD @type
+        type: string
+      _rev:
+        description: Rev is the CouchDB document revision
+        type: string
+      completedAt:
+        description: CompletedAt is when deployment completed
+        type: string
+      errorMessage:
+        description: ErrorMessage contains error details if deployment failed
+        type: string
+      events:
+        description: Events tracks deployment events
+        items:
+          $ref: '#/definitions/models.DeploymentEvent'
+        type: array
+      networkInfo:
+        allOf:
+        - $ref: '#/definitions/models.DeployedNetworkInfo'
+        description: NetworkInfo contains network configuration details
+      phase:
+        description: Phase is the current deployment phase
+        type: string
+      placements:
+        additionalProperties:
+          $ref: '#/definitions/models.ContainerPlacement'
+        description: Placements maps container names to their placements
+        type: object
+      progress:
+        description: Progress is the deployment progress (0-100)
+        type: integer
+      rollbackState:
+        allOf:
+        - $ref: '#/definitions/models.RollbackState'
+        description: RollbackState tracks rollback if needed
+      stackId:
+        description: StackID is the stack identifier
+        type: string
+      startedAt:
+        description: StartedAt is when deployment started
+        type: string
+      status:
+        description: Status is the deployment status (deploying, running, stopping,
+          stopped, failed, rolling-back)
+        type: string
+      volumeInfo:
+        additionalProperties:
+          $ref: '#/definitions/models.VolumeInfo'
+        description: VolumeInfo contains volume information
+        type: object
+    type: object
+  models.EnvironmentVariable:
+    properties:
+      '@type':
+        description: Type is the JSON-LD type
+        type: string
+      name:
+        description: Name is the environment variable name
+        type: string
+      value:
+        description: Value is the environment variable value
+        type: string
+    type: object
+  models.GraphNode:
+    properties:
+      '@id':
+        description: ID is the unique identifier (@id in JSON-LD)
+        type: string
+      '@type':
+        description: Type is the JSON-LD @type (can be string or array)
+      creator:
+        type: string
+      dateCreated:
+        description: Additional metadata
+        type: string
+      dateModified:
+        type: string
+      deployment:
+        $ref: '#/definitions/models.DeploymentConfig'
+      description:
+        description: Description is the human-readable description
+        type: string
+      hasPart:
+        items:
+          $ref: '#/definitions/models.ContainerSpec'
+        type: array
+      locatedInDatacenter:
+        $ref: '#/definitions/models.Reference'
+      locatedInHost:
+        allOf:
+        - $ref: '#/definitions/models.Reference'
+        description: Stack-specific fields
+      locatedInRack:
+        $ref: '#/definitions/models.Reference'
+      name:
+        description: Name is the human-readable name
+        type: string
+      network:
+        $ref: '#/definitions/models.NetworkSpec'
+      rackPosition:
+        description: Rack-specific fields
+        type: string
+      uPosition:
+        description: Host-specific fields
+        type: string
+    type: object
+  models.HealthCheck:
+    properties:
+      command:
+        description: Command is the command to execute for exec checks
+        items:
+          type: string
+        type: array
+      headers:
+        additionalProperties:
+          type: string
+        description: Headers are HTTP headers for http checks
+        type: object
+      interval:
+        description: Interval is the time between health checks in seconds
+        type: integer
+      path:
+        description: Path is the HTTP path for http checks (e.g., "/health")
+        type: string
+      port:
+        description: Port is the port to check
+        type: integer
+      retries:
+        description: Retries is the number of consecutive failures before unhealthy
+        type: integer
+      startPeriod:
+        description: StartPeriod is the initialization time before health checks start
+          (seconds)
+        type: integer
+      timeout:
+        description: Timeout is the health check timeout in seconds
+        type: integer
+      type:
+        description: Type is the health check type (http, tcp, exec, grpc)
+        type: string
+    type: object
+  models.Host:
+    properties:
+      '@context':
+        description: Context is the JSON-LD @context URL (typically https://schema.org)
+        type: string
+      '@id':
+        description: ID is the unique host identifier (maps to CouchDB _id)
+        type: string
+      '@type':
+        description: Type is the JSON-LD @type (ComputerSystem for hosts)
+        type: string
+      _rev:
+        description: Rev is the CouchDB document revision for optimistic locking
+        type: string
+      cpu:
+        description: CPU is the number of CPU cores available
+        type: integer
+      cpuUsage:
+        description: CPUUsage is the current CPU usage percentage (0-100)
+        type: number
+      ipAddress:
+        description: IPAddress is the host's IP address (required, indexed)
+        type: string
+      lastMetricsUpdate:
+        description: LastMetricsUpdate is the timestamp when metrics were last updated
+        type: string
+      location:
+        description: Datacenter is the physical or logical location of the host
+        type: string
+      memory:
+        description: Memory is the total memory in bytes
+        type: integer
+      memoryUsage:
+        description: MemoryUsage is the current memory usage in bytes
+        type: integer
+      memoryUsagePercent:
+        description: MemoryUsagePercent is the current memory usage percentage (0-100)
+        type: number
+      name:
+        description: Name is the human-readable host name (required, indexed)
+        type: string
+      status:
+        description: Status is the host operational status (active, maintenance, offline)
+        type: string
+    type: object
+  models.HostConstraint:
+    properties:
+      containerName:
+        description: ContainerName is the name of the container to constrain
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        description: Labels are custom labels that the host must have
+        type: object
+      minCpu:
+        description: MinCPU is the minimum CPU cores required
+        type: integer
+      minMemory:
+        description: MinMemory is the minimum memory in bytes required
+        type: integer
+      requiredDatacenter:
+        description: RequiredDatacenter requires the container to be in this datacenter
+        type: string
+      targetHost:
+        description: TargetHostID is the specific host ID (for manual placement)
+        type: string
+    type: object
+  models.IgnoreListEntry:
+    properties:
+      '@context':
+        description: Context is the JSON-LD context
+        type: string
+      '@type':
+        description: Type is the JSON-LD type
+        type: string
+      _id:
+        description: ID is the unique identifier for this entry (container ID)
+        type: string
+      _rev:
+        description: Rev is the CouchDB document revision
+        type: string
+      container_id:
+        description: ContainerID is the Docker container ID to ignore
+        type: string
+      created_at:
+        description: CreatedAt is when this entry was added
+        type: string
+      created_by:
+        description: CreatedBy is the user who added this entry
+        type: string
+      expires_at:
+        description: ExpiresAt is optional expiration time (for temporary ignores)
+        type: string
+      host_id:
+        description: HostID is the host where this container was located
+        type: string
+      reason:
+        description: Reason explains why this container is ignored
+        type: string
+    type: object
+  models.NetworkSpec:
+    properties:
+      createIfNotExists:
+        description: CreateIfNotExists creates the network if it doesn't exist
+        type: boolean
+      driver:
+        description: Driver is the network driver (bridge, overlay, host, macvlan)
+        type: string
+      external:
+        description: External indicates this is an externally managed network
+        type: boolean
+      gateway:
+        description: Gateway is the network gateway IP
+        type: string
+      ipRange:
+        description: IPRange is the IP address range for containers
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        description: Labels are custom network labels
+        type: object
+      name:
+        description: Name is the network name
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        description: Options are driver-specific options
+        type: object
+      subnet:
+        description: Subnet is the network subnet (e.g., "172.18.0.0/16")
+        type: string
+    type: object
+  models.Port:
+    properties:
+      containerPort:
+        description: ContainerPort is the port number inside the container
+        type: integer
+      hostPort:
+        description: HostPort is the port number on the host machine
+        type: integer
+      protocol:
+        description: Protocol is the network protocol (tcp, udp, sctp)
+        type: string
+    type: object
+  models.PortMapping:
+    properties:
+      containerPort:
+        description: ContainerPort is the port inside the container
+        type: integer
+      hostIP:
+        description: HostIP binds to a specific host IP (empty for all interfaces)
+        type: string
+      hostPort:
+        description: HostPort is the port on the host (0 for dynamic allocation)
+        type: integer
+      protocol:
+        description: Protocol is the port protocol (tcp, udp, sctp)
+        type: string
+    type: object
+  models.Reference:
+    properties:
+      '@id':
+        type: string
+    type: object
+  models.ResourceConstraints:
+    properties:
+      limits:
+        allOf:
+        - $ref: '#/definitions/models.ResourceLimits'
+        description: Limits defines maximum resource usage
+      reservations:
+        allOf:
+        - $ref: '#/definitions/models.ResourceReservations'
+        description: Reservations defines guaranteed resource allocation
+    type: object
+  models.ResourceLimits:
+    properties:
+      cpus:
+        description: CPUs is the maximum CPU cores (e.g., 0.5, 2.0)
+        type: number
+      memory:
+        description: Memory is the maximum memory in bytes
+        type: integer
+      memorySwap:
+        description: MemorySwap is the maximum memory + swap in bytes (-1 for unlimited)
+        type: integer
+      pids:
+        description: Pids is the maximum number of PIDs
+        type: integer
+    type: object
+  models.ResourceRequirements:
+    properties:
+      '@type':
+        description: Type is the JSON-LD type
+        type: string
+      description:
+        description: Description is a human-readable description of the requirements
+        type: string
+      maxCPU:
+        description: MaxCPU is the maximum number of CPU cores to allocate
+        type: integer
+      maxMemory:
+        description: MaxMemory is the maximum memory in bytes
+        type: integer
+      minCPU:
+        description: MinCPU is the minimum number of CPU cores required
+        type: integer
+      minMemory:
+        description: MinMemory is the minimum memory in bytes
+        type: integer
+      preferredDatacenter:
+        description: PreferredDatacenter is a soft constraint for datacenter placement
+        type: string
+      requiredLabels:
+        additionalProperties:
+          type: string
+        description: RequiredLabels are host labels that must match for placement
+        type: object
+    type: object
+  models.ResourceReservations:
+    properties:
+      cpus:
+        description: CPUs is the guaranteed CPU cores
+        type: number
+      memory:
+        description: Memory is the guaranteed memory in bytes
+        type: integer
+    type: object
+  models.Role:
+    enum:
+    - admin
+    - user
+    - viewer
+    - agent
+    type: string
+    x-enum-varnames:
+    - RoleAdmin
+    - RoleUser
+    - RoleViewer
+    - RoleAgent
+  models.RollbackState:
+    properties:
+      completedAt:
+        description: CompletedAt is when rollback completed
+        type: string
+      errorMessage:
+        description: ErrorMessage contains error details if rollback failed
+        type: string
+      removedContainers:
+        description: RemovedContainers lists containers removed during rollback
+        items:
+          type: string
+        type: array
+      startedAt:
+        description: StartedAt is when rollback started
+        type: string
+      status:
+        description: Status is the rollback status (rolling-back, rolled-back, rollback-failed)
+        type: string
+    type: object
+  models.Stack:
+    properties:
+      '@context':
+        description: Context is the JSON-LD @context URL
+        type: string
+      '@id':
+        description: ID is the unique stack identifier (maps to CouchDB _id)
+        type: string
+      '@type':
+        description: Type is the JSON-LD @type (ItemList for stacks)
+        type: string
+      _rev:
+        description: Rev is the CouchDB document revision
+        type: string
+      containers:
+        description: Containers is a list of container references in this stack
+        items:
+          type: string
+        type: array
+      dateCreated:
+        description: CreatedAt is the stack creation timestamp
+        type: string
+      dateModified:
+        description: UpdatedAt is the last update timestamp
+        type: string
+      definitionPath:
+        description: DefinitionPath is the path to the stack definition file
+        type: string
+      deployedAt:
+        description: DeployedAt is the deployment timestamp
+        type: string
+      deployment:
+        allOf:
+        - $ref: '#/definitions/models.DeploymentConfig'
+        description: Deployment contains deployment configuration
+      deploymentId:
+        description: DeploymentID is the Docker deployment identifier
+        type: string
+      description:
+        description: Description is the human-readable stack description
+        type: string
+      errorMessage:
+        description: ErrorMessage contains error details if status is "error"
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        description: Labels are custom key-value labels
+        type: object
+      location:
+        description: Datacenter is the primary datacenter for this stack (optional)
+        type: string
+      name:
+        description: Name is the stack name (required, indexed, DNS-compatible)
+        type: string
+      owner:
+        description: Owner is the user who created the stack
+        type: string
+      status:
+        description: |-
+          Status is the stack operational status
+          Values: pending, deploying, running, stopping, stopped, error
+        type: string
+    type: object
+  models.StackDefinition:
+    properties:
+      '@context':
+        description: Context is the JSON-LD @context (can be string, array, or object)
+      '@graph':
+        description: Graph is the array of JSON-LD graph nodes
+        items:
+          $ref: '#/definitions/models.GraphNode'
+        type: array
+    type: object
+  models.VolumeDriverConfig:
+    properties:
+      name:
+        description: Name is the driver name
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        description: Options are driver-specific options
+        type: object
+    type: object
+  models.VolumeInfo:
+    properties:
+      createdAt:
+        description: CreatedAt is when the volume was created
+        type: string
+      driver:
+        description: Driver is the volume driver
+        type: string
+      mountpoint:
+        description: Mountpoint is the volume mount point on the host
+        type: string
+      scope:
+        description: Scope is the volume scope
+        type: string
+      volumeName:
+        description: VolumeName is the volume name
+        type: string
+    type: object
+  models.VolumeMount:
+    properties:
+      bindOptions:
+        allOf:
+        - $ref: '#/definitions/models.BindOptions'
+        description: BindOptions are options for bind mounts
+      readOnly:
+        description: ReadOnly makes the mount read-only
+        type: boolean
+      source:
+        description: Source is the volume name or host path
+        type: string
+      target:
+        description: Target is the container mount path
+        type: string
+      type:
+        description: Type is the mount type (volume, bind, tmpfs, npipe)
+        type: string
+      volumeOptions:
+        allOf:
+        - $ref: '#/definitions/models.VolumeOptions'
+        description: VolumeOptions are options for volume mounts
+    type: object
+  models.VolumeOptions:
+    properties:
+      driverConfig:
+        allOf:
+        - $ref: '#/definitions/models.VolumeDriverConfig'
+        description: DriverConfig specifies the volume driver
+      labels:
+        additionalProperties:
+          type: string
+        description: Labels are custom volume labels
+        type: object
+      noCopy:
+        description: NoCopy disables copying data from container to volume
+        type: boolean
+    type: object
+  time.Duration:
+    enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    format: int64
+    type: integer
+    x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+host: localhost:8095
+info:
+  contact:
+    email: support@graphium.io
+    name: Graphium API Support
+    url: https://github.com/[org]/graphium
+  description: |-
+    Graphium is a semantic container orchestration platform that uses knowledge graphs and JSON-LD to manage multi-host Docker infrastructure with intelligent querying, graph traversal, and real-time insights.
+
+    ## Features
+    - JSON-LD/Schema.org semantic models
+    - REST API for container and host management
+    - Graph visualization and traversal
+    - Real-time Docker agent integration
+    - WebSocket support for live updates
+
+    ## Authentication
+    All API endpoints require JWT token authentication. Use the /api/v1/auth/login endpoint to obtain a token.
+    Include the token in the Authorization header: `Authorization: Bearer <token>`
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Graphium API
+  version: 0.1.0
+paths:
+  /api/v1/stacks:
+    get:
+      description: Get a list of all stacks in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Stack'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: List all stacks
+      tags:
+      - stacks
+  /api/v1/stacks/{id}:
+    get:
+      description: Get detailed information about a specific stack
+      parameters:
+      - description: Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Stack'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get stack by ID
+      tags:
+      - stacks
+  /api/v1/stacks/{id}/deployment:
+    get:
+      description: Get the current deployment state and container placements for a
+        stack
+      parameters:
+      - description: Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.DeploymentState'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get stack deployment state
+      tags:
+      - stacks
+  /api/v1/stacks/jsonld:
+    post:
+      consumes:
+      - application/json
+      description: Deploy a stack using JSON-LD @graph format with full container
+        specifications
+      parameters:
+      - description: JSON-LD stack deployment configuration
+        in: body
+        name: stack
+        required: true
+        schema:
+          $ref: '#/definitions/api.DeployJSONLDStackRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/api.DeploymentStateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Deploy JSON-LD stack
+      tags:
+      - stacks
+  /api/v1/stacks/jsonld/deployments:
+    get:
+      consumes:
+      - application/json
+      description: List all JSON-LD stack deployments with optional status filter
+      parameters:
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.DeploymentStateResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: List JSON-LD deployments
+      tags:
+      - stacks
+  /api/v1/stacks/jsonld/deployments/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed deployment state including progress, events, and placements
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.DeploymentStateResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get JSON-LD deployment state
+      tags:
+      - stacks
+  /api/v1/stacks/jsonld/validate:
+    post:
+      consumes:
+      - application/json
+      description: Validate a JSON-LD stack definition and return any errors or warnings
+      parameters:
+      - description: JSON-LD stack definition
+        in: body
+        name: definition
+        required: true
+        schema:
+          $ref: '#/definitions/models.StackDefinition'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ParseResultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Validate JSON-LD stack
+      tags:
+      - stacks
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with username and password, returns JWT tokens
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/api.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully logged in
+          schema:
+            $ref: '#/definitions/api.LoginResponse'
+        "400":
+          description: Bad request - Invalid credentials format
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "401":
+          description: Unauthorized - Invalid username or password
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      summary: User login
+      tags:
+      - Authentication
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Revoke refresh token and logout user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully logged out
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - Authentication
+  /auth/me:
+    get:
+      consumes:
+      - application/json
+      description: Get information about the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Current user information
+          schema:
+            $ref: '#/definitions/api.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - Authentication
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get a new access token using a refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: refresh
+        required: true
+        schema:
+          $ref: '#/definitions/api.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully refreshed token
+          schema:
+            $ref: '#/definitions/api.LoginResponse'
+        "400":
+          description: Bad request - Invalid refresh token format
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "401":
+          description: Unauthorized - Invalid or expired refresh token
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      summary: Refresh access token
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account (admin only)
+      parameters:
+      - description: User registration data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/api.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created user
+          schema:
+            $ref: '#/definitions/api.UserResponse'
+        "400":
+          description: Bad request - Invalid data or validation errors
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "409":
+          description: Conflict - Username or email already exists
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BearerAuth: []
+      summary: Register new user
+      tags:
+      - Authentication
+  /containers:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of containers with optional filtering by status,
+        host, or datacenter
+      parameters:
+      - description: Filter by container status (running, stopped, paused, etc.)
+        in: query
+        name: status
+        type: string
+      - description: Filter by host ID
+        in: query
+        name: host
+        type: string
+      - description: Filter by datacenter location
+        in: query
+        name: datacenter
+        type: string
+      - description: 'Maximum number of items to return (default: 100, max: 1000)'
+        in: query
+        maximum: 1000
+        minimum: 1
+        name: limit
+        type: integer
+      - description: 'Number of items to skip (default: 0)'
+        in: query
+        minimum: 0
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved containers
+          schema:
+            $ref: '#/definitions/api.PaginatedContainersResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: List containers
+      tags:
+      - Containers
+    post:
+      consumes:
+      - application/json
+      description: Create a new container with the provided JSON-LD data
+      parameters:
+      - description: Container object (JSON-LD format)
+        in: body
+        name: container
+        required: true
+        schema:
+          $ref: '#/definitions/models.Container'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created container
+          schema:
+            $ref: '#/definitions/models.Container'
+        "400":
+          description: Bad request - Invalid request body or validation errors
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      summary: Create a new container
+      tags:
+      - Containers
+  /containers/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing container by its ID
+      parameters:
+      - description: Container ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully deleted container
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad request - Container ID is required
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "404":
+          description: Container not found
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      summary: Delete a container
+      tags:
+      - Containers
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific container by its ID
+      parameters:
+      - description: Container ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved container
+          schema:
+            $ref: '#/definitions/models.Container'
+        "400":
+          description: Bad request - Container ID is required
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "404":
+          description: Container not found
+          schema:
+            $ref: '#/definitions/api.APIError'
+      summary: Get container by ID
+      tags:
+      - Containers
+    put:
+      consumes:
+      - application/json
+      description: Update an existing container with new JSON-LD data
+      parameters:
+      - description: Container ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated container object (JSON-LD format)
+        in: body
+        name: container
+        required: true
+        schema:
+          $ref: '#/definitions/models.Container'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully updated container
+          schema:
+            $ref: '#/definitions/models.Container'
+        "400":
+          description: Bad request - Invalid request body or validation errors
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "404":
+          description: Container not found
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      summary: Update a container
+      tags:
+      - Containers
+  /containers/{id}/logs:
+    get:
+      consumes:
+      - application/json
+      description: Get logs from a container via the agent's Docker socket
+      parameters:
+      - description: Container ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 100
+        description: Number of lines
+        in: query
+        name: lines
+        type: integer
+      - default: false
+        description: Stream logs
+        in: query
+        name: follow
+        type: boolean
+      - default: true
+        description: Include timestamps
+        in: query
+        name: timestamps
+        type: boolean
+      - default: '"100"'
+        description: Lines from end
+        in: query
+        name: tail
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Container logs
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get container logs
+      tags:
+      - containers
+  /containers/bulk:
+    post:
+      consumes:
+      - application/json
+      description: Create multiple containers in a single request
+      parameters:
+      - description: Array of container objects (JSON-LD format)
+        in: body
+        name: containers
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.Container'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully created containers
+          schema:
+            $ref: '#/definitions/api.BulkResponse'
+        "400":
+          description: Bad request - Invalid request body or validation errors
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      summary: Bulk create containers
+      tags:
+      - Containers
+  /containers/ignored:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all containers in the ignore list
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of ignored containers
+          schema:
+            items:
+              $ref: '#/definitions/models.IgnoreListEntry'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: List ignored containers
+      tags:
+      - Containers
+  /graph:
+    get:
+      consumes:
+      - application/json
+      description: Get graph visualization data with nodes and edges
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.GraphData'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get graph data
+      tags:
+      - Graph
+  /graph/containers/{id}/dependencies:
+    get:
+      consumes:
+      - application/json
+      description: Get all containers that the specified container depends on
+      parameters:
+      - description: Container ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ContainersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get container dependencies
+      tags:
+      - Graph
+  /graph/containers/{id}/dependents:
+    get:
+      consumes:
+      - application/json
+      description: Get all containers that depend on the specified container
+      parameters:
+      - description: Container ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ContainersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get container dependents
+      tags:
+      - Graph
+  /graph/containers/{id}/graph:
+    get:
+      consumes:
+      - application/json
+      description: Get the full dependency graph for a container (dependencies and
+        dependents)
+      parameters:
+      - description: Container ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 0
+        description: 'Maximum depth to traverse (default: unlimited)'
+        in: query
+        name: depth
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.DependencyGraphResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get container dependency graph
+      tags:
+      - Graph
+  /graph/layout:
+    get:
+      consumes:
+      - application/json
+      description: Get graph visualization data with specified layout algorithm applied
+      parameters:
+      - description: Layout algorithm
+        enum:
+        - force
+        - hierarchical
+        - circle
+        - grid
+        in: query
+        name: layout
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.GraphData'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get graph layout
+      tags:
+      - Graph
+  /graph/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get statistics about graph nodes and edges
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get graph stats
+      tags:
+      - Graph
+  /hosts:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of hosts with optional filtering by status
+        and datacenter
+      parameters:
+      - default: 10
+        description: Maximum number of items to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of items to skip
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by host status
+        in: query
+        name: status
+        type: string
+      - description: Filter by datacenter location
+        in: query
+        name: datacenter
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.PaginatedHostsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: List hosts
+      tags:
+      - Hosts
+    post:
+      consumes:
+      - application/json
+      description: Create a new host with the provided information. ID will be auto-generated
+        if not provided.
+      parameters:
+      - description: Host object to create
+        in: body
+        name: host
+        required: true
+        schema:
+          $ref: '#/definitions/models.Host'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Host'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create a new host
+      tags:
+      - Hosts
+  /hosts/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a host by its ID. This operation broadcasts a WebSocket
+        event.
+      parameters:
+      - description: Host ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Delete a host
+      tags:
+      - Hosts
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a specific host
+      parameters:
+      - description: Host ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Host'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get a host by ID
+      tags:
+      - Hosts
+    put:
+      consumes:
+      - application/json
+      description: Update an existing host with new information. ID and revision are
+        preserved.
+      parameters:
+      - description: Host ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated host object
+        in: body
+        name: host
+        required: true
+        schema:
+          $ref: '#/definitions/models.Host'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Host'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Update a host
+      tags:
+      - Hosts
+  /hosts/{id}/metrics:
+    put:
+      consumes:
+      - application/json
+      description: Update CPU and memory usage metrics for a host
+      parameters:
+      - description: Host ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Metrics update
+        in: body
+        name: metrics
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Host'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Update host metrics
+      tags:
+      - Hosts
+  /hosts/bulk:
+    post:
+      consumes:
+      - application/json
+      description: Create multiple hosts in a single request. Returns success/failure
+        counts and detailed results.
+      parameters:
+      - description: Array of host objects to create
+        in: body
+        name: hosts
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.Host'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.BulkResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Bulk create hosts
+      tags:
+      - Hosts
+  /integrity/audit:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve audit log entries for integrity operations
+      parameters:
+      - default: 100
+        description: Maximum number of entries to return
+        in: query
+        name: limit
+        type: integer
+      - description: Start time (RFC3339 format)
+        in: query
+        name: start_time
+        type: string
+      - description: End time (RFC3339 format)
+        in: query
+        name: end_time
+        type: string
+      - description: Filter by operation type
+        in: query
+        name: operation_type
+        type: string
+      - description: Filter by user
+        in: query
+        name: user
+        type: string
+      - description: Filter by success status
+        in: query
+        name: success
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get integrity audit log
+      tags:
+      - Integrity
+  /integrity/execute:
+    post:
+      consumes:
+      - application/json
+      description: Execute repairs based on a generated plan
+      parameters:
+      - description: Execution request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.ExecuteRepairPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/integrity.RepairResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Execute a repair plan
+      tags:
+      - Integrity
+  /integrity/health:
+    get:
+      consumes:
+      - application/json
+      description: Get comprehensive database health metrics including issue counts,
+        health score, and recommendations
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/integrity.DatabaseHealth'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get database health status
+      tags:
+      - Integrity
+  /integrity/repair-plans:
+    post:
+      consumes:
+      - application/json
+      description: Generate a repair plan for detected integrity issues
+      parameters:
+      - description: Repair plan options
+        in: body
+        name: plan
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateRepairPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/integrity.RepairPlan'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create a repair plan
+      tags:
+      - Integrity
+  /integrity/scan:
+    post:
+      consumes:
+      - application/json
+      description: Perform a comprehensive integrity scan checking for duplicates,
+        conflicts, broken references, and schema violations
+      parameters:
+      - description: Scan options
+        in: body
+        name: options
+        required: true
+        schema:
+          $ref: '#/definitions/api.IntegrityScanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/integrity.ScanReport'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Scan database for integrity issues
+      tags:
+      - Integrity
+  /integrity/scans:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all integrity scan reports
+      parameters:
+      - default: 10
+        description: Maximum number of scans to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of scans to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/integrity.ScanListResult'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: List integrity scans
+      tags:
+      - Integrity
+  /integrity/scans/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific integrity scan report
+      parameters:
+      - description: Scan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/integrity.ScanReport'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get scan report by ID
+      tags:
+      - Integrity
+  /stats:
+    get:
+      consumes:
+      - application/json
+      description: Get overall system statistics including container and host counts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Statistics with container and host information
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get overall statistics
+      tags:
+      - Statistics
+  /stats/containers/count:
+    get:
+      consumes:
+      - application/json
+      description: Get the count of containers with optional filters
+      parameters:
+      - description: Filter by container status
+        in: query
+        name: status
+        type: string
+      - description: Filter by host
+        in: query
+        name: host
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Container count with applied filters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get container count
+      tags:
+      - Statistics
+  /stats/distribution:
+    get:
+      consumes:
+      - application/json
+      description: Get the distribution of containers across hosts with statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Container distribution with min, max, and average containers
+            per host
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get host container distribution
+      tags:
+      - Statistics
+  /stats/hosts/count:
+    get:
+      consumes:
+      - application/json
+      description: Get the count of hosts with optional filters
+      parameters:
+      - description: Filter by host status
+        in: query
+        name: status
+        type: string
+      - description: Filter by datacenter location
+        in: query
+        name: datacenter
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Host count with applied filters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get host count
+      tags:
+      - Statistics
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all users (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users
+          schema:
+            items:
+              $ref: '#/definitions/api.UserResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "403":
+          description: Forbidden - Admin access required
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BearerAuth: []
+      summary: List all users
+      tags:
+      - Users
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully deleted
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "403":
+          description: Forbidden - Admin access required
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BearerAuth: []
+      summary: Delete user
+      tags:
+      - Users
+    get:
+      consumes:
+      - application/json
+      description: Get a user by their ID (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User information
+          schema:
+            $ref: '#/definitions/api.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "403":
+          description: Forbidden - Admin access required
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Update a user's information (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User update data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated user
+          schema:
+            $ref: '#/definitions/api.UserResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "403":
+          description: Forbidden - Admin access required
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BearerAuth: []
+      summary: Update user
+      tags:
+      - Users
+  /users/api-keys:
+    post:
+      consumes:
+      - application/json
+      description: Generate a new API key for the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: API key generated
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BearerAuth: []
+      summary: Generate API key
+      tags:
+      - Users
+  /users/api-keys/{index}:
+    delete:
+      consumes:
+      - application/json
+      description: Revoke an API key by its index
+      parameters:
+      - description: API key index
+        in: path
+        name: index
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: API key revoked
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BearerAuth: []
+      summary: Revoke API key
+      tags:
+      - Users
+  /users/password:
+    post:
+      consumes:
+      - application/json
+      description: Change current user's password
+      parameters:
+      - description: Password change data
+        in: body
+        name: password
+        required: true
+        schema:
+          $ref: '#/definitions/api.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password changed successfully
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BearerAuth: []
+      summary: Change password
+      tags:
+      - Users
+  /ws/graph:
+    get:
+      consumes:
+      - application/json
+      description: Establishes a WebSocket connection for receiving real-time graph
+        events
+      produces:
+      - application/json
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+      summary: WebSocket endpoint for real-time graph updates
+      tags:
+      - websocket
+  /ws/stats:
+    get:
+      description: Returns statistics about WebSocket connections
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get WebSocket statistics
+      tags:
+      - websocket
+schemes:
+- http
+- https
+swagger: "2.0"
+tags:
+- description: Operations related to container management
+  name: Containers
+- description: Operations related to host management
+  name: Hosts
+- description: Graph query and traversal operations
+  name: Queries
+- description: Statistics and metrics endpoints
+  name: Statistics
+- description: Graph visualization endpoints
+  name: Graph
+- description: WebSocket endpoints for real-time updates
+  name: WebSocket

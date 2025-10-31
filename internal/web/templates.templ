@@ -3045,7 +3045,6 @@ templ StacksListWithUser(stacks []*models.Stack, pagination PaginationInfo, user
 		<div class="page-header">
 			<h2>Stacks</h2>
 			<div class="filters">
-				<a href="/web/stacks/new" class="btn btn-primary">+ Deploy Stack</a>
 				<a href="/web/stacks/jsonld/deploy" class="btn btn-primary">+ Deploy New Stack</a>
 			</div>
 		</div>
@@ -3059,7 +3058,7 @@ templ StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInf
 	if len(stacks) == 0 {
 		<div class="empty-state">
 			<p>No stacks deployed yet</p>
-			<p><a href="/web/stacks/new" class="btn btn-primary">Deploy Your First Stack</a></p>
+			<p><a href="/web/stacks/jsonld/deploy" class="btn btn-primary">Deploy Your First Stack</a></p>
 		</div>
 	} else {
 		<table class="data-table">
