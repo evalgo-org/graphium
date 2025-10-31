@@ -1117,57 +1117,61 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 	@LayoutWithUser("Graph Visualization", user) {
 		<div class="page-header">
 			<h2>Infrastructure Graph</h2>
-			<div class="filters">
-				<div class="graph-control-group">
-					<label for="view-mode-select">View Mode:</label>
-					<select id="view-mode-select" name="view-mode">
-						<option value="stack" selected>Stack View</option>
-						<option value="host">Host View (Legacy)</option>
-						<option value="hybrid">Hybrid (Stacks + Orphans)</option>
-						<option value="stack-only">Stack Overview</option>
-					</select>
+			<div class="filters" style="flex-wrap: wrap; gap: 1rem 0;">
+				<div style="display: flex; gap: 1rem; width: 100%;">
+					<div class="graph-control-group">
+						<label for="view-mode-select">View Mode:</label>
+						<select id="view-mode-select" name="view-mode">
+							<option value="stack" selected>Stack View</option>
+							<option value="host">Host View (Legacy)</option>
+							<option value="hybrid">Hybrid (Stacks + Orphans)</option>
+							<option value="stack-only">Stack Overview</option>
+						</select>
+					</div>
+					<div class="graph-control-group">
+						<label for="layout-select">Layout:</label>
+						<select id="layout-select" name="layout">
+							<option value="cose" selected>Force Directed (COSE)</option>
+							<option value="breadthfirst">Breadthfirst</option>
+							<option value="grid">Grid</option>
+							<option value="circle">Circle</option>
+							<option value="concentric">Concentric</option>
+						</select>
+					</div>
+					<div class="graph-control-group">
+						<label>
+							<input type="checkbox" id="show-orphans" name="orphans">
+							Show orphaned containers
+						</label>
+					</div>
 				</div>
-				<div class="graph-control-group">
-					<label for="layout-select">Layout:</label>
-					<select id="layout-select" name="layout">
-						<option value="cose" selected>Force Directed (COSE)</option>
-						<option value="breadthfirst">Breadthfirst</option>
-						<option value="grid">Grid</option>
-						<option value="circle">Circle</option>
-						<option value="concentric">Concentric</option>
-					</select>
+				<div style="display: flex; gap: 1rem; width: 100%;">
+					<div class="graph-control-group">
+						<label for="filter-type">Node Type:</label>
+						<select id="filter-type" name="type">
+							<option value="all">All Types</option>
+							<option value="stack">Stacks Only</option>
+							<option value="host">Hosts Only</option>
+							<option value="container">Containers Only</option>
+						</select>
+					</div>
+					<div class="graph-control-group">
+						<label for="filter-status">Status:</label>
+						<select id="filter-status" name="status">
+							<option value="all">All Status</option>
+							<option value="running">Running</option>
+							<option value="stopped">Stopped</option>
+							<option value="paused">Paused</option>
+						</select>
+					</div>
+					<div class="graph-control-group">
+						<label for="filter-datacenter">Datacenter:</label>
+						<select id="filter-datacenter" name="datacenter">
+							<option value="all">All Datacenters</option>
+						</select>
+					</div>
+					<button class="btn btn-secondary" id="btn-clear-filters">Clear Filters</button>
 				</div>
-				<div class="graph-control-group">
-					<label>
-						<input type="checkbox" id="show-orphans" name="orphans">
-						Show orphaned containers
-					</label>
-				</div>
-				<div class="graph-control-group">
-					<label for="filter-type">Node Type:</label>
-					<select id="filter-type" name="type">
-						<option value="all">All Types</option>
-						<option value="stack">Stacks Only</option>
-						<option value="host">Hosts Only</option>
-						<option value="container">Containers Only</option>
-					</select>
-				</div>
-				<div class="graph-control-group">
-					<label for="filter-status">Status:</label>
-					<select id="filter-status" name="status">
-						<option value="all">All Status</option>
-						<option value="running">Running</option>
-						<option value="stopped">Stopped</option>
-						<option value="paused">Paused</option>
-					</select>
-				</div>
-				<div class="graph-control-group">
-					<label for="filter-datacenter">Datacenter:</label>
-					<select id="filter-datacenter" name="datacenter">
-						<option value="all">All Datacenters</option>
-					</select>
-				</div>
-				<button class="btn btn-secondary" id="btn-clear-filters">Clear Filters</button>
 			</div>
 		</div>
 
