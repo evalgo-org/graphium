@@ -20,6 +20,7 @@ import (
 	"evalgo.org/graphium/internal/auth"
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/internal/integrity"
+	"evalgo.org/graphium/internal/scheduler"
 	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/internal/web"
 )
@@ -33,6 +34,7 @@ type Server struct {
 	authMiddle   *auth.Middleware
 	integrity    *integrity.Service // Database integrity service
 	agentManager *agents.Manager    // Agent process manager
+	scheduler    *scheduler.Scheduler // Scheduled actions scheduler
 }
 
 // debugLog logs a message only if debug mode is enabled in config
@@ -68,6 +70,9 @@ func New(cfg *config.Config, store *storage.Storage, agentMgr *agents.Manager) *
 		integrityService = nil
 	}
 
+	// Initialize scheduler for scheduled actions
+	sched := scheduler.New(store)
+
 	// Create server instance
 	server := &Server{
 		echo:         e,
@@ -77,6 +82,7 @@ func New(cfg *config.Config, store *storage.Storage, agentMgr *agents.Manager) *
 		authMiddle:   authMiddle,
 		integrity:    integrityService,
 		agentManager: agentMgr,
+		scheduler:    sched,
 	}
 
 	// Start WebSocket hub in background
@@ -84,6 +90,10 @@ func New(cfg *config.Config, store *storage.Storage, agentMgr *agents.Manager) *
 
 	// Start task monitor for automatic cleanup
 	go server.runTaskMonitor()
+
+	// Start scheduler for scheduled actions
+	sched.Start()
+	log.Println("Scheduled actions scheduler started")
 
 	// Setup middleware
 	server.setupMiddleware()
@@ -280,6 +290,16 @@ func (s *Server) setupRoutes() {
 	tasks.PUT("/:id/status", s.updateTaskStatus, ValidateIDFormat, s.authMiddle.RequireAgentAuth)
 	tasks.POST("/:id/retry", s.retryTask, ValidateIDFormat, s.authMiddle.RequireWrite)
 	tasks.POST("/:id/cancel", s.cancelTask, ValidateIDFormat, s.authMiddle.RequireWrite)
+
+	// Scheduled Actions routes (schema.org Actions with schedules)
+	actions := v1.Group("/actions")
+	actions.POST("", s.CreateScheduledAction, s.authMiddle.RequireWrite)
+	actions.GET("", s.ListScheduledActions, s.authMiddle.RequireRead)
+	actions.GET("/:id", s.GetScheduledAction, ValidateIDFormat, s.authMiddle.RequireRead)
+	actions.PUT("/:id", s.UpdateScheduledAction, ValidateIDFormat, s.authMiddle.RequireWrite)
+	actions.DELETE("/:id", s.DeleteScheduledAction, ValidateIDFormat, s.authMiddle.RequireWrite)
+	actions.POST("/:id/execute", s.ExecuteScheduledAction, ValidateIDFormat, s.authMiddle.RequireWrite)
+	actions.GET("/:id/history", s.GetScheduledActionHistory, ValidateIDFormat, s.authMiddle.RequireRead)
 
 	// WebSocket routes (use web auth middleware for session cookie support)
 	ws := v1.Group("/ws")
@@ -479,6 +499,12 @@ func (s *Server) Start() error {
 // Shutdown gracefully shuts down the server.
 func (s *Server) Shutdown(ctx context.Context) error {
 	fmt.Println("\n🛑 Shutting down Graphium API Server...")
+
+	// Stop scheduler
+	if s.scheduler != nil {
+		log.Println("Stopping scheduler...")
+		s.scheduler.Stop()
+	}
 
 	// Shutdown Echo server
 	if err := s.echo.Shutdown(ctx); err != nil {

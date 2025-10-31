@@ -167,6 +167,9 @@ func (e *TaskExecutor) executeTask(ctx context.Context, task *models.AgentTask) 
 	case "restart":
 		result, err = e.executeRestart(ctx, task)
 
+	case "check":
+		result, err = e.executeCheck(ctx, task)
+
 	default:
 		err = fmt.Errorf("unsupported task type: %s", task.TaskType)
 	}
@@ -229,6 +232,89 @@ func (e *TaskExecutor) executeRestart(ctx context.Context, task *models.AgentTas
 	}
 
 	return e.deployer.RestartContainer(ctx, &payload)
+}
+
+// executeCheck executes a health check task.
+func (e *TaskExecutor) executeCheck(ctx context.Context, task *models.AgentTask) (*models.TaskResult, error) {
+	var payload models.CheckHealthPayload
+	if err := task.GetPayloadAs(&payload); err != nil {
+		return nil, fmt.Errorf("invalid check payload: %w", err)
+	}
+
+	// Set defaults
+	if payload.Method == "" {
+		payload.Method = "GET"
+	}
+	if payload.ExpectedStatusCode == 0 {
+		payload.ExpectedStatusCode = 200
+	}
+	if payload.Timeout == 0 {
+		payload.Timeout = 5
+	}
+
+	// Create HTTP request
+	req, err := http.NewRequestWithContext(ctx, payload.Method, payload.URL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Add headers
+	for key, value := range payload.Headers {
+		req.Header.Set(key, value)
+	}
+
+	// Set body if provided
+	if payload.Body != "" {
+		req.Body = io.NopCloser(bytes.NewBufferString(payload.Body))
+	}
+
+	// Create HTTP client with timeout
+	client := &http.Client{
+		Timeout: time.Duration(payload.Timeout) * time.Second,
+	}
+
+	// Execute request
+	startTime := time.Now()
+	resp, err := client.Do(req)
+	duration := time.Since(startTime)
+
+	if err != nil {
+		return &models.TaskResult{
+			Success: false,
+			Message: fmt.Sprintf("Health check failed: %v", err),
+			Data: map[string]interface{}{
+				"url":          payload.URL,
+				"error":        err.Error(),
+				"duration_ms":  duration.Milliseconds(),
+				"container_id": payload.ContainerID,
+			},
+		}, nil
+	}
+	defer resp.Body.Close()
+
+	// Read response body (limited to 1KB for logging)
+	bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+	bodyPreview := string(bodyBytes)
+
+	// Check status code
+	success := resp.StatusCode == payload.ExpectedStatusCode
+	message := fmt.Sprintf("Health check %s", map[bool]string{true: "passed", false: "failed"}[success])
+
+	return &models.TaskResult{
+		Success: success,
+		Message: message,
+		Data: map[string]interface{}{
+			"url":               payload.URL,
+			"method":            payload.Method,
+			"status_code":       resp.StatusCode,
+			"expected_status":   payload.ExpectedStatusCode,
+			"duration_ms":       duration.Milliseconds(),
+			"response_preview":  bodyPreview,
+			"container_id":      payload.ContainerID,
+			"content_length":    resp.ContentLength,
+			"content_type":      resp.Header.Get("Content-Type"),
+		},
+	}, nil
 }
 
 // reportTaskStatus reports task status back to the server.

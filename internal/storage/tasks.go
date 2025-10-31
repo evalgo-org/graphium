@@ -440,3 +440,9 @@ func (s *Storage) AreTaskDependenciesMet(taskID string) (bool, error) {
 
 	return true, nil
 }
+// GetTasksByScheduledAction retrieves all tasks created by a specific scheduled action
+func (s *Storage) GetTasksByScheduledAction(actionID string) ([]*models.AgentTask, error) {
+	return s.ListTasks(map[string]interface{}{
+		"scheduledBy": actionID,
+	})
+}

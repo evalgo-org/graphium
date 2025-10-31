@@ -339,10 +339,10 @@ func (s *Scheduler) isExceptDate(now time.Time, exceptDates []string) bool {
 // createTaskFromAction creates a Task from a ScheduledAction
 func (s *Scheduler) createTaskFromAction(action *models.ScheduledAction) (*models.Task, error) {
 	task := &models.Task{
-		Context:     "https://schema.org",
-		Type:        "Task",
+		Type:        "AgentTask",
 		ID:          models.GenerateID("task"),
 		HostID:      action.Agent,
+		AgentID:     action.Agent,
 		Status:      models.TaskStatusPending,
 		ScheduledBy: action.ID, // Link task to the action that created it
 	}
@@ -363,17 +363,26 @@ func (s *Scheduler) createTaskFromAction(action *models.ScheduledAction) (*model
 		task.TaskType = "action"
 	}
 
+	// Build payload from action instrument and object
+	payload := make(map[string]interface{})
+
 	// Copy parameters from action instrument
 	if action.Instrument != nil {
-		task.Params = action.Instrument
+		for k, v := range action.Instrument {
+			payload[k] = v
+		}
 	}
 
-	// Add object information to params
+	// Add object information to payload
 	if action.Object != nil {
-		if task.Params == nil {
-			task.Params = make(map[string]interface{})
+		payload["object"] = action.Object
+	}
+
+	// Set the payload
+	if len(payload) > 0 {
+		if err := task.SetPayload(payload); err != nil {
+			return nil, fmt.Errorf("failed to set task payload: %w", err)
 		}
-		task.Params["object"] = action.Object
 	}
 
 	return task, nil
