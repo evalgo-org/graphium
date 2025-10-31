@@ -2013,7 +2013,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 165, "<div class=\"page-header\"><div><a href=\"/web/containers\" class=\"btn btn-secondary\">← Back to Containers</a><h2>Container Details</h2></div><div class=\"action-buttons\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 165, "<div class=\"page-header\"><div><h2>Container Details</h2></div><div class=\"action-buttons\"><a href=\"/web/containers\" class=\"btn btn-secondary\">← Back to Containers</a> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2419,7 +2419,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 201, "<div class=\"page-header\"><div><a href=\"/web/hosts\" class=\"btn btn-secondary\">← Back to Hosts</a><h2>Host Details</h2></div><div class=\"action-buttons\"><a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 201, "<div class=\"page-header\"><div><h2>Host Details</h2></div><div class=\"action-buttons\"><a href=\"/web/hosts\" class=\"btn btn-secondary\">← Back to Hosts</a> <a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -4504,14 +4504,14 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 387, "<div class=\"page-header\"><div><a href=\"/web/stacks\" class=\"btn btn-secondary\">Back to Stacks</a><h2>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 387, "<div class=\"page-header\"><div><h2>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var246 string
 			templ_7745c5c3_Var246, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3113, Col: 20}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3112, Col: 20}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var246))
 			if templ_7745c5c3_Err != nil {
@@ -4529,7 +4529,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 				var templ_7745c5c3_Var247 string
 				templ_7745c5c3_Var247, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Description)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3115, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3114, Col: 27}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var247))
 				if templ_7745c5c3_Err != nil {
@@ -4540,7 +4540,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 391, "</div><div class=\"page-actions\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 391, "</div><div class=\"page-actions\"><a href=\"/web/stacks\" class=\"btn btn-secondary\">Back to Stacks</a> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -5202,7 +5202,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 451, "<div class=\"page-header\"><div><a href=\"/web/stacks\" class=\"btn btn-secondary\">← Back to Stacks</a><h2>Deploy New Stack</h2><p>Deploy a multi-container stack from a JSON-LD definition</p></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 451, "<div class=\"page-header\"><div><h2>Deploy New Stack</h2><p>Deploy a multi-container stack from a JSON-LD definition</p></div><div class=\"page-actions\"><a href=\"/web/stacks\" class=\"btn btn-secondary\">← Back to Stacks</a></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -5214,7 +5214,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 				var templ_7745c5c3_Var291 string
 				templ_7745c5c3_Var291, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3271, Col: 14}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3273, Col: 14}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var291))
 				if templ_7745c5c3_Err != nil {
@@ -5242,7 +5242,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var292 string
 					templ_7745c5c3_Var292, templ_7745c5c3_Err = templ.JoinStringErrs(tmpl.Content)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3285, Col: 37}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3287, Col: 37}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var292))
 					if templ_7745c5c3_Err != nil {
@@ -5255,7 +5255,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var293 string
 					templ_7745c5c3_Var293, templ_7745c5c3_Err = templ.JoinStringErrs(tmpl.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3285, Col: 51}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3287, Col: 51}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var293))
 					if templ_7745c5c3_Err != nil {
@@ -5268,7 +5268,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var294 string
 					templ_7745c5c3_Var294, templ_7745c5c3_Err = templ.JoinStringErrs(tmpl.Description)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3285, Col: 74}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3287, Col: 74}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var294))
 					if templ_7745c5c3_Err != nil {
@@ -5311,7 +5311,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
   ]
 }`)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3319, Col: 2}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3321, Col: 2}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var295))
 			if templ_7745c5c3_Err != nil {
@@ -5334,7 +5334,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var296 string
 					templ_7745c5c3_Var296, templ_7745c5c3_Err = templ.JoinStringErrs(dc)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3347, Col: 27}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3349, Col: 27}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var296))
 					if templ_7745c5c3_Err != nil {
@@ -5347,7 +5347,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var297 string
 					templ_7745c5c3_Var297, templ_7745c5c3_Err = templ.JoinStringErrs(dc)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3347, Col: 34}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3349, Col: 34}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var297))
 					if templ_7745c5c3_Err != nil {
@@ -5376,7 +5376,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var298 string
 					templ_7745c5c3_Var298, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3359, Col: 70}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3361, Col: 70}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var298))
 					if templ_7745c5c3_Err != nil {
@@ -5389,7 +5389,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var299 string
 					templ_7745c5c3_Var299, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3361, Col: 30}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3363, Col: 30}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var299))
 					if templ_7745c5c3_Err != nil {
@@ -5402,7 +5402,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var300 string
 					templ_7745c5c3_Var300, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3361, Col: 52}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3363, Col: 52}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var300))
 					if templ_7745c5c3_Err != nil {
@@ -5420,7 +5420,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 						var templ_7745c5c3_Var301 string
 						templ_7745c5c3_Var301, templ_7745c5c3_Err = templ.JoinStringErrs(host.Datacenter)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3363, Col: 57}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3365, Col: 57}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var301))
 						if templ_7745c5c3_Err != nil {
@@ -5438,7 +5438,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var302 string
 					templ_7745c5c3_Var302, templ_7745c5c3_Err = templ.JoinStringErrs(host.IPAddress)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3365, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3367, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var302))
 					if templ_7745c5c3_Err != nil {
@@ -5473,7 +5473,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var305 string
 					templ_7745c5c3_Var305, templ_7745c5c3_Err = templ.JoinStringErrs(host.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3366, Col: 96}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3368, Col: 96}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var305))
 					if templ_7745c5c3_Err != nil {
@@ -5507,7 +5507,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var306 string
 					templ_7745c5c3_Var306, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3384, Col: 82}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3386, Col: 82}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var306))
 					if templ_7745c5c3_Err != nil {
@@ -5520,7 +5520,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var307 string
 					templ_7745c5c3_Var307, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3386, Col: 35}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3388, Col: 35}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var307))
 					if templ_7745c5c3_Err != nil {
@@ -5533,7 +5533,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var308 string
 					templ_7745c5c3_Var308, templ_7745c5c3_Err = templ.JoinStringErrs(container.Image)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3387, Col: 56}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3389, Col: 56}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var308))
 					if templ_7745c5c3_Err != nil {
@@ -5568,7 +5568,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var311 string
 					templ_7745c5c3_Var311, templ_7745c5c3_Err = templ.JoinStringErrs(container.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3388, Col: 106}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3390, Col: 106}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var311))
 					if templ_7745c5c3_Err != nil {
@@ -5581,7 +5581,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var312 string
 					templ_7745c5c3_Var312, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID[:12])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3390, Col: 56}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3392, Col: 56}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var312))
 					if templ_7745c5c3_Err != nil {
@@ -5594,7 +5594,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var313 string
 					templ_7745c5c3_Var313, templ_7745c5c3_Err = templ.JoinStringErrs(container.HostedOn)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3390, Col: 82}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3392, Col: 82}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var313))
 					if templ_7745c5c3_Err != nil {
@@ -5665,7 +5665,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var316 templ.SafeURL
 			templ_7745c5c3_Var316, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3493, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3495, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var316))
 			if templ_7745c5c3_Err != nil {
@@ -5678,7 +5678,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var317 string
 			templ_7745c5c3_Var317, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3494, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3496, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var317))
 			if templ_7745c5c3_Err != nil {
@@ -5696,7 +5696,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 				var templ_7745c5c3_Var318 string
 				templ_7745c5c3_Var318, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3500, Col: 14}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3502, Col: 14}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var318))
 				if templ_7745c5c3_Err != nil {
@@ -5714,7 +5714,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var319 templ.SafeURL
 			templ_7745c5c3_Var319, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s/update", stack.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3504, Col: 89}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3506, Col: 89}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var319))
 			if templ_7745c5c3_Err != nil {
@@ -5727,7 +5727,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var320 string
 			templ_7745c5c3_Var320, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3509, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3511, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var320))
 			if templ_7745c5c3_Err != nil {
@@ -5740,7 +5740,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var321 string
 			templ_7745c5c3_Var321, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Description)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3514, Col: 102}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3516, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var321))
 			if templ_7745c5c3_Err != nil {
@@ -5753,7 +5753,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var322 string
 			templ_7745c5c3_Var322, templ_7745c5c3_Err = templ.JoinStringErrs(stack.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3522, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3524, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var322))
 			if templ_7745c5c3_Err != nil {
@@ -5766,7 +5766,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var323 string
 			templ_7745c5c3_Var323, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3526, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3528, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var323))
 			if templ_7745c5c3_Err != nil {
@@ -5779,7 +5779,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var324 string
 			templ_7745c5c3_Var324, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Deployment.PlacementStrategy)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3530, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3532, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var324))
 			if templ_7745c5c3_Err != nil {
@@ -5802,7 +5802,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 					var templ_7745c5c3_Var325 string
 					templ_7745c5c3_Var325, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3546, Col: 30}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3548, Col: 30}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var325))
 					if templ_7745c5c3_Err != nil {
@@ -5825,7 +5825,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 					var templ_7745c5c3_Var326 string
 					templ_7745c5c3_Var326, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3552, Col: 34}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3554, Col: 34}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var326))
 					if templ_7745c5c3_Err != nil {
@@ -5838,7 +5838,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 					var templ_7745c5c3_Var327 string
 					templ_7745c5c3_Var327, templ_7745c5c3_Err = templ.JoinStringErrs(container.Image)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3553, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3555, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var327))
 					if templ_7745c5c3_Err != nil {
@@ -5873,7 +5873,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 					var templ_7745c5c3_Var330 string
 					templ_7745c5c3_Var330, templ_7745c5c3_Err = templ.JoinStringErrs(container.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3554, Col: 105}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3556, Col: 105}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var330))
 					if templ_7745c5c3_Err != nil {
@@ -5886,7 +5886,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 					var templ_7745c5c3_Var331 string
 					templ_7745c5c3_Var331, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID[:12])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3556, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3558, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var331))
 					if templ_7745c5c3_Err != nil {
@@ -5899,7 +5899,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 					var templ_7745c5c3_Var332 string
 					templ_7745c5c3_Var332, templ_7745c5c3_Err = templ.JoinStringErrs(container.HostedOn)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3556, Col: 81}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3558, Col: 81}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var332))
 					if templ_7745c5c3_Err != nil {
@@ -5922,7 +5922,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var333 templ.SafeURL
 			templ_7745c5c3_Var333, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3566, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3568, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var333))
 			if templ_7745c5c3_Err != nil {
@@ -5983,7 +5983,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 			var templ_7745c5c3_Var336 templ.SafeURL
 			templ_7745c5c3_Var336, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3578, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3580, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var336))
 			if templ_7745c5c3_Err != nil {
@@ -5996,7 +5996,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 			var templ_7745c5c3_Var337 string
 			templ_7745c5c3_Var337, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3579, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3581, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var337))
 			if templ_7745c5c3_Err != nil {
@@ -6031,7 +6031,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 			var templ_7745c5c3_Var340 string
 			templ_7745c5c3_Var340, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3583, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3585, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var340))
 			if templ_7745c5c3_Err != nil {
@@ -6055,7 +6055,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 					var templ_7745c5c3_Var341 string
 					templ_7745c5c3_Var341, templ_7745c5c3_Err = templ.JoinStringErrs(placement.ContainerName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3595, Col: 36}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3597, Col: 36}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var341))
 					if templ_7745c5c3_Err != nil {
@@ -6068,7 +6068,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 					var templ_7745c5c3_Var342 string
 					templ_7745c5c3_Var342, templ_7745c5c3_Err = templ.JoinStringErrs(placement.HostID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3597, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3599, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var342))
 					if templ_7745c5c3_Err != nil {
@@ -6103,7 +6103,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 					var templ_7745c5c3_Var345 string
 					templ_7745c5c3_Var345, templ_7745c5c3_Err = templ.JoinStringErrs(placement.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3598, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3600, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var345))
 					if templ_7745c5c3_Err != nil {
@@ -6121,7 +6121,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 						var templ_7745c5c3_Var346 string
 						templ_7745c5c3_Var346, templ_7745c5c3_Err = templ.JoinStringErrs("logs-" + placement.ContainerID)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3602, Col: 68}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3604, Col: 68}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var346))
 						if templ_7745c5c3_Err != nil {
@@ -6134,7 +6134,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 						var templ_7745c5c3_Var347 string
 						templ_7745c5c3_Var347, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/containers/%s/logs?tail=100", placement.ContainerID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3604, Col: 88}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3606, Col: 88}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var347))
 						if templ_7745c5c3_Err != nil {
@@ -6204,7 +6204,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 540, "<div class=\"page-header\"><div><a href=\"/web/hosts\" class=\"btn btn-secondary\">← Back to Hosts</a><h2>Register New Host</h2><p>Add a new Docker host to your infrastructure</p></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 540, "<div class=\"page-header\"><div><h2>Register New Host</h2><p>Add a new Docker host to your infrastructure</p></div><div class=\"page-actions\"><a href=\"/web/hosts\" class=\"btn btn-secondary\">← Back to Hosts</a></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -6216,7 +6216,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 				var templ_7745c5c3_Var350 string
 				templ_7745c5c3_Var350, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3634, Col: 14}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3638, Col: 14}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var350))
 				if templ_7745c5c3_Err != nil {
@@ -6234,7 +6234,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 			var templ_7745c5c3_Var351 string
 			templ_7745c5c3_Var351, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3643, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3647, Col: 58}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var351))
 			if templ_7745c5c3_Err != nil {
@@ -6247,7 +6247,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 			var templ_7745c5c3_Var352 string
 			templ_7745c5c3_Var352, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3648, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3652, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var352))
 			if templ_7745c5c3_Err != nil {
@@ -6260,7 +6260,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 			var templ_7745c5c3_Var353 string
 			templ_7745c5c3_Var353, templ_7745c5c3_Err = templ.JoinStringErrs(host.IPAddress)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3653, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3657, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var353))
 			if templ_7745c5c3_Err != nil {
@@ -6273,7 +6273,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 			var templ_7745c5c3_Var354 string
 			templ_7745c5c3_Var354, templ_7745c5c3_Err = templ.JoinStringErrs(host.Datacenter)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3658, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3662, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var354))
 			if templ_7745c5c3_Err != nil {
@@ -6286,7 +6286,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 			var templ_7745c5c3_Var355 string
 			templ_7745c5c3_Var355, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", host.CPU))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3666, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3670, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var355))
 			if templ_7745c5c3_Err != nil {
@@ -6299,7 +6299,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 			var templ_7745c5c3_Var356 string
 			templ_7745c5c3_Var356, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", host.Memory))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3671, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3675, Col: 91}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var356))
 			if templ_7745c5c3_Err != nil {
@@ -6390,7 +6390,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var359 templ.SafeURL
 			templ_7745c5c3_Var359, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3707, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3711, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var359))
 			if templ_7745c5c3_Err != nil {
@@ -6403,7 +6403,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var360 string
 			templ_7745c5c3_Var360, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3708, Col: 30}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3712, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var360))
 			if templ_7745c5c3_Err != nil {
@@ -6421,7 +6421,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 				var templ_7745c5c3_Var361 string
 				templ_7745c5c3_Var361, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3713, Col: 14}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3717, Col: 14}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var361))
 				if templ_7745c5c3_Err != nil {
@@ -6439,7 +6439,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var362 templ.SafeURL
 			templ_7745c5c3_Var362, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/hosts/%s/update", host.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3717, Col: 87}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3721, Col: 87}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var362))
 			if templ_7745c5c3_Err != nil {
@@ -6452,7 +6452,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var363 string
 			templ_7745c5c3_Var363, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3722, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3726, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var363))
 			if templ_7745c5c3_Err != nil {
@@ -6465,7 +6465,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var364 string
 			templ_7745c5c3_Var364, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3727, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3731, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var364))
 			if templ_7745c5c3_Err != nil {
@@ -6478,7 +6478,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var365 string
 			templ_7745c5c3_Var365, templ_7745c5c3_Err = templ.JoinStringErrs(host.IPAddress)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3731, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3735, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var365))
 			if templ_7745c5c3_Err != nil {
@@ -6491,7 +6491,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var366 string
 			templ_7745c5c3_Var366, templ_7745c5c3_Err = templ.JoinStringErrs(host.Datacenter)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3736, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3740, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var366))
 			if templ_7745c5c3_Err != nil {
@@ -6504,7 +6504,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var367 string
 			templ_7745c5c3_Var367, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", host.CPU))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3743, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3747, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var367))
 			if templ_7745c5c3_Err != nil {
@@ -6517,7 +6517,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var368 string
 			templ_7745c5c3_Var368, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", host.Memory))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3747, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3751, Col: 91}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var368))
 			if templ_7745c5c3_Err != nil {
@@ -6560,7 +6560,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var369 templ.SafeURL
 			templ_7745c5c3_Var369, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3763, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3767, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var369))
 			if templ_7745c5c3_Err != nil {
@@ -6626,7 +6626,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 				var templ_7745c5c3_Var372 string
 				templ_7745c5c3_Var372, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3780, Col: 15}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3784, Col: 15}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var372))
 				if templ_7745c5c3_Err != nil {
@@ -6646,7 +6646,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 					var templ_7745c5c3_Var373 string
 					templ_7745c5c3_Var373, templ_7745c5c3_Err = templ.JoinStringErrs(validationResult.StackName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3788, Col: 46}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3792, Col: 46}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var373))
 					if templ_7745c5c3_Err != nil {
@@ -6659,7 +6659,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 					var templ_7745c5c3_Var374 string
 					templ_7745c5c3_Var374, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", validationResult.ContainerCount))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3789, Col: 75}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3793, Col: 75}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var374))
 					if templ_7745c5c3_Err != nil {
@@ -6672,7 +6672,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 					var templ_7745c5c3_Var375 string
 					templ_7745c5c3_Var375, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", validationResult.WaveCount))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3790, Col: 65}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3794, Col: 65}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var375))
 					if templ_7745c5c3_Err != nil {
@@ -6705,7 +6705,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 							var templ_7745c5c3_Var376 string
 							templ_7745c5c3_Var376, templ_7745c5c3_Err = templ.JoinStringErrs(warning)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3799, Col: 22}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3803, Col: 22}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var376))
 							if templ_7745c5c3_Err != nil {
@@ -6738,7 +6738,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 						var templ_7745c5c3_Var377 string
 						templ_7745c5c3_Var377, templ_7745c5c3_Err = templ.JoinStringErrs(err)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3809, Col: 17}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3813, Col: 17}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var377))
 						if templ_7745c5c3_Err != nil {
@@ -6762,7 +6762,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 			var templ_7745c5c3_Var378 string
 			templ_7745c5c3_Var378, templ_7745c5c3_Err = templ.JoinStringErrs("@context")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3858, Col: 29}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3862, Col: 29}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var378))
 			if templ_7745c5c3_Err != nil {
@@ -6775,7 +6775,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 			var templ_7745c5c3_Var379 string
 			templ_7745c5c3_Var379, templ_7745c5c3_Err = templ.JoinStringErrs("@graph")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3859, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3863, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var379))
 			if templ_7745c5c3_Err != nil {
@@ -6836,7 +6836,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var382 string
 			templ_7745c5c3_Var382, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.StackID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3875, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3879, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var382))
 			if templ_7745c5c3_Err != nil {
@@ -6849,7 +6849,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var383 string
 			templ_7745c5c3_Var383, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3876, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3880, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var383))
 			if templ_7745c5c3_Err != nil {
@@ -6862,7 +6862,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var384 templ.SafeURL
 			templ_7745c5c3_Var384, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s", deployment.StackID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3879, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3883, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var384))
 			if templ_7745c5c3_Err != nil {
@@ -6897,7 +6897,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var387 string
 			templ_7745c5c3_Var387, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3888, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3892, Col: 81}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var387))
 			if templ_7745c5c3_Err != nil {
@@ -6910,7 +6910,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var388 string
 			templ_7745c5c3_Var388, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.Phase)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3892, Col: 30}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3896, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var388))
 			if templ_7745c5c3_Err != nil {
@@ -6923,7 +6923,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var389 string
 			templ_7745c5c3_Var389, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("width: %d%%", deployment.Progress))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3897, Col: 89}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3901, Col: 89}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var389))
 			if templ_7745c5c3_Err != nil {
@@ -6936,7 +6936,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var390 string
 			templ_7745c5c3_Var390, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d%%", deployment.Progress))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3899, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3903, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var390))
 			if templ_7745c5c3_Err != nil {
@@ -6949,7 +6949,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var391 string
 			templ_7745c5c3_Var391, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.StartedAt.Format("2006-01-02 15:04:05"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3903, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3907, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var391))
 			if templ_7745c5c3_Err != nil {
@@ -6967,7 +6967,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var392 string
 				templ_7745c5c3_Var392, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.CompletedAt.Format("2006-01-02 15:04:05"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3908, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3912, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var392))
 				if templ_7745c5c3_Err != nil {
@@ -6986,7 +6986,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var393 string
 				templ_7745c5c3_Var393, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.ErrorMessage)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3913, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3917, Col: 56}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var393))
 				if templ_7745c5c3_Err != nil {
@@ -7014,7 +7014,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var394 string
 					templ_7745c5c3_Var394, templ_7745c5c3_Err = templ.JoinStringErrs(containerName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3933, Col: 28}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3937, Col: 28}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var394))
 					if templ_7745c5c3_Err != nil {
@@ -7027,7 +7027,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var395 string
 					templ_7745c5c3_Var395, templ_7745c5c3_Err = templ.JoinStringErrs(placement.HostID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3934, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3938, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var395))
 					if templ_7745c5c3_Err != nil {
@@ -7045,7 +7045,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 						var templ_7745c5c3_Var396 string
 						templ_7745c5c3_Var396, templ_7745c5c3_Err = templ.JoinStringErrs(placement.ContainerID[:12])
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3937, Col: 45}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3941, Col: 45}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var396))
 						if templ_7745c5c3_Err != nil {
@@ -7090,7 +7090,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var399 string
 					templ_7745c5c3_Var399, templ_7745c5c3_Err = templ.JoinStringErrs(placement.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3943, Col: 83}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3947, Col: 83}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var399))
 					if templ_7745c5c3_Err != nil {
@@ -7114,7 +7114,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var400 string
 				templ_7745c5c3_Var400, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.NetworkInfo.NetworkName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3957, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3961, Col: 49}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var400))
 				if templ_7745c5c3_Err != nil {
@@ -7127,7 +7127,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var401 string
 				templ_7745c5c3_Var401, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.NetworkInfo.NetworkID[:12])
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3961, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3965, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var401))
 				if templ_7745c5c3_Err != nil {
@@ -7140,7 +7140,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var402 string
 				templ_7745c5c3_Var402, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.NetworkInfo.Driver)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3965, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3969, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var402))
 				if templ_7745c5c3_Err != nil {
@@ -7182,7 +7182,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var405 string
 					templ_7745c5c3_Var405, templ_7745c5c3_Err = templ.JoinStringErrs(event.Timestamp.Format("15:04:05"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3977, Col: 70}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3981, Col: 70}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var405))
 					if templ_7745c5c3_Err != nil {
@@ -7217,7 +7217,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var408 string
 					templ_7745c5c3_Var408, templ_7745c5c3_Err = templ.JoinStringErrs(event.Type)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3978, Col: 74}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3982, Col: 74}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var408))
 					if templ_7745c5c3_Err != nil {
@@ -7230,7 +7230,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var409 string
 					templ_7745c5c3_Var409, templ_7745c5c3_Err = templ.JoinStringErrs(event.Phase)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3979, Col: 48}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3983, Col: 48}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var409))
 					if templ_7745c5c3_Err != nil {
@@ -7248,7 +7248,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 						var templ_7745c5c3_Var410 string
 						templ_7745c5c3_Var410, templ_7745c5c3_Err = templ.JoinStringErrs(event.Container)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3983, Col: 35}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3987, Col: 35}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var410))
 						if templ_7745c5c3_Err != nil {
@@ -7262,7 +7262,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var411 string
 					templ_7745c5c3_Var411, templ_7745c5c3_Err = templ.JoinStringErrs(event.Message)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3985, Col: 24}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3989, Col: 24}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var411))
 					if templ_7745c5c3_Err != nil {
@@ -7286,7 +7286,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var412 string
 				templ_7745c5c3_Var412, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.RollbackState.Status)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3996, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4000, Col: 59}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var412))
 				if templ_7745c5c3_Err != nil {
@@ -7299,7 +7299,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var413 string
 				templ_7745c5c3_Var413, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.RollbackState.StartedAt.Format("2006-01-02 15:04:05"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3997, Col: 84}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4001, Col: 84}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var413))
 				if templ_7745c5c3_Err != nil {
@@ -7317,7 +7317,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var414 string
 					templ_7745c5c3_Var414, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.RollbackState.CompletedAt.Format("2006-01-02 15:04:05"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3999, Col: 89}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4003, Col: 89}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var414))
 					if templ_7745c5c3_Err != nil {
@@ -7341,7 +7341,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 						var templ_7745c5c3_Var415 string
 						templ_7745c5c3_Var415, templ_7745c5c3_Err = templ.JoinStringErrs(containerName)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4005, Col: 28}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4009, Col: 28}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var415))
 						if templ_7745c5c3_Err != nil {
@@ -7365,7 +7365,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var416 string
 					templ_7745c5c3_Var416, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.RollbackState.ErrorMessage)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4010, Col: 73}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4014, Col: 73}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var416))
 					if templ_7745c5c3_Err != nil {

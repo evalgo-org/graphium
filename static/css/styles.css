@@ -1902,6 +1902,10 @@ body {
   margin: 0;
 }
 
+.page-actions .badge {
+  padding: 0.625rem 0.75rem; /* Match button vertical padding for consistent height */
+}
+
 /* Alert Styles */
 .alert {
   padding: 15px 20px;

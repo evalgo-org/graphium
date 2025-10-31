@@ -2138,10 +2138,10 @@ templ ContainerDetailWithUser(container *models.Container, host *models.Host, st
 	@LayoutWithUser("Container Details", user) {
 		<div class="page-header">
 			<div>
-				<a href="/web/containers" class="btn btn-secondary">← Back to Containers</a>
 				<h2>Container Details</h2>
 			</div>
 			<div class="action-buttons">
+				<a href="/web/containers" class="btn btn-secondary">← Back to Containers</a>
 				if belongsToStack && stack != nil {
 					<div class="alert alert-info" style="margin: 0; padding: 8px 12px; display: inline-block;">
 						📦 Part of stack: <a href={ templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)) } style="color: inherit; font-weight: bold;">{ stack.Name }</a>
@@ -2289,10 +2289,10 @@ templ HostDetailWithUser(host *models.Host, containers []*models.Container, user
 	@LayoutWithUser("Host Details", user) {
 		<div class="page-header">
 			<div>
-				<a href="/web/hosts" class="btn btn-secondary">← Back to Hosts</a>
 				<h2>Host Details</h2>
 			</div>
 			<div class="action-buttons">
+				<a href="/web/hosts" class="btn btn-secondary">← Back to Hosts</a>
 				<a href={ templ.URL(fmt.Sprintf("/web/hosts/%s/edit", host.ID)) } class="btn btn-primary">✏️ Edit Host</a>
 				<form method="POST" action={ templ.URL(fmt.Sprintf("/web/hosts/%s/delete", host.ID)) } id="delete-host-form" style="display: inline;">
 					<button type="button" class="btn btn-danger" data-host-name={ host.Name } onclick="showConfirmModal('Delete Host', 'Are you sure you want to delete host &quot;' + this.dataset.hostName + '&quot;? This action cannot be undone.', 'Delete', function() { document.getElementById('delete-host-form').submit(); })">🗑️ Delete Host</button>
@@ -3109,13 +3109,13 @@ templ StackDetailWithUser(stack *models.Stack, deployment *models.StackDeploymen
 	@LayoutWithUser("Stack Detail", user) {
 		<div class="page-header">
 			<div>
-				<a href="/web/stacks" class="btn btn-secondary">Back to Stacks</a>
 				<h2>{ stack.Name }</h2>
 				if stack.Description != "" {
 					<p>{ stack.Description }</p>
 				}
 			</div>
 			<div class="page-actions">
+				<a href="/web/stacks" class="btn btn-secondary">Back to Stacks</a>
 				<span class={ "badge badge-" + stack.Status }>{ stack.Status }</span>
 				<a href={ templ.URL(fmt.Sprintf("/web/stacks/%s/edit", stack.ID)) } class="btn btn-secondary">Edit</a>
 				if stack.Status == "running" {
@@ -3261,9 +3261,11 @@ templ DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, c
 	@LayoutWithUser("Deploy Stack", user) {
 		<div class="page-header">
 			<div>
-				<a href="/web/stacks" class="btn btn-secondary">← Back to Stacks</a>
 				<h2>Deploy New Stack</h2>
 				<p>Deploy a multi-container stack from a JSON-LD definition</p>
+			</div>
+			<div class="page-actions">
+				<a href="/web/stacks" class="btn btn-secondary">← Back to Stacks</a>
 			</div>
 		</div>
 		if errorMsg != "" {
@@ -3624,9 +3626,11 @@ templ CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Us
 	@LayoutWithUser("Create Host", user) {
 		<div class="page-header">
 			<div>
-				<a href="/web/hosts" class="btn btn-secondary">← Back to Hosts</a>
 				<h2>Register New Host</h2>
 				<p>Add a new Docker host to your infrastructure</p>
+			</div>
+			<div class="page-actions">
+				<a href="/web/hosts" class="btn btn-secondary">← Back to Hosts</a>
 			</div>
 		</div>
 		if errorMsg != "" {
