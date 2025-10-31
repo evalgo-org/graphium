@@ -230,7 +230,7 @@ func (s *Server) setupRoutes() {
 	agents.POST("/:id/restart", s.restartAgent, ValidateIDFormat, s.authMiddle.RequireWrite)
 
 	// Web UI routes
-	webHandler := web.NewHandler(s.storage, s.config, &serverBroadcaster{server: s})
+	webHandler := web.NewHandler(s.storage, s.config, &serverBroadcaster{server: s}, s.agentManager)
 
 	// Statistics routes (support both JWT and web session auth for web UI compatibility)
 	stats := v1.Group("/stats")
@@ -359,6 +359,8 @@ func (s *Server) setupRoutes() {
 	webGroup.POST("/agents/:id/stop", webHandler.StopAgentHandler)
 	webGroup.POST("/agents/:id/restart", webHandler.RestartAgentHandler)
 	webGroup.DELETE("/agents/:id", webHandler.DeleteAgentHandler)
+	webGroup.GET("/agents/:id/logs/download", webHandler.AgentLogsDownloadHandler)
+	webGroup.GET("/agents/:id/logs", webHandler.AgentLogsHandler)
 }
 
 // Start starts the HTTP server.

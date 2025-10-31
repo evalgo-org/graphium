@@ -26,6 +26,10 @@ type AgentConfig struct {
 	// DockerSocket is the Docker connection string (unix://, ssh://, tcp://)
 	DockerSocket string `json:"dockerSocket"`
 
+	// SSHKeyPath is the path to the SSH private key for remote Docker connections
+	// Used when DockerSocket is ssh://user@host format
+	SSHKeyPath string `json:"sshKeyPath,omitempty"`
+
 	// Datacenter is the datacenter location
 	Datacenter string `json:"datacenter,omitempty"`
 

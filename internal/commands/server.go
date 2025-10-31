@@ -67,7 +67,6 @@ func runServer(cmd *cobra.Command, args []string) error {
 		fmt.Println("\n⚠️  Shutdown signal received")
 
 		// Stop agent manager first
-		log.Println("Stopping agent manager...")
 		if err := agentManager.Stop(); err != nil {
 			log.Printf("Warning: agent manager shutdown error: %v", err)
 		}
@@ -88,7 +87,6 @@ func runServer(cmd *cobra.Command, args []string) error {
 
 	case err := <-errChan:
 		// Stop agent manager on error
-		log.Println("Stopping agent manager due to server error...")
 		if stopErr := agentManager.Stop(); stopErr != nil {
 			log.Printf("Warning: agent manager shutdown error: %v", stopErr)
 		}

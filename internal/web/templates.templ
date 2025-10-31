@@ -197,6 +197,22 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 						<p class="stat-value" id="stat-hosts-with-containers">{ fmt.Sprintf("%d", len(stats.HostContainerCounts)) }</p>
 					</div>
 				</div>
+
+				<div class="stat-card">
+					<div class="stat-icon">🤖</div>
+					<div class="stat-content">
+						<h3>Total Agents</h3>
+						<p class="stat-value" id="stat-total-agents">{ fmt.Sprintf("%d", stats.TotalAgents) }</p>
+					</div>
+				</div>
+
+				<div class="stat-card stat-success">
+					<div class="stat-icon">✅</div>
+					<div class="stat-content">
+						<h3>Running Agents</h3>
+						<p class="stat-value" id="stat-running-agents">{ fmt.Sprintf("%d", stats.RunningAgents) }</p>
+					</div>
+				</div>
 			</div>
 
 
@@ -282,6 +298,8 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 							document.getElementById('stat-total-hosts').textContent = data.totalHosts;
 							document.getElementById('stat-total-stacks').textContent = data.totalStacks || 0;
 							document.getElementById('stat-running-stacks').textContent = data.runningStacks || 0;
+							document.getElementById('stat-total-agents').textContent = data.totalAgents || 0;
+							document.getElementById('stat-running-agents').textContent = data.runningAgents || 0;
 							document.getElementById('stat-hosts-with-containers').textContent = data.hostsWithContainers || 0;
 							console.log('✅ Dashboard DOM updated with new stats');
 						})
@@ -4160,10 +4178,38 @@ templ AgentsTable(agents []AgentInfo) {
 templ AgentDetailWithUser(agent AgentInfo, user *models.User) {
 	@LayoutWithUser(fmt.Sprintf("Agent: %s", agent.Config.Name), user) {
 		<div class="page-header">
-			<div class="flex-row">
-				<a href="/web/agents" class="btn btn-secondary">← Back to Agents</a>
-			</div>
 			<h2>Agent: { agent.Config.Name }</h2>
+			<div class="flex-row" style="gap: 0.5rem; align-items: center;">
+				<a href="/web/agents" class="btn btn-secondary">← Back to Agents</a>
+				if agent.State.Status == "running" {
+					<button
+						class="btn btn-warning"
+						hx-post={ fmt.Sprintf("/web/agents/%s/stop", agent.Config.ID) }
+						hx-target="body"
+						hx-swap="outerHTML"
+					>⏸️ Stop Agent</button>
+					<button
+						class="btn btn-primary"
+						hx-post={ fmt.Sprintf("/web/agents/%s/restart", agent.Config.ID) }
+						hx-target="body"
+						hx-swap="outerHTML"
+					>🔄 Restart Agent</button>
+				} else {
+					<button
+						class="btn btn-success"
+						hx-post={ fmt.Sprintf("/web/agents/%s/start", agent.Config.ID) }
+						hx-target="body"
+						hx-swap="outerHTML"
+					>▶️ Start Agent</button>
+				}
+				<button
+					class="btn btn-danger"
+					hx-delete={ fmt.Sprintf("/web/agents/%s", agent.Config.ID) }
+					hx-confirm="Are you sure you want to delete this agent? This action cannot be undone."
+					hx-target="body"
+					hx-swap="outerHTML"
+				>🗑️ Delete Agent</button>
+			</div>
 		</div>
 
 		<div class="detail-grid">
@@ -4185,6 +4231,16 @@ templ AgentDetailWithUser(agent AgentInfo, user *models.User) {
 					<span class="detail-label">Docker Socket:</span>
 					<span class="detail-value">{ agent.Config.DockerSocket }</span>
 				</div>
+			<div class="detail-row">
+				<span class="detail-label">SSH Key Path:</span>
+				<span class="detail-value">
+					if agent.Config.SSHKeyPath != "" {
+						{ agent.Config.SSHKeyPath }
+					} else {
+						<span class="text-muted">Not configured</span>
+					}
+				</span>
+			</div>
 				<div class="detail-row">
 					<span class="detail-label">Datacenter:</span>
 					<span class="detail-value">{ agent.Config.Datacenter }</span>
@@ -4279,36 +4335,54 @@ templ AgentDetailWithUser(agent AgentInfo, user *models.User) {
 			</div>
 		</div>
 
-		<div class="detail-actions">
-			if agent.State.Status == "running" {
-				<button
-					class="btn btn-warning"
-					hx-post={ fmt.Sprintf("/web/agents/%s/stop", agent.Config.ID) }
-					hx-target="body"
-					hx-swap="outerHTML"
-				>⏸️ Stop Agent</button>
-				<button
-					class="btn btn-primary"
-					hx-post={ fmt.Sprintf("/web/agents/%s/restart", agent.Config.ID) }
-					hx-target="body"
-					hx-swap="outerHTML"
-				>🔄 Restart Agent</button>
-			} else {
-				<button
-					class="btn btn-success"
-					hx-post={ fmt.Sprintf("/web/agents/%s/start", agent.Config.ID) }
-					hx-target="body"
-					hx-swap="outerHTML"
-				>▶️ Start Agent</button>
-			}
-			<button
-				class="btn btn-danger"
-				hx-delete={ fmt.Sprintf("/web/agents/%s", agent.Config.ID) }
-				hx-confirm="Are you sure you want to delete this agent? This action cannot be undone."
-				hx-target="body"
-				hx-swap="outerHTML"
-			>🗑️ Delete Agent</button>
+		<!-- Agent Logs -->
+		<div class="detail-card" style="margin-top: 2rem;">
+			<div class="flex-row" style="align-items: center; margin-bottom: 1rem;">
+				<h3 style="margin: 0;">Agent Logs</h3>
+				<div style="margin-left: auto; display: flex; gap: 0.5rem; align-items: center;">
+					<label for="log-lines-agent" style="margin: 0; font-size: 0.9rem;">Lines:</label>
+					<select id="log-lines-agent" class="form-control" style="width: auto; padding: 0.25rem 0.5rem;">
+						<option value="100">100</option>
+						<option value="500">500</option>
+						<option value="1000" selected>1000</option>
+						<option value="5000">5000</option>
+					</select>
+					<a
+						href={ templ.URL(fmt.Sprintf("/web/agents/%s/logs/download?lines=1000", agent.Config.ID)) }
+						class="btn btn-secondary"
+						download
+						style="padding: 0.25rem 0.75rem; font-size: 0.9rem;"
+					>📥 Download</a>
+				</div>
+			</div>
+
+			<div
+				id="logs-container-agent"
+				style="background: #1a1a1a; color: #00ff00; padding: 1rem; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 600px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;"
+			>
+				<div
+					hx-get={ fmt.Sprintf("/web/agents/%s/logs?tail=1000", agent.Config.ID) }
+					hx-trigger="load, every 5s"
+					hx-swap="innerHTML"
+				>
+					Loading logs...
+				</div>
+			</div>
 		</div>
+
+		<script>
+			// Update logs when line count changes
+			document.getElementById('log-lines-agent').addEventListener('change', function(e) {
+				const lines = e.target.value;
+				const agentID = "{ agent.Config.ID }";
+				htmx.ajax('GET', `/web/agents/${agentID}/logs?tail=${lines}`, {
+					target: '#logs-container-agent > div',
+					swap: 'innerHTML'
+				});
+				// Update download link
+				document.querySelector('a[download]').href = `/web/agents/${agentID}/logs/download?lines=${lines}`;
+			});
+		</script>
 	}
 }
 
@@ -4365,6 +4439,20 @@ templ CreateAgentFormWithUser(errorMsg string, user *models.User) {
 						• TCP: <code>tcp://192.168.1.10:2375</code> (unencrypted) or <code>tcp://192.168.1.10:2376</code> (TLS)<br/>
 						• SSH: <code>ssh://user@hostname</code> or <code>ssh://user@hostname:22</code><br/>
 						• Named pipe (Windows): <code>npipe:////./pipe/docker_engine</code>
+					</small>
+				</div>
+
+				<div class="form-group">
+					<label for="ssh_key_path">SSH Key Path (Optional)</label>
+					<input
+						type="text"
+						id="ssh_key_path"
+						name="ssh_key_path"
+						placeholder="e.g., /home/user/.ssh/id_rsa"
+					/>
+					<small class="form-help">
+						Path to SSH private key for remote Docker connections (ssh://user@host).<br/>
+						Required when using SSH docker socket without ssh-agent.
 					</small>
 				</div>
 

@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 
 	"evalgo.org/graphium/internal/auth"
@@ -377,8 +378,9 @@ func (m *Manager) checkAgentHealth() {
 	for _, agent := range m.agents {
 		agent.mu.Lock()
 		if agent.State.Status == "running" && agent.Cmd != nil && agent.Cmd.Process != nil {
-			// Check if process is still alive
-			if err := agent.Cmd.Process.Signal(os.Signal(nil)); err != nil {
+			// Check if process is still alive by sending signal 0
+			// Signal 0 doesn't actually signal the process, but returns an error if it doesn't exist
+			if err := agent.Cmd.Process.Signal(syscall.Signal(0)); err != nil {
 				// Process is dead
 				now := time.Now()
 				agent.State.Status = "failed"

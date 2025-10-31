@@ -24,12 +24,28 @@ func (s *Server) getStatistics(c echo.Context) error {
 		})
 	}
 
+	// Get agent states from the agent manager
+	agentStates, err := s.agentManager.ListAgentStates()
+	if err == nil {
+		stats.TotalAgents = len(agentStates)
+		// Count running agents
+		runningAgents := 0
+		for _, state := range agentStates {
+			if state.Status == "running" {
+				runningAgents++
+			}
+		}
+		stats.RunningAgents = runningAgents
+	}
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"totalContainers":       stats.TotalContainers,
 		"runningContainers":     stats.RunningContainers,
 		"totalHosts":            stats.TotalHosts,
 		"totalStacks":           stats.TotalStacks,
 		"runningStacks":         stats.RunningStacks,
+		"totalAgents":           stats.TotalAgents,
+		"runningAgents":         stats.RunningAgents,
 		"hostsWithContainers":   len(stats.HostContainerCounts),
 		"containerDistribution": stats.HostContainerCounts,
 	})

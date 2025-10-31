@@ -309,6 +309,9 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 		stats.RunningStacks = runningCount
 	}
 
+	// Note: Agent statistics are populated at the API layer
+	// because agent states are managed by the agent manager, not stored in the database
+
 	// Count deployments by status
 	allDeployments, err := s.ListDeployments(nil)
 	if err == nil {
@@ -332,6 +335,8 @@ type Statistics struct {
 	TotalHosts             int
 	TotalStacks            int
 	RunningStacks          int
+	TotalAgents            int
+	RunningAgents          int
 	HostContainerCounts    map[string]int
 	TotalDeployments       int
 	DeploymentStatusCounts map[string]int

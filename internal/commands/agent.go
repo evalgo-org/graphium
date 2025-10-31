@@ -36,16 +36,29 @@ func init() {
 }
 
 func runAgent(cmd *cobra.Command, args []string) error {
+	// Get configuration values (command-line flags override config file)
+	apiURL := viper.GetString("agent.api_url")
+	hostID := viper.GetString("agent.host_id")
+	datacenter := viper.GetString("agent.datacenter")
+	dockerSocket := viper.GetString("agent.docker_socket")
+
 	fmt.Println("🤖 Starting Graphium Agent")
 	fmt.Printf("   Version: %s\n", rootCmd.Version)
-	fmt.Printf("   Host ID: %s\n", cfg.Agent.HostID)
-	fmt.Printf("   Datacenter: %s\n", cfg.Agent.Datacenter)
-	fmt.Printf("   API URL: %s\n", cfg.Agent.APIURL)
+	fmt.Printf("   Host ID: %s\n", hostID)
+	fmt.Printf("   Datacenter: %s\n", datacenter)
+	fmt.Printf("   API URL: %s\n", apiURL)
 	fmt.Println()
 
 	// Get agent authentication token
+	// Priority order:
+	// 1. TOKEN environment variable (set by agent manager for managed agents)
+	// 2. agent_token from config file (for standalone agents)
+	// 3. Generate token if auth is enabled
 	var agentToken string
-	if cfg.Agent.AgentToken != "" {
+	if envToken := os.Getenv("TOKEN"); envToken != "" {
+		// Use token from environment (agent manager)
+		agentToken = envToken
+	} else if cfg.Agent.AgentToken != "" {
 		// Use pre-configured token from config file
 		agentToken = cfg.Agent.AgentToken
 	} else if cfg.Security.AuthEnabled {
@@ -58,7 +71,7 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		// Generate a long-lived token (7 days) if no token configured
 		token, err := auth.GenerateAgentToken(
 			secret,
-			cfg.Agent.HostID,
+			hostID,
 			7*24*time.Hour,
 		)
 		if err != nil {
@@ -68,10 +81,10 @@ func runAgent(cmd *cobra.Command, args []string) error {
 	}
 
 	a, err := agent.NewAgent(
-		cfg.Agent.APIURL,
-		cfg.Agent.HostID,
-		cfg.Agent.Datacenter,
-		cfg.Agent.DockerSocket,
+		apiURL,
+		hostID,
+		datacenter,
+		dockerSocket,
 		agentToken,
 	)
 	if err != nil {

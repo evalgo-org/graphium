@@ -38,11 +38,18 @@ type EventBroadcaster interface {
 	BroadcastGraphEvent(eventType string, data interface{})
 }
 
+// AgentManager is an interface for managing agent processes
+type AgentManager interface {
+	GetAgentState(configID string) (*models.AgentState, error)
+	ListAgentStates() ([]*models.AgentState, error)
+}
+
 // Handler handles web UI requests.
 type Handler struct {
-	storage     *storage.Storage
-	config      *config.Config
-	broadcaster EventBroadcaster
+	storage      *storage.Storage
+	config       *config.Config
+	broadcaster  EventBroadcaster
+	agentManager AgentManager
 }
 
 // debugLog logs a message only if debug mode is enabled in config
@@ -53,11 +60,12 @@ func (h *Handler) debugLog(format string, args ...interface{}) {
 }
 
 // NewHandler creates a new web handler.
-func NewHandler(store *storage.Storage, cfg *config.Config, broadcaster EventBroadcaster) *Handler {
+func NewHandler(store *storage.Storage, cfg *config.Config, broadcaster EventBroadcaster, agentMgr AgentManager) *Handler {
 	return &Handler{
-		storage:     store,
-		config:      cfg,
-		broadcaster: broadcaster,
+		storage:      store,
+		config:       cfg,
+		broadcaster:  broadcaster,
+		agentManager: agentMgr,
 	}
 }
 
