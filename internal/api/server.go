@@ -223,6 +223,12 @@ func (s *Server) setupRoutes() {
 	users.POST("/api-keys", s.generateAPIKey, s.authMiddle.RequireAuth)
 	users.DELETE("/api-keys/:index", s.revokeAPIKey, s.authMiddle.RequireAuth)
 
+	// Agent management API routes
+	agents := v1.Group("/agents")
+	agents.POST("/:id/start", s.startAgent, ValidateIDFormat, s.authMiddle.RequireWrite)
+	agents.POST("/:id/stop", s.stopAgent, ValidateIDFormat, s.authMiddle.RequireWrite)
+	agents.POST("/:id/restart", s.restartAgent, ValidateIDFormat, s.authMiddle.RequireWrite)
+
 	// Web UI routes
 	webHandler := web.NewHandler(s.storage, s.config, &serverBroadcaster{server: s})
 
