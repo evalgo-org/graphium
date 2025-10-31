@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+)
 
 // StackDefinition represents a complete stack deployment definition using JSON-LD @graph structure.
 // This is the new format that supports full declarative infrastructure as code.
@@ -119,6 +123,58 @@ type ContainerSpec struct {
 
 	// Resources defines resource constraints
 	Resources *ResourceConstraints `json:"resources,omitempty"`
+}
+
+// UnmarshalJSON implements custom JSON unmarshaling for ContainerSpec
+// to support both array and object formats for environment variables.
+// Accepts both:
+//   - Array format: "environment": [{"name": "KEY", "value": "val"}]
+//   - Map format: "environment": {"KEY": "val"} (Docker Compose style)
+func (c *ContainerSpec) UnmarshalJSON(data []byte) error {
+	// Use a type alias to avoid infinite recursion
+	type Alias ContainerSpec
+
+	// First, try to unmarshal into temporary struct with raw environment
+	aux := &struct {
+		Environment json.RawMessage `json:"environment,omitempty"`
+		*Alias
+	}{
+		Alias: (*Alias)(c),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// If no environment data, we're done
+	if len(aux.Environment) == 0 || string(aux.Environment) == "null" {
+		return nil
+	}
+
+	// Try to unmarshal as array first (the preferred format)
+	var envArray []EnvironmentVariable
+	if err := json.Unmarshal(aux.Environment, &envArray); err == nil {
+		c.Environment = envArray
+		return nil
+	}
+
+	// If array unmarshal failed, try as map (Docker Compose format)
+	var envMap map[string]string
+	if err := json.Unmarshal(aux.Environment, &envMap); err != nil {
+		return fmt.Errorf("environment must be either array of {name,value} objects or a map of key:value pairs: %w", err)
+	}
+
+	// Convert map to array
+	envArray = make([]EnvironmentVariable, 0, len(envMap))
+	for k, v := range envMap {
+		envArray = append(envArray, EnvironmentVariable{
+			Name:  k,
+			Value: v,
+		})
+	}
+	c.Environment = envArray
+
+	return nil
 }
 
 // NetworkSpec defines network configuration for the stack.
