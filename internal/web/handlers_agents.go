@@ -212,6 +212,7 @@ func (h *Handler) CreateAgentHandler(c echo.Context) error {
 
 	// Create agent configuration
 	config := &models.AgentConfig{
+		ID:           fmt.Sprintf("agent:%s", hostID),
 		Name:         name,
 		HostID:       hostID,
 		DockerSocket: dockerSocket,
