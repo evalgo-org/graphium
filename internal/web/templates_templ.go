@@ -1992,7 +1992,7 @@ func GraphViewWithUser(cfg *config.Config, user *models.User) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 166, "<div class=\"page-header\"><h2>Infrastructure Graph</h2><div class=\"filters\"><div class=\"graph-control-group\"><label for=\"layout-select\">Layout:</label> <select id=\"layout-select\" name=\"layout\"><option value=\"cose\">Force Directed (COSE)</option> <option value=\"grid\">Grid</option> <option value=\"circle\">Circle</option> <option value=\"breadthfirst\">Hierarchical</option> <option value=\"concentric\">Concentric</option></select></div><div class=\"graph-control-group\"><label for=\"filter-type\">Node Type:</label> <select id=\"filter-type\" name=\"type\"><option value=\"all\">All Types</option> <option value=\"host\">Hosts Only</option> <option value=\"container\">Containers Only</option></select></div><div class=\"graph-control-group\"><label for=\"filter-status\">Status:</label> <select id=\"filter-status\" name=\"status\"><option value=\"all\">All Status</option> <option value=\"running\">Running</option> <option value=\"stopped\">Stopped</option> <option value=\"paused\">Paused</option></select></div><div class=\"graph-control-group\"><label for=\"filter-datacenter\">Datacenter:</label> <select id=\"filter-datacenter\" name=\"datacenter\"><option value=\"all\">All Datacenters</option></select></div><button class=\"btn btn-secondary\" id=\"btn-clear-filters\">Clear Filters</button></div></div><div class=\"graph-container\"><div class=\"graph-legend\"><div class=\"legend-item\"><div class=\"legend-color host\"></div><span>Hosts</span></div><div class=\"legend-item\"><div class=\"legend-color container-running\"></div><span>Running Containers</span></div><div class=\"legend-item\"><div class=\"legend-color container-stopped\"></div><span>Stopped Containers</span></div></div><div id=\"graph-stats\" class=\"graph-stats\"><div class=\"graph-stat-item\"><div class=\"label\">Total Nodes</div><div class=\"value\" id=\"stat-nodes\">-</div></div><div class=\"graph-stat-item\"><div class=\"label\">Hosts</div><div class=\"value\" id=\"stat-hosts\">-</div></div><div class=\"graph-stat-item\"><div class=\"label\">Containers</div><div class=\"value\" id=\"stat-containers\">-</div></div><div class=\"graph-stat-item\"><div class=\"label\">Relationships</div><div class=\"value\" id=\"stat-edges\">-</div></div></div><div class=\"graph-controls\"><div class=\"action-buttons\"><button class=\"btn btn-primary\" id=\"btn-fit\">Fit to Screen</button> <button class=\"btn btn-secondary\" id=\"btn-center\">Center</button> <button class=\"btn btn-secondary\" id=\"btn-refresh\">Refresh Data</button> <button class=\"btn btn-secondary\" id=\"btn-export-png\">Export PNG</button> <button class=\"btn btn-secondary\" id=\"btn-export-svg\">Export SVG</button> <button class=\"btn btn-secondary\" id=\"btn-export-json\">Export JSON</button></div></div><div id=\"cy\"></div></div><script src=\"https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js\"></script> <script>\n\t\t(function() {\n\t\t\tlet cy;\n\t\t\tlet originalData = { nodes: [], edges: [] };\n\t\t\tlet currentFilters = { type: 'all', status: 'all', datacenter: 'all' };\n\n\t\t\t// Initialize Cytoscape\n\t\t\tfunction initGraph(layout = 'cose') {\n\t\t\t\tfetch('/api/v1/graph')\n\t\t\t\t\t.then(response => response.json())\n\t\t\t\t\t.then(data => {\n\t\t\t\t\t\t// Store original data\n\t\t\t\t\t\toriginalData = {\n\t\t\t\t\t\t\tnodes: data.nodes || [],\n\t\t\t\t\t\t\tedges: data.edges || []\n\t\t\t\t\t\t};\n\n\t\t\t\t\t\t// Populate datacenter filter with unique datacenters\n\t\t\t\t\t\tpopulateDatacenterFilter(originalData.nodes);\n\n\t\t\t\t\t\t// Apply current filters\n\t\t\t\t\t\tconst elements = applyFilters(originalData, currentFilters);\n\n\t\t\t\t\t\t// Update stats\n\t\t\t\t\t\tconst stats = {\n\t\t\t\t\t\t\tnodes: elements.nodes.length,\n\t\t\t\t\t\t\thosts: elements.nodes.filter(n => n.data.type === 'host').length,\n\t\t\t\t\t\t\tcontainers: elements.nodes.filter(n => n.data.type === 'container').length,\n\t\t\t\t\t\t\tedges: elements.edges.length\n\t\t\t\t\t\t};\n\n\t\t\t\t\t\tdocument.getElementById('stat-nodes').textContent = stats.nodes;\n\t\t\t\t\t\tdocument.getElementById('stat-hosts').textContent = stats.hosts;\n\t\t\t\t\t\tdocument.getElementById('stat-containers').textContent = stats.containers;\n\t\t\t\t\t\tdocument.getElementById('stat-edges').textContent = stats.edges;\n\n\t\t\t\t\t\t// Initialize or update graph\n\t\t\t\t\t\tif (cy) {\n\t\t\t\t\t\t\tcy.destroy();\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tcy = cytoscape({\n\t\t\t\t\t\t\tcontainer: document.getElementById('cy'),\n\t\t\t\t\t\t\telements: elements,\n\t\t\t\t\t\t\tstyle: [\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t\t\t'label': 'data(label)',\n\t\t\t\t\t\t\t\t\t\t'color': '#f1f5f9',\n\t\t\t\t\t\t\t\t\t\t'text-valign': 'center',\n\t\t\t\t\t\t\t\t\t\t'text-halign': 'center',\n\t\t\t\t\t\t\t\t\t\t'font-size': '12px',\n\t\t\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t\t\t'border-width': 2,\n\t\t\t\t\t\t\t\t\t\t'border-color': '#8b5cf6'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[type=\"host\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t\t\t'shape': 'rectangle',\n\t\t\t\t\t\t\t\t\t\t'width': 80,\n\t\t\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t\t\t'border-color': '#4f46e5'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[type=\"container\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#10b981',\n\t\t\t\t\t\t\t\t\t\t'shape': 'ellipse',\n\t\t\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t\t\t'height': 60\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[status=\"stopped\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#94a3b8',\n\t\t\t\t\t\t\t\t\t\t'opacity': 0.7\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[status=\"running\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#10b981'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'edge',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'width': 2,\n\t\t\t\t\t\t\t\t\t\t'line-color': '#475569',\n\t\t\t\t\t\t\t\t\t\t'target-arrow-color': '#475569',\n\t\t\t\t\t\t\t\t\t\t'target-arrow-shape': 'triangle',\n\t\t\t\t\t\t\t\t\t\t'curve-style': 'bezier',\n\t\t\t\t\t\t\t\t\t\t'arrow-scale': 1.5\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node:selected',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'border-width': 4,\n\t\t\t\t\t\t\t\t\t\t'border-color': '#f59e0b'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\tlayout: {\n\t\t\t\t\t\t\t\tname: layout,\n\t\t\t\t\t\t\t\tanimate: true,\n\t\t\t\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\t\t\t\tfit: true,\n\t\t\t\t\t\t\t\tpadding: 50,\n\t\t\t\t\t\t\t\trandomize: false,\n\t\t\t\t\t\t\t\tcomponentSpacing: 100,\n\t\t\t\t\t\t\t\tnodeRepulsion: 400000,\n\t\t\t\t\t\t\t\tidealEdgeLength: 100,\n\t\t\t\t\t\t\t\tedgeElasticity: 100\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\t// Add tooltips on hover\n\t\t\t\t\t\tcy.on('tap', 'node', function(evt) {\n\t\t\t\t\t\t\tconst node = evt.target;\n\t\t\t\t\t\t\tconst data = node.data();\n\t\t\t\t\t\t\tlet info = `Type: ${data.type}\\\\nID: ${data.id}\\\\nStatus: ${data.status || 'N/A'}`;\n\t\t\t\t\t\t\tif (data.type === 'host') {\n\t\t\t\t\t\t\t\tinfo += `\\\\nIP: ${data.ip || 'N/A'}\\\\nCPU: ${data.cpu || 'N/A'}\\\\nMemory: ${data.memory ? (data.memory / 1024 / 1024 / 1024).toFixed(1) + ' GB' : 'N/A'}`;\n\t\t\t\t\t\t\t} else if (data.type === 'container') {\n\t\t\t\t\t\t\t\tinfo += `\\\\nImage: ${data.image || 'N/A'}`;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tshowNodeInfoModal(data);\n\t\t\t\t\t\t});\n\t\t\t\t\t})\n\t\t\t\t\t.catch(error => {\n\t\t\t\t\t\tconsole.error('Failed to load graph data:', error);\n\t\t\t\t\t\tdocument.getElementById('cy').innerHTML = '<div class=\"graph-loading\">Failed to load graph data</div>';\n\t\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Layout selector\n\t\t\tdocument.getElementById('layout-select').addEventListener('change', function(e) {\n\t\t\t\tif (cy) {\n\t\t\t\t\tcy.layout({\n\t\t\t\t\t\tname: e.target.value,\n\t\t\t\t\t\tanimate: true,\n\t\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\t\tfit: true,\n\t\t\t\t\t\tpadding: 50\n\t\t\t\t\t}).run();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Control buttons\n\t\t\tdocument.getElementById('btn-fit').addEventListener('click', function() {\n\t\t\t\tif (cy) cy.fit();\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-center').addEventListener('click', function() {\n\t\t\t\tif (cy) cy.center();\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-refresh').addEventListener('click', function() {\n\t\t\t\tconst layout = document.getElementById('layout-select').value;\n\t\t\t\tinitGraph(layout);\n\t\t\t});\n\n\t\t\t// Export button handlers\n\t\t\tdocument.getElementById('btn-export-png').addEventListener('click', function() {\n\t\t\t\tif (!cy) return;\n\t\t\t\tconst png = cy.png({ full: true, scale: 2 });\n\t\t\t\tdownloadFile(png, 'graphium-graph.png');\n\t\t\t\tshowNotification('Graph exported as PNG', 'success');\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-export-svg').addEventListener('click', function() {\n\t\t\t\tif (!cy) return;\n\t\t\t\tconst svg = cy.svg({ full: true, scale: 1 });\n\t\t\t\tconst blob = new Blob([svg], { type: 'image/svg+xml' });\n\t\t\t\tconst url = URL.createObjectURL(blob);\n\t\t\t\tdownloadFile(url, 'graphium-graph.svg');\n\t\t\t\tURL.revokeObjectURL(url);\n\t\t\t\tshowNotification('Graph exported as SVG', 'success');\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-export-json').addEventListener('click', function() {\n\t\t\t\tif (!cy) return;\n\t\t\t\tconst graphData = {\n\t\t\t\t\tnodes: cy.nodes().map(node => node.json()),\n\t\t\t\t\tedges: cy.edges().map(edge => edge.json())\n\t\t\t\t};\n\t\t\t\tconst json = JSON.stringify(graphData, null, 2);\n\t\t\t\tconst blob = new Blob([json], { type: 'application/json' });\n\t\t\t\tconst url = URL.createObjectURL(blob);\n\t\t\t\tdownloadFile(url, 'graphium-graph.json');\n\t\t\t\tURL.revokeObjectURL(url);\n\t\t\t\tshowNotification('Graph exported as JSON', 'success');\n\t\t\t});\n\n\t\t\t// Helper function to download files\n\t\t\tfunction downloadFile(url, filename) {\n\t\t\t\tconst link = document.createElement('a');\n\t\t\t\tlink.href = url;\n\t\t\t\tlink.download = filename;\n\t\t\t\tdocument.body.appendChild(link);\n\t\t\t\tlink.click();\n\t\t\t\tdocument.body.removeChild(link);\n\t\t\t}\n\n\t\t\t// Populate datacenter filter with unique datacenters from nodes\n\t\t\tfunction populateDatacenterFilter(nodes) {\n\t\t\t\tconst datacenters = new Set();\n\t\t\t\tnodes.forEach(node => {\n\t\t\t\t\tif (node.data && node.data.datacenter) {\n\t\t\t\t\t\tdatacenters.add(node.data.datacenter);\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\tconst select = document.getElementById('filter-datacenter');\n\t\t\t\t// Keep the \"All Datacenters\" option\n\t\t\t\tselect.innerHTML = '<option value=\"all\">All Datacenters</option>';\n\n\t\t\t\t// Add unique datacenters\n\t\t\t\tArray.from(datacenters).sort().forEach(dc => {\n\t\t\t\t\tconst option = document.createElement('option');\n\t\t\t\t\toption.value = dc;\n\t\t\t\t\toption.textContent = dc;\n\t\t\t\t\tselect.appendChild(option);\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Apply filters to graph data\n\t\t\tfunction applyFilters(data, filters) {\n\t\t\t\tlet filteredNodes = data.nodes.filter(node => {\n\t\t\t\t\tconst nodeData = node.data;\n\n\t\t\t\t\t// Filter by type\n\t\t\t\t\tif (filters.type !== 'all' && nodeData.type !== filters.type) {\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\n\t\t\t\t\t// Filter by status\n\t\t\t\t\tif (filters.status !== 'all' && nodeData.status !== filters.status) {\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\n\t\t\t\t\t// Filter by datacenter (for hosts and containers)\n\t\t\t\t\tif (filters.datacenter !== 'all' && nodeData.datacenter !== filters.datacenter) {\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\n\t\t\t\t\treturn true;\n\t\t\t\t});\n\n\t\t\t\t// Get IDs of filtered nodes\n\t\t\t\tconst nodeIds = new Set(filteredNodes.map(n => n.data.id));\n\n\t\t\t\t// Filter edges to only include those connecting visible nodes\n\t\t\t\tconst filteredEdges = data.edges.filter(edge => {\n\t\t\t\t\tconst source = edge.data.source;\n\t\t\t\t\tconst target = edge.data.target;\n\t\t\t\t\treturn nodeIds.has(source) && nodeIds.has(target);\n\t\t\t\t});\n\n\t\t\t\treturn {\n\t\t\t\t\tnodes: filteredNodes,\n\t\t\t\t\tedges: filteredEdges\n\t\t\t\t};\n\t\t\t}\n\n\t\t\t// Reapply filters and redraw graph\n\t\t\tfunction reapplyFilters() {\n\t\t\t\tconst layout = document.getElementById('layout-select').value;\n\t\t\t\tconst filteredData = applyFilters(originalData, currentFilters);\n\n\t\t\t\t// Update stats\n\t\t\t\tconst stats = {\n\t\t\t\t\tnodes: filteredData.nodes.length,\n\t\t\t\t\thosts: filteredData.nodes.filter(n => n.data.type === 'host').length,\n\t\t\t\t\tcontainers: filteredData.nodes.filter(n => n.data.type === 'container').length,\n\t\t\t\t\tedges: filteredData.edges.length\n\t\t\t\t};\n\n\t\t\t\tdocument.getElementById('stat-nodes').textContent = stats.nodes;\n\t\t\t\tdocument.getElementById('stat-hosts').textContent = stats.hosts;\n\t\t\t\tdocument.getElementById('stat-containers').textContent = stats.containers;\n\t\t\t\tdocument.getElementById('stat-edges').textContent = stats.edges;\n\n\t\t\t\t// Recreate graph with filtered data\n\t\t\t\tif (cy) {\n\t\t\t\t\tcy.destroy();\n\t\t\t\t}\n\n\t\t\t\tcy = cytoscape({\n\t\t\t\t\tcontainer: document.getElementById('cy'),\n\t\t\t\t\telements: filteredData,\n\t\t\t\t\tstyle: [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t'label': 'data(label)',\n\t\t\t\t\t\t\t\t'color': '#f1f5f9',\n\t\t\t\t\t\t\t\t'text-valign': 'center',\n\t\t\t\t\t\t\t\t'text-halign': 'center',\n\t\t\t\t\t\t\t\t'font-size': '12px',\n\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t'border-width': 2,\n\t\t\t\t\t\t\t\t'border-color': '#8b5cf6'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[type=\"host\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t'shape': 'rectangle',\n\t\t\t\t\t\t\t\t'width': 80,\n\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t'border-color': '#4f46e5'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[type=\"container\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#10b981',\n\t\t\t\t\t\t\t\t'shape': 'ellipse',\n\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t'height': 60\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[status=\"stopped\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#94a3b8',\n\t\t\t\t\t\t\t\t'opacity': 0.7\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[status=\"running\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#10b981'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'edge',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'width': 2,\n\t\t\t\t\t\t\t\t'line-color': '#475569',\n\t\t\t\t\t\t\t\t'target-arrow-color': '#475569',\n\t\t\t\t\t\t\t\t'target-arrow-shape': 'triangle',\n\t\t\t\t\t\t\t\t'curve-style': 'bezier',\n\t\t\t\t\t\t\t\t'arrow-scale': 1.5\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node:selected',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'border-width': 4,\n\t\t\t\t\t\t\t\t'border-color': '#f59e0b'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\tlayout: {\n\t\t\t\t\t\tname: layout,\n\t\t\t\t\t\tanimate: true,\n\t\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\t\tfit: true,\n\t\t\t\t\t\tpadding: 50,\n\t\t\t\t\t\trandomize: false,\n\t\t\t\t\t\tcomponentSpacing: 100,\n\t\t\t\t\t\tnodeRepulsion: 400000,\n\t\t\t\t\t\tidealEdgeLength: 100,\n\t\t\t\t\t\tedgeElasticity: 100\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Re-add node click handlers for modal\n\t\t\t\tcy.on('tap', 'node', function(evt) {\n\t\t\t\t\tconst node = evt.target;\n\t\t\t\t\tconst data = node.data();\n\t\t\t\t\tshowNodeInfoModal(data);\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Filter event listeners\n\t\t\tdocument.getElementById('filter-type').addEventListener('change', function(e) {\n\t\t\t\tcurrentFilters.type = e.target.value;\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\tdocument.getElementById('filter-status').addEventListener('change', function(e) {\n\t\t\t\tcurrentFilters.status = e.target.value;\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\tdocument.getElementById('filter-datacenter').addEventListener('change', function(e) {\n\t\t\t\tcurrentFilters.datacenter = e.target.value;\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-clear-filters').addEventListener('click', function() {\n\t\t\t\tcurrentFilters = { type: 'all', status: 'all', datacenter: 'all' };\n\t\t\t\tdocument.getElementById('filter-type').value = 'all';\n\t\t\t\tdocument.getElementById('filter-status').value = 'all';\n\t\t\t\tdocument.getElementById('filter-datacenter').value = 'all';\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\t// WebSocket connection for real-time updates\n\t\t\tlet ws = null;\n\t\t\tlet wsReconnectAttempts = 0;\n\t\t\tconst maxReconnectAttempts = 10;\n\t\t\tconst reconnectDelay = 3000;\n\n\t\t\tfunction connectWebSocket() {\n\t\t\t\tconst protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';\n\t\t\t\tconst wsURL = `${protocol}//${window.location.host}/api/v1/ws/graph`;\n\n\t\t\t\ttry {\n\t\t\t\t\tws = new WebSocket(wsURL);\n\n\t\t\t\t\tws.onopen = function() {\n\t\t\t\t\t\tconsole.log('WebSocket connected');\n\t\t\t\t\t\twsReconnectAttempts = 0;\n\t\t\t\t\t\t// Add connection indicator\n\t\t\t\t\t\tconst indicator = document.createElement('div');\n\t\t\t\t\t\tindicator.id = 'ws-status';\n\t\t\t\t\t\tindicator.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 8px 16px; border-radius: 4px; font-size: 14px; z-index: 1000;';\n\t\t\t\t\t\tindicator.textContent = '● Connected';\n\t\t\t\t\t\tdocument.body.appendChild(indicator);\n\t\t\t\t\t\tsetTimeout(() => indicator.remove(), 3000);\n\t\t\t\t\t};\n\n\t\t\t\t\tws.onmessage = function(event) {\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tconst graphEvent = JSON.parse(event.data);\n\t\t\t\t\t\t\tconsole.log('WebSocket event received:', graphEvent);\n\t\t\t\t\t\t\thandleGraphEvent(graphEvent);\n\t\t\t\t\t\t} catch (error) {\n\t\t\t\t\t\t\tconsole.error('Failed to parse WebSocket message:', error);\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\n\t\t\t\t\tws.onerror = function(error) {\n\t\t\t\t\t\tconsole.error('WebSocket error:', error);\n\t\t\t\t\t};\n\n\t\t\t\t\tws.onclose = function() {\n\t\t\t\t\t\tconsole.log('WebSocket disconnected');\n\t\t\t\t\t\t// Remove connection indicator if exists\n\t\t\t\t\t\tconst indicator = document.getElementById('ws-status');\n\t\t\t\t\t\tif (indicator) indicator.remove();\n\n\t\t\t\t\t\t// Attempt reconnection\n\t\t\t\t\t\tif (wsReconnectAttempts < maxReconnectAttempts) {\n\t\t\t\t\t\t\twsReconnectAttempts++;\n\t\t\t\t\t\t\tconsole.log(`Reconnecting WebSocket (attempt ${wsReconnectAttempts}/${maxReconnectAttempts})...`);\n\t\t\t\t\t\t\tsetTimeout(connectWebSocket, reconnectDelay);\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tconsole.error('Max WebSocket reconnection attempts reached');\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\t\t\t\t} catch (error) {\n\t\t\t\t\tconsole.error('Failed to create WebSocket connection:', error);\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleGraphEvent(event) {\n\t\t\t\tif (!cy) return;\n\n\t\t\t\tswitch (event.type) {\n\t\t\t\t\tcase 'container_added':\n\t\t\t\t\t\thandleContainerAdded(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'container_updated':\n\t\t\t\t\t\thandleContainerUpdated(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'container_removed':\n\t\t\t\t\t\thandleContainerRemoved(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'host_added':\n\t\t\t\t\t\thandleHostAdded(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'host_updated':\n\t\t\t\t\t\thandleHostUpdated(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'host_removed':\n\t\t\t\t\t\thandleHostRemoved(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'graph_refresh':\n\t\t\t\t\t\t// Refresh the entire graph\n\t\t\t\t\t\tconst layout = document.getElementById('layout-select').value;\n\t\t\t\t\t\tinitGraph(layout);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tdefault:\n\t\t\t\t\t\tconsole.warn('Unknown event type:', event.type);\n\t\t\t\t}\n\n\t\t\t\t// Update stats after any change\n\t\t\t\tupdateStats();\n\t\t\t}\n\n\t\t\tfunction handleContainerAdded(container) {\n\t\t\t\tconst nodeId = container['@id'] || container.id;\n\n\t\t\t\t// Check if node already exists\n\t\t\t\tif (cy.$('#' + nodeId).length > 0) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\t// Add container node\n\t\t\t\tcy.add({\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tid: nodeId,\n\t\t\t\t\t\tlabel: container.name,\n\t\t\t\t\t\ttype: 'container',\n\t\t\t\t\t\tstatus: container.status,\n\t\t\t\t\t\timage: container.image\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Add edge to host if hostedOn exists\n\t\t\t\tif (container.hostedOn) {\n\t\t\t\t\tconst hostId = container.hostedOn['@id'] || container.hostedOn;\n\t\t\t\t\tif (cy.$('#' + hostId).length > 0) {\n\t\t\t\t\t\tcy.add({\n\t\t\t\t\t\t\tdata: {\n\t\t\t\t\t\t\t\tid: 'edge-' + nodeId,\n\t\t\t\t\t\t\t\tsource: hostId,\n\t\t\t\t\t\t\t\ttarget: nodeId\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Animate the new node\n\t\t\t\tcy.$('#' + nodeId).animate({\n\t\t\t\t\tstyle: { opacity: 1 }\n\t\t\t\t}, {\n\t\t\t\t\tduration: 500\n\t\t\t\t});\n\n\t\t\t\t// Re-layout the graph\n\t\t\t\tcy.layout({\n\t\t\t\t\tname: document.getElementById('layout-select').value,\n\t\t\t\t\tanimate: true,\n\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\tfit: false\n\t\t\t\t}).run();\n\n\t\t\t\tshowNotification('Container added: ' + container.name, 'success');\n\t\t\t}\n\n\t\t\tfunction handleContainerUpdated(container) {\n\t\t\t\tconst nodeId = container['@id'] || container.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Update node data\n\t\t\t\t\tnode.data({\n\t\t\t\t\t\tlabel: container.name,\n\t\t\t\t\t\tstatus: container.status,\n\t\t\t\t\t\timage: container.image\n\t\t\t\t\t});\n\n\t\t\t\t\t// Flash animation\n\t\t\t\t\tnode.animate({\n\t\t\t\t\t\tstyle: { 'border-width': '4px' }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 300,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\tnode.animate({\n\t\t\t\t\t\t\t\tstyle: { 'border-width': '2px' }\n\t\t\t\t\t\t\t}, {\n\t\t\t\t\t\t\t\tduration: 300\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Container updated: ' + container.name, 'info');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleContainerRemoved(data) {\n\t\t\t\tconst nodeId = data.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Fade out animation\n\t\t\t\t\tnode.animate({\n\t\t\t\t\t\tstyle: { opacity: 0 }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 500,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\t// Remove node and connected edges\n\t\t\t\t\t\t\tnode.remove();\n\t\t\t\t\t\t\tcy.$('#edge-' + nodeId).remove();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Container removed', 'warning');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleHostAdded(host) {\n\t\t\t\tconst nodeId = host['@id'] || host.id;\n\n\t\t\t\t// Check if node already exists\n\t\t\t\tif (cy.$('#' + nodeId).length > 0) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\t// Add host node\n\t\t\t\tcy.add({\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tid: nodeId,\n\t\t\t\t\t\tlabel: host.name,\n\t\t\t\t\t\ttype: 'host',\n\t\t\t\t\t\tstatus: host.status,\n\t\t\t\t\t\tip: host.ipAddress,\n\t\t\t\t\t\tcpu: host.cpuCores,\n\t\t\t\t\t\tmemory: host.memoryBytes\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Animate the new node\n\t\t\t\tcy.$('#' + nodeId).animate({\n\t\t\t\t\tstyle: { opacity: 1 }\n\t\t\t\t}, {\n\t\t\t\t\tduration: 500\n\t\t\t\t});\n\n\t\t\t\t// Re-layout the graph\n\t\t\t\tcy.layout({\n\t\t\t\t\tname: document.getElementById('layout-select').value,\n\t\t\t\t\tanimate: true,\n\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\tfit: false\n\t\t\t\t}).run();\n\n\t\t\t\tshowNotification('Host added: ' + host.name, 'success');\n\t\t\t}\n\n\t\t\tfunction handleHostUpdated(host) {\n\t\t\t\tconst nodeId = host['@id'] || host.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Update node data\n\t\t\t\t\tnode.data({\n\t\t\t\t\t\tlabel: host.name,\n\t\t\t\t\t\tstatus: host.status,\n\t\t\t\t\t\tip: host.ipAddress,\n\t\t\t\t\t\tcpu: host.cpuCores,\n\t\t\t\t\t\tmemory: host.memoryBytes\n\t\t\t\t\t});\n\n\t\t\t\t\t// Flash animation\n\t\t\t\t\tnode.animate({\n\t\t\t\t\t\tstyle: { 'border-width': '6px' }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 300,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\tnode.animate({\n\t\t\t\t\t\t\t\tstyle: { 'border-width': '3px' }\n\t\t\t\t\t\t\t}, {\n\t\t\t\t\t\t\t\tduration: 300\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Host updated: ' + host.name, 'info');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleHostRemoved(data) {\n\t\t\t\tconst nodeId = data.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Get all containers connected to this host\n\t\t\t\t\tconst connectedContainers = cy.$('#' + nodeId).neighborhood('node[type=\"container\"]');\n\n\t\t\t\t\t// Fade out animation for host and containers\n\t\t\t\t\tnode.add(connectedContainers).animate({\n\t\t\t\t\t\tstyle: { opacity: 0 }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 500,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\t// Remove host, containers, and edges\n\t\t\t\t\t\t\tnode.add(connectedContainers).remove();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Host removed', 'warning');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction updateStats() {\n\t\t\t\tif (!cy) return;\n\n\t\t\t\tconst hosts = cy.nodes('[type=\"host\"]').length;\n\t\t\t\tconst containers = cy.nodes('[type=\"container\"]').length;\n\t\t\t\tconst edges = cy.edges().length;\n\t\t\t\tconst totalNodes = hosts + containers;\n\n\t\t\t\tconst nodeCountEl = document.getElementById('stat-nodes');\n\t\t\t\tconst hostCountEl = document.getElementById('stat-hosts');\n\t\t\t\tconst containerCountEl = document.getElementById('stat-containers');\n\t\t\t\tconst edgeCountEl = document.getElementById('stat-edges');\n\n\t\t\t\tif (nodeCountEl) nodeCountEl.textContent = totalNodes;\n\t\t\t\tif (hostCountEl) hostCountEl.textContent = hosts;\n\t\t\t\tif (containerCountEl) containerCountEl.textContent = containers;\n\t\t\t\tif (edgeCountEl) edgeCountEl.textContent = edges;\n\t\t\t}\n\n\t\t\t// Activity tracking system (replaces individual notifications)\n\t\t\tconst activityLog = {\n\t\t\t\titems: [],\n\t\t\t\tmaxItems: 100,\n\t\t\t\tcounters: {},\n\t\t\t\tlastUpdate: Date.now(),\n\t\t\t\tbatchTimeout: null,\n\n\t\t\t\tadd: function(message, type = 'info') {\n\t\t\t\t\t// Update counter for batch aggregation\n\t\t\t\t\tconst key = `${type}:${message}`;\n\t\t\t\t\tif (!this.counters[key]) {\n\t\t\t\t\t\tthis.counters[key] = { count: 0, type: type, message: message, firstSeen: Date.now() };\n\t\t\t\t\t}\n\t\t\t\t\tthis.counters[key].count++;\n\t\t\t\t\tthis.counters[key].lastSeen = Date.now();\n\n\t\t\t\t\t// Schedule batch update\n\t\t\t\t\tclearTimeout(this.batchTimeout);\n\t\t\t\t\tthis.batchTimeout = setTimeout(() => this.flushBatch(), 2000);\n\t\t\t\t},\n\n\t\t\t\tflushBatch: function() {\n\t\t\t\t\t// Convert counters to log items\n\t\t\t\t\tfor (const key in this.counters) {\n\t\t\t\t\t\tconst counter = this.counters[key];\n\t\t\t\t\t\tconst displayMessage = counter.count > 1\n\t\t\t\t\t\t\t? `${counter.message} (${counter.count}x)`\n\t\t\t\t\t\t\t: counter.message;\n\n\t\t\t\t\t\tthis.items.unshift({\n\t\t\t\t\t\t\tmessage: displayMessage,\n\t\t\t\t\t\t\ttype: counter.type,\n\t\t\t\t\t\t\ttimestamp: counter.lastSeen,\n\t\t\t\t\t\t\tcount: counter.count\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\n\t\t\t\t\t// Clear counters\n\t\t\t\t\tthis.counters = {};\n\n\t\t\t\t\t// Keep only last maxItems\n\t\t\t\t\tif (this.items.length > this.maxItems) {\n\t\t\t\t\t\tthis.items = this.items.slice(0, this.maxItems);\n\t\t\t\t\t}\n\n\t\t\t\t\tthis.render();\n\t\t\t\t\tthis.showBadge();\n\t\t\t\t},\n\n\t\t\t\trender: function() {\n\t\t\t\t\tconst container = document.getElementById('activityList');\n\t\t\t\t\tif (!container) return;\n\n\t\t\t\t\tconst html = this.items.map(item => {\n\t\t\t\t\t\tconst time = new Date(item.timestamp).toLocaleTimeString();\n\t\t\t\t\t\tconst icon = {\n\t\t\t\t\t\t\tsuccess: '✓',\n\t\t\t\t\t\t\tinfo: 'ℹ',\n\t\t\t\t\t\t\twarning: '⚠',\n\t\t\t\t\t\t\terror: '✗'\n\t\t\t\t\t\t}[item.type] || 'ℹ';\n\n\t\t\t\t\t\treturn `\n\t\t\t\t\t\t\t<div class=\"activity-item activity-${item.type}\">\n\t\t\t\t\t\t\t\t<span class=\"activity-icon\">${icon}</span>\n\t\t\t\t\t\t\t\t<span class=\"activity-message\">${item.message}</span>\n\t\t\t\t\t\t\t\t<span class=\"activity-time\">${time}</span>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t`;\n\t\t\t\t\t}).join('');\n\n\t\t\t\t\tcontainer.innerHTML = html || '<div class=\"activity-empty\">No recent activity</div>';\n\t\t\t\t},\n\n\t\t\t\tshowBadge: function() {\n\t\t\t\t\tconst badge = document.getElementById('activityBadge');\n\t\t\t\t\tconst totalCount = this.items.reduce((sum, item) => sum + (item.count || 1), 0);\n\n\t\t\t\t\tif (totalCount > 0) {\n\t\t\t\t\t\tbadge.textContent = totalCount > 99 ? '99+' : totalCount;\n\t\t\t\t\t\tbadge.style.display = 'flex';\n\t\t\t\t\t}\n\t\t\t\t},\n\n\t\t\t\tclearBadge: function() {\n\t\t\t\t\tconst badge = document.getElementById('activityBadge');\n\t\t\t\t\tbadge.style.display = 'none';\n\t\t\t\t}\n\t\t\t};\n\n\t\t\tfunction showNotification(message, type = 'info') {\n\t\t\t\tactivityLog.add(message, type);\n\t\t\t}\n\n\t\t\t// Activity panel toggle functions\n\t\t\twindow.toggleActivityPanel = function() {\n\t\t\t\tconst panel = document.getElementById('activityPanel');\n\t\t\t\tconst isOpen = panel.classList.contains('open');\n\n\t\t\t\tif (isOpen) {\n\t\t\t\t\tpanel.classList.remove('open');\n\t\t\t\t} else {\n\t\t\t\t\tpanel.classList.add('open');\n\t\t\t\t\tactivityLog.clearBadge();\n\t\t\t\t\tactivityLog.render();\n\t\t\t\t}\n\t\t\t};\n\n\t\t\twindow.clearActivityLog = function() {\n\t\t\t\tactivityLog.items = [];\n\t\t\t\tactivityLog.counters = [];\n\t\t\t\tactivityLog.render();\n\t\t\t\tactivityLog.clearBadge();\n\t\t\t};\n\n\t\t\t// Node info modal functions (exposed globally for onclick handlers)\n\t\t\twindow.showNodeInfoModal = function(data) {\n\t\t\t\tconst modal = document.getElementById('nodeInfoModal');\n\t\t\t\tconst title = document.getElementById('nodeInfoTitle');\n\t\t\t\tconst typeEl = document.getElementById('nodeInfoType');\n\t\t\t\tconst content = document.getElementById('nodeInfoContent');\n\n\t\t\t\t// Set title based on type\n\t\t\t\tconst icon = data.type === 'host' ? '🖥️' : '📦';\n\t\t\t\ttitle.textContent = icon + ' ' + (data.label || data.id);\n\n\t\t\t\t// Set type badge\n\t\t\t\ttypeEl.textContent = data.type.toUpperCase();\n\t\t\t\ttypeEl.className = 'node-info-type ' + (data.type === 'host' ? 'type-host' : 'type-container');\n\n\t\t\t\t// Build content based on type\n\t\t\t\tlet html = '';\n\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">ID:</span><span class=\"node-info-value\">' + (data.id || 'N/A') + '</span></div>';\n\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">Status:</span><span class=\"node-info-value\"><span class=\"badge badge-' + (data.status || 'unknown') + '\">' + (data.status || 'N/A').toUpperCase() + '</span></span></div>';\n\n\t\t\t\tif (data.type === 'host') {\n\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">IP Address:</span><span class=\"node-info-value\">' + (data.ip || 'N/A') + '</span></div>';\n\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">CPU:</span><span class=\"node-info-value\">' + (data.cpu || 'N/A') + '</span></div>';\n\t\t\t\t\tif (data.memory) {\n\t\t\t\t\t\tconst memoryGB = (data.memory / 1024 / 1024 / 1024).toFixed(1);\n\t\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">Memory:</span><span class=\"node-info-value\">' + memoryGB + ' GB</span></div>';\n\t\t\t\t\t} else {\n\t\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">Memory:</span><span class=\"node-info-value\">N/A</span></div>';\n\t\t\t\t\t}\n\t\t\t\t\tif (data.datacenter) {\n\t\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">Datacenter:</span><span class=\"node-info-value\">' + data.datacenter + '</span></div>';\n\t\t\t\t\t}\n\t\t\t\t} else if (data.type === 'container') {\n\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">Image:</span><span class=\"node-info-value\">' + (data.image || 'N/A') + '</span></div>';\n\t\t\t\t\tif (data.command) {\n\t\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">Command:</span><span class=\"node-info-value\" style=\"font-family: monospace; font-size: 0.85rem;\">' + data.command + '</span></div>';\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\tcontent.innerHTML = html;\n\t\t\t\tmodal.style.display = 'flex';\n\t\t\t};\n\n\t\t\twindow.closeNodeInfoModal = function() {\n\t\t\t\tconst modal = document.getElementById('nodeInfoModal');\n\t\t\t\tmodal.style.display = 'none';\n\t\t\t};\n\n\t\t\t// Close modal when clicking outside (on the backdrop)\n\t\t\twindow.addEventListener('click', function(event) {\n\t\t\t\tconst modal = document.getElementById('nodeInfoModal');\n\t\t\t\tif (event.target === modal) {\n\t\t\t\t\tcloseNodeInfoModal();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Close modal on Escape key\n\t\t\tdocument.addEventListener('keydown', function(event) {\n\t\t\t\tif (event.key === 'Escape') {\n\t\t\t\t\tcloseNodeInfoModal();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Initialize graph on page load\n\t\t\tinitGraph();\n\n\t\t\t// Connect WebSocket after graph is initialized\n\t\t\tsetTimeout(connectWebSocket, 1000);\n\t\t})();\n\t\t</script> <!-- Activity Panel --> <div id=\"activityPanel\" class=\"activity-panel\"><div class=\"activity-header\"><h3>Activity Log</h3><div class=\"activity-header-actions\"><button type=\"button\" class=\"btn-icon\" onclick=\"clearActivityLog()\" title=\"Clear all\">✕</button> <button type=\"button\" class=\"btn-icon\" onclick=\"toggleActivityPanel()\" title=\"Close\">▼</button></div></div><div class=\"activity-body\"><div id=\"activityList\"></div></div></div><!-- Activity Toggle Button --> <button id=\"activityToggle\" class=\"activity-toggle\" onclick=\"toggleActivityPanel()\"><span class=\"activity-icon\">📊</span> <span class=\"activity-label\">Activity</span> <span id=\"activityBadge\" class=\"activity-badge\">0</span></button><!-- Node Info Modal --> <div id=\"nodeInfoModal\" class=\"modal\"><div class=\"modal-content\"><div class=\"modal-header\"><h3 id=\"nodeInfoTitle\">Node Information</h3><span class=\"node-info-type\" id=\"nodeInfoType\">NODE</span></div><div class=\"modal-body\"><div id=\"nodeInfoContent\"></div></div><div class=\"modal-footer\"><button type=\"button\" class=\"btn btn-secondary\" onclick=\"closeNodeInfoModal()\">Close</button></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 166, "<div class=\"page-header\"><h2>Infrastructure Graph</h2><div class=\"filters\"><div class=\"graph-control-group\"><label for=\"view-mode-select\">View Mode:</label> <select id=\"view-mode-select\" name=\"view-mode\"><option value=\"stack\" selected>Stack View</option> <option value=\"host\">Host View (Legacy)</option> <option value=\"hybrid\">Hybrid (Stacks + Orphans)</option> <option value=\"stack-only\">Stack Overview</option></select></div><div class=\"graph-control-group\"><label for=\"layout-select\">Layout:</label> <select id=\"layout-select\" name=\"layout\"><option value=\"cose-bilkent\">Hierarchical (COSE-Bilkent)</option> <option value=\"cose\">Force Directed (COSE)</option> <option value=\"breadthfirst\">Breadthfirst</option> <option value=\"grid\">Grid</option> <option value=\"circle\">Circle</option> <option value=\"concentric\">Concentric</option></select></div><div class=\"graph-control-group\"><label><input type=\"checkbox\" id=\"show-orphans\" name=\"orphans\"> Show orphaned containers</label></div><div class=\"graph-control-group\"><label for=\"filter-type\">Node Type:</label> <select id=\"filter-type\" name=\"type\"><option value=\"all\">All Types</option> <option value=\"stack\">Stacks Only</option> <option value=\"host\">Hosts Only</option> <option value=\"container\">Containers Only</option></select></div><div class=\"graph-control-group\"><label for=\"filter-status\">Status:</label> <select id=\"filter-status\" name=\"status\"><option value=\"all\">All Status</option> <option value=\"running\">Running</option> <option value=\"stopped\">Stopped</option> <option value=\"paused\">Paused</option></select></div><div class=\"graph-control-group\"><label for=\"filter-datacenter\">Datacenter:</label> <select id=\"filter-datacenter\" name=\"datacenter\"><option value=\"all\">All Datacenters</option></select></div><button class=\"btn btn-secondary\" id=\"btn-clear-filters\">Clear Filters</button></div></div><div class=\"graph-container\"><div class=\"graph-legend\"><div class=\"legend-item\"><div class=\"legend-color stack\"></div><span>Stacks</span></div><div class=\"legend-item\"><div class=\"legend-color host\"></div><span>Hosts</span></div><div class=\"legend-item\"><div class=\"legend-color container-running\"></div><span>Running Containers</span></div><div class=\"legend-item\"><div class=\"legend-color container-stopped\"></div><span>Stopped Containers</span></div><div class=\"legend-item\"><div class=\"legend-color orphan\"></div><span>Orphaned Containers</span></div></div><div id=\"graph-stats\" class=\"graph-stats\"><div class=\"graph-stat-item\"><div class=\"label\">Total Nodes</div><div class=\"value\" id=\"stat-nodes\">-</div></div><div class=\"graph-stat-item\"><div class=\"label\">Stacks</div><div class=\"value\" id=\"stat-stacks\">-</div></div><div class=\"graph-stat-item\"><div class=\"label\">Hosts</div><div class=\"value\" id=\"stat-hosts\">-</div></div><div class=\"graph-stat-item\"><div class=\"label\">Containers</div><div class=\"value\" id=\"stat-containers\">-</div></div><div class=\"graph-stat-item\"><div class=\"label\">Relationships</div><div class=\"value\" id=\"stat-edges\">-</div></div></div><div class=\"graph-controls\"><div class=\"action-buttons\"><button class=\"btn btn-primary\" id=\"btn-fit\">Fit to Screen</button> <button class=\"btn btn-secondary\" id=\"btn-center\">Center</button> <button class=\"btn btn-secondary\" id=\"btn-refresh\">Refresh Data</button> <button class=\"btn btn-secondary\" id=\"btn-export-png\">Export PNG</button> <button class=\"btn btn-secondary\" id=\"btn-export-svg\">Export SVG</button> <button class=\"btn btn-secondary\" id=\"btn-export-json\">Export JSON</button></div></div><div id=\"cy\"></div></div><script src=\"https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js\"></script> <script src=\"https://unpkg.com/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.js\"></script> <script>\n\t\t(function() {\n\t\t\tlet cy;\n\t\t\tlet originalData = { nodes: [], edges: [] };\n\t\t\tlet currentFilters = { type: 'all', status: 'all', datacenter: 'all' };\n\t\t\tlet currentViewMode = 'stack';\n\t\t\tlet showOrphans = false;\n\n\t\t\t// Register cose-bilkent layout\n\t\t\tif (typeof cytoscape !== 'undefined' && typeof cytoscapeCoseBilkent !== 'undefined') {\n\t\t\t\tcytoscape.use(cytoscapeCoseBilkent);\n\t\t\t}\n\n\t\t\t// Build API URL based on view mode\n\t\t\tfunction getGraphAPIUrl() {\n\t\t\t\tconst viewMode = document.getElementById('view-mode-select').value || 'stack';\n\t\t\t\tconst orphans = document.getElementById('show-orphans').checked;\n\n\t\t\t\tif (viewMode === 'host') {\n\t\t\t\t\treturn '/api/v1/graph'; // Legacy host-centric endpoint\n\t\t\t\t}\n\n\t\t\t\treturn `/api/v1/graph/stack-view?view=${viewMode}&orphans=${orphans}`;\n\t\t\t}\n\n\t\t\t// Initialize Cytoscape\n\t\t\tfunction initGraph(layout = 'cose-bilkent') {\n\t\t\t\tconst apiUrl = getGraphAPIUrl();\n\n\t\t\t\tfetch(apiUrl)\n\t\t\t\t\t.then(response => response.json())\n\t\t\t\t\t.then(data => {\n\t\t\t\t\t\t// Store original data\n\t\t\t\t\t\toriginalData = {\n\t\t\t\t\t\t\tnodes: data.nodes || [],\n\t\t\t\t\t\t\tedges: data.edges || []\n\t\t\t\t\t\t};\n\n\t\t\t\t\t\t// Populate datacenter filter with unique datacenters\n\t\t\t\t\t\tpopulateDatacenterFilter(originalData.nodes);\n\n\t\t\t\t\t\t// Apply current filters\n\t\t\t\t\t\tconst elements = applyFilters(originalData, currentFilters);\n\n\t\t\t\t\t\t// Update stats\n\t\t\t\t\t\tconst stats = {\n\t\t\t\t\t\t\tnodes: elements.nodes.length,\n\t\t\t\t\t\t\tstacks: elements.nodes.filter(n => n.data.type === 'stack').length,\n\t\t\t\t\t\t\thosts: elements.nodes.filter(n => n.data.type === 'host').length,\n\t\t\t\t\t\t\tcontainers: elements.nodes.filter(n => n.data.type === 'container').length,\n\t\t\t\t\t\t\tedges: elements.edges.length\n\t\t\t\t\t\t};\n\n\t\t\t\t\t\tdocument.getElementById('stat-nodes').textContent = stats.nodes;\n\t\t\t\t\t\tdocument.getElementById('stat-stacks').textContent = stats.stacks;\n\t\t\t\t\t\tdocument.getElementById('stat-hosts').textContent = stats.hosts;\n\t\t\t\t\t\tdocument.getElementById('stat-containers').textContent = stats.containers;\n\t\t\t\t\t\tdocument.getElementById('stat-edges').textContent = stats.edges;\n\n\t\t\t\t\t\t// Initialize or update graph\n\t\t\t\t\t\tif (cy) {\n\t\t\t\t\t\t\tcy.destroy();\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tcy = cytoscape({\n\t\t\t\t\t\t\tcontainer: document.getElementById('cy'),\n\t\t\t\t\t\t\telements: elements,\n\t\t\t\t\t\t\tstyle: [\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t\t\t'label': 'data(label)',\n\t\t\t\t\t\t\t\t\t\t'color': '#f1f5f9',\n\t\t\t\t\t\t\t\t\t\t'text-valign': 'center',\n\t\t\t\t\t\t\t\t\t\t'text-halign': 'center',\n\t\t\t\t\t\t\t\t\t\t'font-size': '12px',\n\t\t\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t\t\t'border-width': 2,\n\t\t\t\t\t\t\t\t\t\t'border-color': '#8b5cf6'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t// Stack nodes (compound/parent nodes)\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[type=\"stack\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#f0f9ff',\n\t\t\t\t\t\t\t\t\t\t'background-opacity': 0.2,\n\t\t\t\t\t\t\t\t\t\t'shape': 'roundrectangle',\n\t\t\t\t\t\t\t\t\t\t'border-width': 4,\n\t\t\t\t\t\t\t\t\t\t'border-color': '#3b82f6',\n\t\t\t\t\t\t\t\t\t\t'border-style': 'solid',\n\t\t\t\t\t\t\t\t\t\t'label': 'data(label)',\n\t\t\t\t\t\t\t\t\t\t'text-valign': 'top',\n\t\t\t\t\t\t\t\t\t\t'text-halign': 'center',\n\t\t\t\t\t\t\t\t\t\t'text-margin-y': -10,\n\t\t\t\t\t\t\t\t\t\t'font-size': '18px',\n\t\t\t\t\t\t\t\t\t\t'font-weight': 'bold',\n\t\t\t\t\t\t\t\t\t\t'color': '#1e40af',\n\t\t\t\t\t\t\t\t\t\t'padding': '20px'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[type=\"host\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#ede9fe',\n\t\t\t\t\t\t\t\t\t\t'background-opacity': 0.3,\n\t\t\t\t\t\t\t\t\t\t'shape': 'roundrectangle',\n\t\t\t\t\t\t\t\t\t\t'width': 100,\n\t\t\t\t\t\t\t\t\t\t'height': 80,\n\t\t\t\t\t\t\t\t\t\t'border-width': 3,\n\t\t\t\t\t\t\t\t\t\t'border-color': '#8b5cf6',\n\t\t\t\t\t\t\t\t\t\t'label': 'data(label)',\n\t\t\t\t\t\t\t\t\t\t'text-valign': 'top',\n\t\t\t\t\t\t\t\t\t\t'text-halign': 'center',\n\t\t\t\t\t\t\t\t\t\t'font-size': '14px',\n\t\t\t\t\t\t\t\t\t\t'color': '#6d28d9',\n\t\t\t\t\t\t\t\t\t\t'padding': '15px'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[type=\"container\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#10b981',\n\t\t\t\t\t\t\t\t\t\t'shape': 'ellipse',\n\t\t\t\t\t\t\t\t\t\t'width': 50,\n\t\t\t\t\t\t\t\t\t\t'height': 50,\n\t\t\t\t\t\t\t\t\t\t'font-size': '11px'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t// Orphaned containers\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[metadata.orphan=\"true\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#f59e0b',\n\t\t\t\t\t\t\t\t\t\t'border-color': '#d97706',\n\t\t\t\t\t\t\t\t\t\t'border-width': 3\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[status=\"stopped\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#94a3b8',\n\t\t\t\t\t\t\t\t\t\t'opacity': 0.7\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node[status=\"running\"]',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'background-color': '#10b981'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'edge',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'width': 2,\n\t\t\t\t\t\t\t\t\t\t'line-color': '#475569',\n\t\t\t\t\t\t\t\t\t\t'target-arrow-color': '#475569',\n\t\t\t\t\t\t\t\t\t\t'target-arrow-shape': 'triangle',\n\t\t\t\t\t\t\t\t\t\t'curve-style': 'bezier',\n\t\t\t\t\t\t\t\t\t\t'arrow-scale': 1.5\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\tselector: 'node:selected',\n\t\t\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t\t\t'border-width': 4,\n\t\t\t\t\t\t\t\t\t\t'border-color': '#f59e0b'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\tlayout: {\n\t\t\t\t\t\t\t\tname: layout,\n\t\t\t\t\t\t\t\tanimate: true,\n\t\t\t\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\t\t\t\tfit: true,\n\t\t\t\t\t\t\t\tpadding: 50,\n\t\t\t\t\t\t\t\trandomize: false,\n\t\t\t\t\t\t\t\tcomponentSpacing: 100,\n\t\t\t\t\t\t\t\tnodeRepulsion: 400000,\n\t\t\t\t\t\t\t\tidealEdgeLength: 100,\n\t\t\t\t\t\t\t\tedgeElasticity: 100,\n\t\t\t\t\t\t\t\t// Compound node options (for cose-bilkent)\n\t\t\t\t\t\t\t\tnestingFactor: 0.1,\n\t\t\t\t\t\t\t\tgravity: 0.25,\n\t\t\t\t\t\t\t\tnumIter: 2500,\n\t\t\t\t\t\t\t\ttile: true,\n\t\t\t\t\t\t\t\ttilingPaddingVertical: 10,\n\t\t\t\t\t\t\t\ttilingPaddingHorizontal: 10,\n\t\t\t\t\t\t\t\tgravityRangeCompound: 1.5,\n\t\t\t\t\t\t\t\tgravityCompound: 1.0,\n\t\t\t\t\t\t\t\tgravityRange: 3.8\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\t// Add tooltips on hover\n\t\t\t\t\t\tcy.on('tap', 'node', function(evt) {\n\t\t\t\t\t\t\tconst node = evt.target;\n\t\t\t\t\t\t\tconst data = node.data();\n\t\t\t\t\t\t\tlet info = `Type: ${data.type}\\\\nID: ${data.id}\\\\nStatus: ${data.status || 'N/A'}`;\n\t\t\t\t\t\t\tif (data.type === 'stack') {\n\t\t\t\t\t\t\t\tinfo += `\\\\nContainers: ${data.containerCount || 0}\\\\nHosts: ${data.hostCount || 0}`;\n\t\t\t\t\t\t\t\tif (data.metadata && data.metadata.deploymentMode) {\n\t\t\t\t\t\t\t\t\tinfo += `\\\\nMode: ${data.metadata.deploymentMode}`;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t} else if (data.type === 'host') {\n\t\t\t\t\t\t\t\tinfo += `\\\\nIP: ${data.ip || 'N/A'}\\\\nCPU: ${data.cpu || 'N/A'}\\\\nMemory: ${data.memory ? (data.memory / 1024 / 1024 / 1024).toFixed(1) + ' GB' : 'N/A'}`;\n\t\t\t\t\t\t\t} else if (data.type === 'container') {\n\t\t\t\t\t\t\t\tinfo += `\\\\nImage: ${data.image || 'N/A'}`;\n\t\t\t\t\t\t\t\tif (data.metadata && data.metadata.stack) {\n\t\t\t\t\t\t\t\t\tinfo += `\\\\nStack: ${data.metadata.stack}`;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\tif (data.metadata && data.metadata.orphan) {\n\t\t\t\t\t\t\t\t\tinfo += `\\\\n⚠️ Orphaned Container`;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tshowNodeInfoModal(data);\n\t\t\t\t\t\t});\n\t\t\t\t\t})\n\t\t\t\t\t.catch(error => {\n\t\t\t\t\t\tconsole.error('Failed to load graph data:', error);\n\t\t\t\t\t\tdocument.getElementById('cy').innerHTML = '<div class=\"graph-loading\">Failed to load graph data</div>';\n\t\t\t\t\t});\n\t\t\t}\n\n\t\t\t// View mode selector\n\t\t\tdocument.getElementById('view-mode-select').addEventListener('change', function(e) {\n\t\t\t\tcurrentViewMode = e.target.value;\n\t\t\t\tconst currentLayout = document.getElementById('layout-select').value;\n\t\t\t\tinitGraph(currentLayout);\n\t\t\t});\n\n\t\t\t// Orphans checkbox\n\t\t\tdocument.getElementById('show-orphans').addEventListener('change', function(e) {\n\t\t\t\tshowOrphans = e.target.checked;\n\t\t\t\tconst currentLayout = document.getElementById('layout-select').value;\n\t\t\t\tinitGraph(currentLayout);\n\t\t\t});\n\n\t\t\t// Layout selector\n\t\t\tdocument.getElementById('layout-select').addEventListener('change', function(e) {\n\t\t\t\tif (cy) {\n\t\t\t\t\tcy.layout({\n\t\t\t\t\t\tname: e.target.value,\n\t\t\t\t\t\tanimate: true,\n\t\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\t\tfit: true,\n\t\t\t\t\t\tpadding: 50,\n\t\t\t\t\t\t// Compound node options\n\t\t\t\t\t\tnestingFactor: 0.1,\n\t\t\t\t\t\tgravity: 0.25,\n\t\t\t\t\t\tnumIter: 2500,\n\t\t\t\t\t\ttile: true\n\t\t\t\t\t}).run();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Control buttons\n\t\t\tdocument.getElementById('btn-fit').addEventListener('click', function() {\n\t\t\t\tif (cy) cy.fit();\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-center').addEventListener('click', function() {\n\t\t\t\tif (cy) cy.center();\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-refresh').addEventListener('click', function() {\n\t\t\t\tconst layout = document.getElementById('layout-select').value;\n\t\t\t\tinitGraph(layout);\n\t\t\t});\n\n\t\t\t// Export button handlers\n\t\t\tdocument.getElementById('btn-export-png').addEventListener('click', function() {\n\t\t\t\tif (!cy) return;\n\t\t\t\tconst png = cy.png({ full: true, scale: 2 });\n\t\t\t\tdownloadFile(png, 'graphium-graph.png');\n\t\t\t\tshowNotification('Graph exported as PNG', 'success');\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-export-svg').addEventListener('click', function() {\n\t\t\t\tif (!cy) return;\n\t\t\t\tconst svg = cy.svg({ full: true, scale: 1 });\n\t\t\t\tconst blob = new Blob([svg], { type: 'image/svg+xml' });\n\t\t\t\tconst url = URL.createObjectURL(blob);\n\t\t\t\tdownloadFile(url, 'graphium-graph.svg');\n\t\t\t\tURL.revokeObjectURL(url);\n\t\t\t\tshowNotification('Graph exported as SVG', 'success');\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-export-json').addEventListener('click', function() {\n\t\t\t\tif (!cy) return;\n\t\t\t\tconst graphData = {\n\t\t\t\t\tnodes: cy.nodes().map(node => node.json()),\n\t\t\t\t\tedges: cy.edges().map(edge => edge.json())\n\t\t\t\t};\n\t\t\t\tconst json = JSON.stringify(graphData, null, 2);\n\t\t\t\tconst blob = new Blob([json], { type: 'application/json' });\n\t\t\t\tconst url = URL.createObjectURL(blob);\n\t\t\t\tdownloadFile(url, 'graphium-graph.json');\n\t\t\t\tURL.revokeObjectURL(url);\n\t\t\t\tshowNotification('Graph exported as JSON', 'success');\n\t\t\t});\n\n\t\t\t// Helper function to download files\n\t\t\tfunction downloadFile(url, filename) {\n\t\t\t\tconst link = document.createElement('a');\n\t\t\t\tlink.href = url;\n\t\t\t\tlink.download = filename;\n\t\t\t\tdocument.body.appendChild(link);\n\t\t\t\tlink.click();\n\t\t\t\tdocument.body.removeChild(link);\n\t\t\t}\n\n\t\t\t// Populate datacenter filter with unique datacenters from nodes\n\t\t\tfunction populateDatacenterFilter(nodes) {\n\t\t\t\tconst datacenters = new Set();\n\t\t\t\tnodes.forEach(node => {\n\t\t\t\t\tif (node.data && node.data.datacenter) {\n\t\t\t\t\t\tdatacenters.add(node.data.datacenter);\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\tconst select = document.getElementById('filter-datacenter');\n\t\t\t\t// Keep the \"All Datacenters\" option\n\t\t\t\tselect.innerHTML = '<option value=\"all\">All Datacenters</option>';\n\n\t\t\t\t// Add unique datacenters\n\t\t\t\tArray.from(datacenters).sort().forEach(dc => {\n\t\t\t\t\tconst option = document.createElement('option');\n\t\t\t\t\toption.value = dc;\n\t\t\t\t\toption.textContent = dc;\n\t\t\t\t\tselect.appendChild(option);\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Apply filters to graph data\n\t\t\tfunction applyFilters(data, filters) {\n\t\t\t\tlet filteredNodes = data.nodes.filter(node => {\n\t\t\t\t\tconst nodeData = node.data;\n\n\t\t\t\t\t// Filter by type\n\t\t\t\t\tif (filters.type !== 'all' && nodeData.type !== filters.type) {\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\n\t\t\t\t\t// Filter by status\n\t\t\t\t\tif (filters.status !== 'all' && nodeData.status !== filters.status) {\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\n\t\t\t\t\t// Filter by datacenter (for hosts and containers)\n\t\t\t\t\tif (filters.datacenter !== 'all' && nodeData.datacenter !== filters.datacenter) {\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\n\t\t\t\t\treturn true;\n\t\t\t\t});\n\n\t\t\t\t// Get IDs of filtered nodes\n\t\t\t\tconst nodeIds = new Set(filteredNodes.map(n => n.data.id));\n\n\t\t\t\t// Filter edges to only include those connecting visible nodes\n\t\t\t\tconst filteredEdges = data.edges.filter(edge => {\n\t\t\t\t\tconst source = edge.data.source;\n\t\t\t\t\tconst target = edge.data.target;\n\t\t\t\t\treturn nodeIds.has(source) && nodeIds.has(target);\n\t\t\t\t});\n\n\t\t\t\treturn {\n\t\t\t\t\tnodes: filteredNodes,\n\t\t\t\t\tedges: filteredEdges\n\t\t\t\t};\n\t\t\t}\n\n\t\t\t// Reapply filters and redraw graph\n\t\t\tfunction reapplyFilters() {\n\t\t\t\tconst layout = document.getElementById('layout-select').value;\n\t\t\t\tconst filteredData = applyFilters(originalData, currentFilters);\n\n\t\t\t\t// Update stats\n\t\t\t\tconst stats = {\n\t\t\t\t\tnodes: filteredData.nodes.length,\n\t\t\t\t\thosts: filteredData.nodes.filter(n => n.data.type === 'host').length,\n\t\t\t\t\tcontainers: filteredData.nodes.filter(n => n.data.type === 'container').length,\n\t\t\t\t\tedges: filteredData.edges.length\n\t\t\t\t};\n\n\t\t\t\tdocument.getElementById('stat-nodes').textContent = stats.nodes;\n\t\t\t\tdocument.getElementById('stat-hosts').textContent = stats.hosts;\n\t\t\t\tdocument.getElementById('stat-containers').textContent = stats.containers;\n\t\t\t\tdocument.getElementById('stat-edges').textContent = stats.edges;\n\n\t\t\t\t// Recreate graph with filtered data\n\t\t\t\tif (cy) {\n\t\t\t\t\tcy.destroy();\n\t\t\t\t}\n\n\t\t\t\tcy = cytoscape({\n\t\t\t\t\tcontainer: document.getElementById('cy'),\n\t\t\t\t\telements: filteredData,\n\t\t\t\t\tstyle: [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t'label': 'data(label)',\n\t\t\t\t\t\t\t\t'color': '#f1f5f9',\n\t\t\t\t\t\t\t\t'text-valign': 'center',\n\t\t\t\t\t\t\t\t'text-halign': 'center',\n\t\t\t\t\t\t\t\t'font-size': '12px',\n\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t'border-width': 2,\n\t\t\t\t\t\t\t\t'border-color': '#8b5cf6'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[type=\"host\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#6366f1',\n\t\t\t\t\t\t\t\t'shape': 'rectangle',\n\t\t\t\t\t\t\t\t'width': 80,\n\t\t\t\t\t\t\t\t'height': 60,\n\t\t\t\t\t\t\t\t'border-color': '#4f46e5'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[type=\"container\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#10b981',\n\t\t\t\t\t\t\t\t'shape': 'ellipse',\n\t\t\t\t\t\t\t\t'width': 60,\n\t\t\t\t\t\t\t\t'height': 60\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[status=\"stopped\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#94a3b8',\n\t\t\t\t\t\t\t\t'opacity': 0.7\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node[status=\"running\"]',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'background-color': '#10b981'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'edge',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'width': 2,\n\t\t\t\t\t\t\t\t'line-color': '#475569',\n\t\t\t\t\t\t\t\t'target-arrow-color': '#475569',\n\t\t\t\t\t\t\t\t'target-arrow-shape': 'triangle',\n\t\t\t\t\t\t\t\t'curve-style': 'bezier',\n\t\t\t\t\t\t\t\t'arrow-scale': 1.5\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tselector: 'node:selected',\n\t\t\t\t\t\t\tstyle: {\n\t\t\t\t\t\t\t\t'border-width': 4,\n\t\t\t\t\t\t\t\t'border-color': '#f59e0b'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\tlayout: {\n\t\t\t\t\t\tname: layout,\n\t\t\t\t\t\tanimate: true,\n\t\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\t\tfit: true,\n\t\t\t\t\t\tpadding: 50,\n\t\t\t\t\t\trandomize: false,\n\t\t\t\t\t\tcomponentSpacing: 100,\n\t\t\t\t\t\tnodeRepulsion: 400000,\n\t\t\t\t\t\tidealEdgeLength: 100,\n\t\t\t\t\t\tedgeElasticity: 100\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Re-add node click handlers for modal\n\t\t\t\tcy.on('tap', 'node', function(evt) {\n\t\t\t\t\tconst node = evt.target;\n\t\t\t\t\tconst data = node.data();\n\t\t\t\t\tshowNodeInfoModal(data);\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Filter event listeners\n\t\t\tdocument.getElementById('filter-type').addEventListener('change', function(e) {\n\t\t\t\tcurrentFilters.type = e.target.value;\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\tdocument.getElementById('filter-status').addEventListener('change', function(e) {\n\t\t\t\tcurrentFilters.status = e.target.value;\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\tdocument.getElementById('filter-datacenter').addEventListener('change', function(e) {\n\t\t\t\tcurrentFilters.datacenter = e.target.value;\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\tdocument.getElementById('btn-clear-filters').addEventListener('click', function() {\n\t\t\t\tcurrentFilters = { type: 'all', status: 'all', datacenter: 'all' };\n\t\t\t\tdocument.getElementById('filter-type').value = 'all';\n\t\t\t\tdocument.getElementById('filter-status').value = 'all';\n\t\t\t\tdocument.getElementById('filter-datacenter').value = 'all';\n\t\t\t\treapplyFilters();\n\t\t\t});\n\n\t\t\t// WebSocket connection for real-time updates\n\t\t\tlet ws = null;\n\t\t\tlet wsReconnectAttempts = 0;\n\t\t\tconst maxReconnectAttempts = 10;\n\t\t\tconst reconnectDelay = 3000;\n\n\t\t\tfunction connectWebSocket() {\n\t\t\t\tconst protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';\n\t\t\t\tconst wsURL = `${protocol}//${window.location.host}/api/v1/ws/graph`;\n\n\t\t\t\ttry {\n\t\t\t\t\tws = new WebSocket(wsURL);\n\n\t\t\t\t\tws.onopen = function() {\n\t\t\t\t\t\tconsole.log('WebSocket connected');\n\t\t\t\t\t\twsReconnectAttempts = 0;\n\t\t\t\t\t\t// Add connection indicator\n\t\t\t\t\t\tconst indicator = document.createElement('div');\n\t\t\t\t\t\tindicator.id = 'ws-status';\n\t\t\t\t\t\tindicator.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 8px 16px; border-radius: 4px; font-size: 14px; z-index: 1000;';\n\t\t\t\t\t\tindicator.textContent = '● Connected';\n\t\t\t\t\t\tdocument.body.appendChild(indicator);\n\t\t\t\t\t\tsetTimeout(() => indicator.remove(), 3000);\n\t\t\t\t\t};\n\n\t\t\t\t\tws.onmessage = function(event) {\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tconst graphEvent = JSON.parse(event.data);\n\t\t\t\t\t\t\tconsole.log('WebSocket event received:', graphEvent);\n\t\t\t\t\t\t\thandleGraphEvent(graphEvent);\n\t\t\t\t\t\t} catch (error) {\n\t\t\t\t\t\t\tconsole.error('Failed to parse WebSocket message:', error);\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\n\t\t\t\t\tws.onerror = function(error) {\n\t\t\t\t\t\tconsole.error('WebSocket error:', error);\n\t\t\t\t\t};\n\n\t\t\t\t\tws.onclose = function() {\n\t\t\t\t\t\tconsole.log('WebSocket disconnected');\n\t\t\t\t\t\t// Remove connection indicator if exists\n\t\t\t\t\t\tconst indicator = document.getElementById('ws-status');\n\t\t\t\t\t\tif (indicator) indicator.remove();\n\n\t\t\t\t\t\t// Attempt reconnection\n\t\t\t\t\t\tif (wsReconnectAttempts < maxReconnectAttempts) {\n\t\t\t\t\t\t\twsReconnectAttempts++;\n\t\t\t\t\t\t\tconsole.log(`Reconnecting WebSocket (attempt ${wsReconnectAttempts}/${maxReconnectAttempts})...`);\n\t\t\t\t\t\t\tsetTimeout(connectWebSocket, reconnectDelay);\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tconsole.error('Max WebSocket reconnection attempts reached');\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\t\t\t\t} catch (error) {\n\t\t\t\t\tconsole.error('Failed to create WebSocket connection:', error);\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleGraphEvent(event) {\n\t\t\t\tif (!cy) return;\n\n\t\t\t\tswitch (event.type) {\n\t\t\t\t\tcase 'container_added':\n\t\t\t\t\t\thandleContainerAdded(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'container_updated':\n\t\t\t\t\t\thandleContainerUpdated(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'container_removed':\n\t\t\t\t\t\thandleContainerRemoved(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'host_added':\n\t\t\t\t\t\thandleHostAdded(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'host_updated':\n\t\t\t\t\t\thandleHostUpdated(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'host_removed':\n\t\t\t\t\t\thandleHostRemoved(event.data);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 'graph_refresh':\n\t\t\t\t\t\t// Refresh the entire graph\n\t\t\t\t\t\tconst layout = document.getElementById('layout-select').value;\n\t\t\t\t\t\tinitGraph(layout);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tdefault:\n\t\t\t\t\t\tconsole.warn('Unknown event type:', event.type);\n\t\t\t\t}\n\n\t\t\t\t// Update stats after any change\n\t\t\t\tupdateStats();\n\t\t\t}\n\n\t\t\tfunction handleContainerAdded(container) {\n\t\t\t\tconst nodeId = container['@id'] || container.id;\n\n\t\t\t\t// Check if node already exists\n\t\t\t\tif (cy.$('#' + nodeId).length > 0) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\t// Add container node\n\t\t\t\tcy.add({\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tid: nodeId,\n\t\t\t\t\t\tlabel: container.name,\n\t\t\t\t\t\ttype: 'container',\n\t\t\t\t\t\tstatus: container.status,\n\t\t\t\t\t\timage: container.image\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Add edge to host if hostedOn exists\n\t\t\t\tif (container.hostedOn) {\n\t\t\t\t\tconst hostId = container.hostedOn['@id'] || container.hostedOn;\n\t\t\t\t\tif (cy.$('#' + hostId).length > 0) {\n\t\t\t\t\t\tcy.add({\n\t\t\t\t\t\t\tdata: {\n\t\t\t\t\t\t\t\tid: 'edge-' + nodeId,\n\t\t\t\t\t\t\t\tsource: hostId,\n\t\t\t\t\t\t\t\ttarget: nodeId\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Animate the new node\n\t\t\t\tcy.$('#' + nodeId).animate({\n\t\t\t\t\tstyle: { opacity: 1 }\n\t\t\t\t}, {\n\t\t\t\t\tduration: 500\n\t\t\t\t});\n\n\t\t\t\t// Re-layout the graph\n\t\t\t\tcy.layout({\n\t\t\t\t\tname: document.getElementById('layout-select').value,\n\t\t\t\t\tanimate: true,\n\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\tfit: false\n\t\t\t\t}).run();\n\n\t\t\t\tshowNotification('Container added: ' + container.name, 'success');\n\t\t\t}\n\n\t\t\tfunction handleContainerUpdated(container) {\n\t\t\t\tconst nodeId = container['@id'] || container.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Update node data\n\t\t\t\t\tnode.data({\n\t\t\t\t\t\tlabel: container.name,\n\t\t\t\t\t\tstatus: container.status,\n\t\t\t\t\t\timage: container.image\n\t\t\t\t\t});\n\n\t\t\t\t\t// Flash animation\n\t\t\t\t\tnode.animate({\n\t\t\t\t\t\tstyle: { 'border-width': '4px' }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 300,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\tnode.animate({\n\t\t\t\t\t\t\t\tstyle: { 'border-width': '2px' }\n\t\t\t\t\t\t\t}, {\n\t\t\t\t\t\t\t\tduration: 300\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Container updated: ' + container.name, 'info');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleContainerRemoved(data) {\n\t\t\t\tconst nodeId = data.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Fade out animation\n\t\t\t\t\tnode.animate({\n\t\t\t\t\t\tstyle: { opacity: 0 }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 500,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\t// Remove node and connected edges\n\t\t\t\t\t\t\tnode.remove();\n\t\t\t\t\t\t\tcy.$('#edge-' + nodeId).remove();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Container removed', 'warning');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleHostAdded(host) {\n\t\t\t\tconst nodeId = host['@id'] || host.id;\n\n\t\t\t\t// Check if node already exists\n\t\t\t\tif (cy.$('#' + nodeId).length > 0) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\t// Add host node\n\t\t\t\tcy.add({\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tid: nodeId,\n\t\t\t\t\t\tlabel: host.name,\n\t\t\t\t\t\ttype: 'host',\n\t\t\t\t\t\tstatus: host.status,\n\t\t\t\t\t\tip: host.ipAddress,\n\t\t\t\t\t\tcpu: host.cpuCores,\n\t\t\t\t\t\tmemory: host.memoryBytes\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// Animate the new node\n\t\t\t\tcy.$('#' + nodeId).animate({\n\t\t\t\t\tstyle: { opacity: 1 }\n\t\t\t\t}, {\n\t\t\t\t\tduration: 500\n\t\t\t\t});\n\n\t\t\t\t// Re-layout the graph\n\t\t\t\tcy.layout({\n\t\t\t\t\tname: document.getElementById('layout-select').value,\n\t\t\t\t\tanimate: true,\n\t\t\t\t\tanimationDuration: 500,\n\t\t\t\t\tfit: false\n\t\t\t\t}).run();\n\n\t\t\t\tshowNotification('Host added: ' + host.name, 'success');\n\t\t\t}\n\n\t\t\tfunction handleHostUpdated(host) {\n\t\t\t\tconst nodeId = host['@id'] || host.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Update node data\n\t\t\t\t\tnode.data({\n\t\t\t\t\t\tlabel: host.name,\n\t\t\t\t\t\tstatus: host.status,\n\t\t\t\t\t\tip: host.ipAddress,\n\t\t\t\t\t\tcpu: host.cpuCores,\n\t\t\t\t\t\tmemory: host.memoryBytes\n\t\t\t\t\t});\n\n\t\t\t\t\t// Flash animation\n\t\t\t\t\tnode.animate({\n\t\t\t\t\t\tstyle: { 'border-width': '6px' }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 300,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\tnode.animate({\n\t\t\t\t\t\t\t\tstyle: { 'border-width': '3px' }\n\t\t\t\t\t\t\t}, {\n\t\t\t\t\t\t\t\tduration: 300\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Host updated: ' + host.name, 'info');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction handleHostRemoved(data) {\n\t\t\t\tconst nodeId = data.id;\n\t\t\t\tconst node = cy.$('#' + nodeId);\n\n\t\t\t\tif (node.length > 0) {\n\t\t\t\t\t// Get all containers connected to this host\n\t\t\t\t\tconst connectedContainers = cy.$('#' + nodeId).neighborhood('node[type=\"container\"]');\n\n\t\t\t\t\t// Fade out animation for host and containers\n\t\t\t\t\tnode.add(connectedContainers).animate({\n\t\t\t\t\t\tstyle: { opacity: 0 }\n\t\t\t\t\t}, {\n\t\t\t\t\t\tduration: 500,\n\t\t\t\t\t\tcomplete: function() {\n\t\t\t\t\t\t\t// Remove host, containers, and edges\n\t\t\t\t\t\t\tnode.add(connectedContainers).remove();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\tshowNotification('Host removed', 'warning');\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction updateStats() {\n\t\t\t\tif (!cy) return;\n\n\t\t\t\tconst hosts = cy.nodes('[type=\"host\"]').length;\n\t\t\t\tconst containers = cy.nodes('[type=\"container\"]').length;\n\t\t\t\tconst edges = cy.edges().length;\n\t\t\t\tconst totalNodes = hosts + containers;\n\n\t\t\t\tconst nodeCountEl = document.getElementById('stat-nodes');\n\t\t\t\tconst hostCountEl = document.getElementById('stat-hosts');\n\t\t\t\tconst containerCountEl = document.getElementById('stat-containers');\n\t\t\t\tconst edgeCountEl = document.getElementById('stat-edges');\n\n\t\t\t\tif (nodeCountEl) nodeCountEl.textContent = totalNodes;\n\t\t\t\tif (hostCountEl) hostCountEl.textContent = hosts;\n\t\t\t\tif (containerCountEl) containerCountEl.textContent = containers;\n\t\t\t\tif (edgeCountEl) edgeCountEl.textContent = edges;\n\t\t\t}\n\n\t\t\t// Activity tracking system (replaces individual notifications)\n\t\t\tconst activityLog = {\n\t\t\t\titems: [],\n\t\t\t\tmaxItems: 100,\n\t\t\t\tcounters: {},\n\t\t\t\tlastUpdate: Date.now(),\n\t\t\t\tbatchTimeout: null,\n\n\t\t\t\tadd: function(message, type = 'info') {\n\t\t\t\t\t// Update counter for batch aggregation\n\t\t\t\t\tconst key = `${type}:${message}`;\n\t\t\t\t\tif (!this.counters[key]) {\n\t\t\t\t\t\tthis.counters[key] = { count: 0, type: type, message: message, firstSeen: Date.now() };\n\t\t\t\t\t}\n\t\t\t\t\tthis.counters[key].count++;\n\t\t\t\t\tthis.counters[key].lastSeen = Date.now();\n\n\t\t\t\t\t// Schedule batch update\n\t\t\t\t\tclearTimeout(this.batchTimeout);\n\t\t\t\t\tthis.batchTimeout = setTimeout(() => this.flushBatch(), 2000);\n\t\t\t\t},\n\n\t\t\t\tflushBatch: function() {\n\t\t\t\t\t// Convert counters to log items\n\t\t\t\t\tfor (const key in this.counters) {\n\t\t\t\t\t\tconst counter = this.counters[key];\n\t\t\t\t\t\tconst displayMessage = counter.count > 1\n\t\t\t\t\t\t\t? `${counter.message} (${counter.count}x)`\n\t\t\t\t\t\t\t: counter.message;\n\n\t\t\t\t\t\tthis.items.unshift({\n\t\t\t\t\t\t\tmessage: displayMessage,\n\t\t\t\t\t\t\ttype: counter.type,\n\t\t\t\t\t\t\ttimestamp: counter.lastSeen,\n\t\t\t\t\t\t\tcount: counter.count\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\n\t\t\t\t\t// Clear counters\n\t\t\t\t\tthis.counters = {};\n\n\t\t\t\t\t// Keep only last maxItems\n\t\t\t\t\tif (this.items.length > this.maxItems) {\n\t\t\t\t\t\tthis.items = this.items.slice(0, this.maxItems);\n\t\t\t\t\t}\n\n\t\t\t\t\tthis.render();\n\t\t\t\t\tthis.showBadge();\n\t\t\t\t},\n\n\t\t\t\trender: function() {\n\t\t\t\t\tconst container = document.getElementById('activityList');\n\t\t\t\t\tif (!container) return;\n\n\t\t\t\t\tconst html = this.items.map(item => {\n\t\t\t\t\t\tconst time = new Date(item.timestamp).toLocaleTimeString();\n\t\t\t\t\t\tconst icon = {\n\t\t\t\t\t\t\tsuccess: '✓',\n\t\t\t\t\t\t\tinfo: 'ℹ',\n\t\t\t\t\t\t\twarning: '⚠',\n\t\t\t\t\t\t\terror: '✗'\n\t\t\t\t\t\t}[item.type] || 'ℹ';\n\n\t\t\t\t\t\treturn `\n\t\t\t\t\t\t\t<div class=\"activity-item activity-${item.type}\">\n\t\t\t\t\t\t\t\t<span class=\"activity-icon\">${icon}</span>\n\t\t\t\t\t\t\t\t<span class=\"activity-message\">${item.message}</span>\n\t\t\t\t\t\t\t\t<span class=\"activity-time\">${time}</span>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t`;\n\t\t\t\t\t}).join('');\n\n\t\t\t\t\tcontainer.innerHTML = html || '<div class=\"activity-empty\">No recent activity</div>';\n\t\t\t\t},\n\n\t\t\t\tshowBadge: function() {\n\t\t\t\t\tconst badge = document.getElementById('activityBadge');\n\t\t\t\t\tconst totalCount = this.items.reduce((sum, item) => sum + (item.count || 1), 0);\n\n\t\t\t\t\tif (totalCount > 0) {\n\t\t\t\t\t\tbadge.textContent = totalCount > 99 ? '99+' : totalCount;\n\t\t\t\t\t\tbadge.style.display = 'flex';\n\t\t\t\t\t}\n\t\t\t\t},\n\n\t\t\t\tclearBadge: function() {\n\t\t\t\t\tconst badge = document.getElementById('activityBadge');\n\t\t\t\t\tbadge.style.display = 'none';\n\t\t\t\t}\n\t\t\t};\n\n\t\t\tfunction showNotification(message, type = 'info') {\n\t\t\t\tactivityLog.add(message, type);\n\t\t\t}\n\n\t\t\t// Activity panel toggle functions\n\t\t\twindow.toggleActivityPanel = function() {\n\t\t\t\tconst panel = document.getElementById('activityPanel');\n\t\t\t\tconst isOpen = panel.classList.contains('open');\n\n\t\t\t\tif (isOpen) {\n\t\t\t\t\tpanel.classList.remove('open');\n\t\t\t\t} else {\n\t\t\t\t\tpanel.classList.add('open');\n\t\t\t\t\tactivityLog.clearBadge();\n\t\t\t\t\tactivityLog.render();\n\t\t\t\t}\n\t\t\t};\n\n\t\t\twindow.clearActivityLog = function() {\n\t\t\t\tactivityLog.items = [];\n\t\t\t\tactivityLog.counters = [];\n\t\t\t\tactivityLog.render();\n\t\t\t\tactivityLog.clearBadge();\n\t\t\t};\n\n\t\t\t// Node info modal functions (exposed globally for onclick handlers)\n\t\t\twindow.showNodeInfoModal = function(data) {\n\t\t\t\tconst modal = document.getElementById('nodeInfoModal');\n\t\t\t\tconst title = document.getElementById('nodeInfoTitle');\n\t\t\t\tconst typeEl = document.getElementById('nodeInfoType');\n\t\t\t\tconst content = document.getElementById('nodeInfoContent');\n\n\t\t\t\t// Set title based on type\n\t\t\t\tconst icon = data.type === 'host' ? '🖥️' : '📦';\n\t\t\t\ttitle.textContent = icon + ' ' + (data.label || data.id);\n\n\t\t\t\t// Set type badge\n\t\t\t\ttypeEl.textContent = data.type.toUpperCase();\n\t\t\t\ttypeEl.className = 'node-info-type ' + (data.type === 'host' ? 'type-host' : 'type-container');\n\n\t\t\t\t// Build content based on type\n\t\t\t\tlet html = '';\n\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">ID:</span><span class=\"node-info-value\">' + (data.id || 'N/A') + '</span></div>';\n\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">Status:</span><span class=\"node-info-value\"><span class=\"badge badge-' + (data.status || 'unknown') + '\">' + (data.status || 'N/A').toUpperCase() + '</span></span></div>';\n\n\t\t\t\tif (data.type === 'host') {\n\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">IP Address:</span><span class=\"node-info-value\">' + (data.ip || 'N/A') + '</span></div>';\n\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">CPU:</span><span class=\"node-info-value\">' + (data.cpu || 'N/A') + '</span></div>';\n\t\t\t\t\tif (data.memory) {\n\t\t\t\t\t\tconst memoryGB = (data.memory / 1024 / 1024 / 1024).toFixed(1);\n\t\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">Memory:</span><span class=\"node-info-value\">' + memoryGB + ' GB</span></div>';\n\t\t\t\t\t} else {\n\t\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">Memory:</span><span class=\"node-info-value\">N/A</span></div>';\n\t\t\t\t\t}\n\t\t\t\t\tif (data.datacenter) {\n\t\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">Datacenter:</span><span class=\"node-info-value\">' + data.datacenter + '</span></div>';\n\t\t\t\t\t}\n\t\t\t\t} else if (data.type === 'container') {\n\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">Image:</span><span class=\"node-info-value\">' + (data.image || 'N/A') + '</span></div>';\n\t\t\t\t\tif (data.command) {\n\t\t\t\t\t\thtml += '<div class=\"node-info-row\"><span class=\"node-info-label\">Command:</span><span class=\"node-info-value\" style=\"font-family: monospace; font-size: 0.85rem;\">' + data.command + '</span></div>';\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\tcontent.innerHTML = html;\n\t\t\t\tmodal.style.display = 'flex';\n\t\t\t};\n\n\t\t\twindow.closeNodeInfoModal = function() {\n\t\t\t\tconst modal = document.getElementById('nodeInfoModal');\n\t\t\t\tmodal.style.display = 'none';\n\t\t\t};\n\n\t\t\t// Close modal when clicking outside (on the backdrop)\n\t\t\twindow.addEventListener('click', function(event) {\n\t\t\t\tconst modal = document.getElementById('nodeInfoModal');\n\t\t\t\tif (event.target === modal) {\n\t\t\t\t\tcloseNodeInfoModal();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Close modal on Escape key\n\t\t\tdocument.addEventListener('keydown', function(event) {\n\t\t\t\tif (event.key === 'Escape') {\n\t\t\t\t\tcloseNodeInfoModal();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Initialize graph on page load\n\t\t\tinitGraph();\n\n\t\t\t// Connect WebSocket after graph is initialized\n\t\t\tsetTimeout(connectWebSocket, 1000);\n\t\t})();\n\t\t</script> <!-- Activity Panel --> <div id=\"activityPanel\" class=\"activity-panel\"><div class=\"activity-header\"><h3>Activity Log</h3><div class=\"activity-header-actions\"><button type=\"button\" class=\"btn-icon\" onclick=\"clearActivityLog()\" title=\"Clear all\">✕</button> <button type=\"button\" class=\"btn-icon\" onclick=\"toggleActivityPanel()\" title=\"Close\">▼</button></div></div><div class=\"activity-body\"><div id=\"activityList\"></div></div></div><!-- Activity Toggle Button --> <button id=\"activityToggle\" class=\"activity-toggle\" onclick=\"toggleActivityPanel()\"><span class=\"activity-icon\">📊</span> <span class=\"activity-label\">Activity</span> <span id=\"activityBadge\" class=\"activity-badge\">0</span></button><!-- Node Info Modal --> <div id=\"nodeInfoModal\" class=\"modal\"><div class=\"modal-content\"><div class=\"modal-header\"><h3 id=\"nodeInfoTitle\">Node Information</h3><span class=\"node-info-type\" id=\"nodeInfoType\">NODE</span></div><div class=\"modal-body\"><div id=\"nodeInfoContent\"></div></div><div class=\"modal-footer\"><button type=\"button\" class=\"btn btn-secondary\" onclick=\"closeNodeInfoModal()\">Close</button></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2052,7 +2052,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 				var templ_7745c5c3_Var115 templ.SafeURL
 				templ_7745c5c3_Var115, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2167, Col: 86}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2298, Col: 86}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var115))
 				if templ_7745c5c3_Err != nil {
@@ -2065,7 +2065,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 				var templ_7745c5c3_Var116 string
 				templ_7745c5c3_Var116, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2167, Col: 144}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2298, Col: 144}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var116))
 				if templ_7745c5c3_Err != nil {
@@ -2083,7 +2083,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 				var templ_7745c5c3_Var117 templ.SafeURL
 				templ_7745c5c3_Var117, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/containers/%s/delete", container.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2170, Col: 99}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2301, Col: 99}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var117))
 				if templ_7745c5c3_Err != nil {
@@ -2096,7 +2096,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 				var templ_7745c5c3_Var118 string
 				templ_7745c5c3_Var118, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2171, Col: 87}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2302, Col: 87}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var118))
 				if templ_7745c5c3_Err != nil {
@@ -2114,7 +2114,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 			var templ_7745c5c3_Var119 string
 			templ_7745c5c3_Var119, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2183, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2314, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var119))
 			if templ_7745c5c3_Err != nil {
@@ -2127,7 +2127,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 			var templ_7745c5c3_Var120 string
 			templ_7745c5c3_Var120, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2187, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2318, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var120))
 			if templ_7745c5c3_Err != nil {
@@ -2162,7 +2162,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 			var templ_7745c5c3_Var123 string
 			templ_7745c5c3_Var123, templ_7745c5c3_Err = templ.JoinStringErrs(container.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2192, Col: 25}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2323, Col: 25}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var123))
 			if templ_7745c5c3_Err != nil {
@@ -2175,7 +2175,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 			var templ_7745c5c3_Var124 string
 			templ_7745c5c3_Var124, templ_7745c5c3_Err = templ.JoinStringErrs(container.Image)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2197, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2328, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var124))
 			if templ_7745c5c3_Err != nil {
@@ -2193,7 +2193,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 				var templ_7745c5c3_Var125 templ.SafeURL
 				templ_7745c5c3_Var125, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2209, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2340, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var125))
 				if templ_7745c5c3_Err != nil {
@@ -2206,7 +2206,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 				var templ_7745c5c3_Var126 string
 				templ_7745c5c3_Var126, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2209, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2340, Col: 80}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var126))
 				if templ_7745c5c3_Err != nil {
@@ -2219,7 +2219,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 				var templ_7745c5c3_Var127 string
 				templ_7745c5c3_Var127, templ_7745c5c3_Err = templ.JoinStringErrs(host.IPAddress)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2214, Col: 50}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2345, Col: 50}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var127))
 				if templ_7745c5c3_Err != nil {
@@ -2232,7 +2232,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 				var templ_7745c5c3_Var128 string
 				templ_7745c5c3_Var128, templ_7745c5c3_Err = templ.JoinStringErrs(host.Datacenter)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2218, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2349, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var128))
 				if templ_7745c5c3_Err != nil {
@@ -2256,7 +2256,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 					var templ_7745c5c3_Var129 string
 					templ_7745c5c3_Var129, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", port.HostPort))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2239, Col: 48}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2370, Col: 48}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var129))
 					if templ_7745c5c3_Err != nil {
@@ -2269,7 +2269,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 					var templ_7745c5c3_Var130 string
 					templ_7745c5c3_Var130, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", port.ContainerPort))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2240, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2371, Col: 53}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var130))
 					if templ_7745c5c3_Err != nil {
@@ -2282,7 +2282,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 					var templ_7745c5c3_Var131 string
 					templ_7745c5c3_Var131, templ_7745c5c3_Err = templ.JoinStringErrs(port.Protocol)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2241, Col: 29}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2372, Col: 29}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var131))
 					if templ_7745c5c3_Err != nil {
@@ -2311,7 +2311,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 					var templ_7745c5c3_Var132 string
 					templ_7745c5c3_Var132, templ_7745c5c3_Err = templ.JoinStringErrs(key)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2264, Col: 25}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2395, Col: 25}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var132))
 					if templ_7745c5c3_Err != nil {
@@ -2324,7 +2324,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 					var templ_7745c5c3_Var133 string
 					templ_7745c5c3_Var133, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2265, Col: 27}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2396, Col: 27}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var133))
 					if templ_7745c5c3_Err != nil {
@@ -2348,7 +2348,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 				var templ_7745c5c3_Var134 string
 				templ_7745c5c3_Var134, templ_7745c5c3_Err = templ.JoinStringErrs(container.Created)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2280, Col: 53}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2411, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var134))
 				if templ_7745c5c3_Err != nil {
@@ -2366,7 +2366,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 			var templ_7745c5c3_Var135 string
 			templ_7745c5c3_Var135, templ_7745c5c3_Err = templ.JoinStringErrs(container.Context)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2291, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2422, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var135))
 			if templ_7745c5c3_Err != nil {
@@ -2379,7 +2379,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 			var templ_7745c5c3_Var136 string
 			templ_7745c5c3_Var136, templ_7745c5c3_Err = templ.JoinStringErrs(container.Type)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2295, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2426, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var136))
 			if templ_7745c5c3_Err != nil {
@@ -2392,7 +2392,7 @@ func ContainerDetailWithUser(container *models.Container, host *models.Host, sta
 			var templ_7745c5c3_Var137 string
 			templ_7745c5c3_Var137, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2299, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2430, Col: 54}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var137))
 			if templ_7745c5c3_Err != nil {
@@ -2453,7 +2453,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var140 templ.SafeURL
 			templ_7745c5c3_Var140, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/hosts/%s/edit", host.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2316, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2447, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var140))
 			if templ_7745c5c3_Err != nil {
@@ -2466,7 +2466,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var141 templ.SafeURL
 			templ_7745c5c3_Var141, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/hosts/%s/delete", host.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2317, Col: 88}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2448, Col: 88}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var141))
 			if templ_7745c5c3_Err != nil {
@@ -2479,7 +2479,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var142 string
 			templ_7745c5c3_Var142, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2318, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2449, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var142))
 			if templ_7745c5c3_Err != nil {
@@ -2492,7 +2492,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var143 string
 			templ_7745c5c3_Var143, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2329, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2460, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var143))
 			if templ_7745c5c3_Err != nil {
@@ -2505,7 +2505,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var144 string
 			templ_7745c5c3_Var144, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2333, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2464, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var144))
 			if templ_7745c5c3_Err != nil {
@@ -2540,7 +2540,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var147 string
 			templ_7745c5c3_Var147, templ_7745c5c3_Err = templ.JoinStringErrs(host.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2338, Col: 20}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2469, Col: 20}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var147))
 			if templ_7745c5c3_Err != nil {
@@ -2553,7 +2553,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var148 string
 			templ_7745c5c3_Var148, templ_7745c5c3_Err = templ.JoinStringErrs(host.IPAddress)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2343, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2474, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var148))
 			if templ_7745c5c3_Err != nil {
@@ -2566,7 +2566,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var149 string
 			templ_7745c5c3_Var149, templ_7745c5c3_Err = templ.JoinStringErrs(host.Datacenter)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2347, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2478, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var149))
 			if templ_7745c5c3_Err != nil {
@@ -2579,7 +2579,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var150 string
 			templ_7745c5c3_Var150, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d cores", host.CPU))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2357, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2488, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var150))
 			if templ_7745c5c3_Err != nil {
@@ -2592,7 +2592,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var151 string
 			templ_7745c5c3_Var151, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f GB", float64(host.Memory)/1024/1024/1024))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2361, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2492, Col: 100}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var151))
 			if templ_7745c5c3_Err != nil {
@@ -2605,7 +2605,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var152 string
 			templ_7745c5c3_Var152, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(containers)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2367, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2498, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var152))
 			if templ_7745c5c3_Err != nil {
@@ -2628,7 +2628,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 					var templ_7745c5c3_Var153 string
 					templ_7745c5c3_Var153, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2383, Col: 35}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2514, Col: 35}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var153))
 					if templ_7745c5c3_Err != nil {
@@ -2641,7 +2641,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 					var templ_7745c5c3_Var154 string
 					templ_7745c5c3_Var154, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2385, Col: 51}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2516, Col: 51}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var154))
 					if templ_7745c5c3_Err != nil {
@@ -2654,7 +2654,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 					var templ_7745c5c3_Var155 string
 					templ_7745c5c3_Var155, templ_7745c5c3_Err = templ.JoinStringErrs(container.Image)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2387, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2518, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var155))
 					if templ_7745c5c3_Err != nil {
@@ -2689,7 +2689,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 					var templ_7745c5c3_Var158 string
 					templ_7745c5c3_Var158, templ_7745c5c3_Err = templ.JoinStringErrs(container.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2390, Col: 30}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2521, Col: 30}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var158))
 					if templ_7745c5c3_Err != nil {
@@ -2702,7 +2702,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 					var templ_7745c5c3_Var159 templ.SafeURL
 					templ_7745c5c3_Var159, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2394, Col: 79}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2525, Col: 79}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var159))
 					if templ_7745c5c3_Err != nil {
@@ -2730,7 +2730,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var160 string
 			templ_7745c5c3_Var160, templ_7745c5c3_Err = templ.JoinStringErrs(host.Context)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2411, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2542, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var160))
 			if templ_7745c5c3_Err != nil {
@@ -2743,7 +2743,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var161 string
 			templ_7745c5c3_Var161, templ_7745c5c3_Err = templ.JoinStringErrs(host.Type)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2415, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2546, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var161))
 			if templ_7745c5c3_Err != nil {
@@ -2756,7 +2756,7 @@ func HostDetailWithUser(host *models.Host, containers []*models.Container, user 
 			var templ_7745c5c3_Var162 string
 			templ_7745c5c3_Var162, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2419, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2550, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var162))
 			if templ_7745c5c3_Err != nil {
@@ -2810,7 +2810,7 @@ func LoginPage(errorMsg string) templ.Component {
 			var templ_7745c5c3_Var164 string
 			templ_7745c5c3_Var164, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2447, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2578, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var164))
 			if templ_7745c5c3_Err != nil {
@@ -2881,7 +2881,7 @@ func UsersList(users []*models.User, currentUser *models.User) templ.Component {
 				var templ_7745c5c3_Var167 string
 				templ_7745c5c3_Var167, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2501, Col: 34}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2632, Col: 34}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var167))
 				if templ_7745c5c3_Err != nil {
@@ -2894,7 +2894,7 @@ func UsersList(users []*models.User, currentUser *models.User) templ.Component {
 				var templ_7745c5c3_Var168 string
 				templ_7745c5c3_Var168, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2502, Col: 23}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2633, Col: 23}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var168))
 				if templ_7745c5c3_Err != nil {
@@ -2907,7 +2907,7 @@ func UsersList(users []*models.User, currentUser *models.User) templ.Component {
 				var templ_7745c5c3_Var169 string
 				templ_7745c5c3_Var169, templ_7745c5c3_Err = templ.JoinStringErrs(user.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2503, Col: 22}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2634, Col: 22}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var169))
 				if templ_7745c5c3_Err != nil {
@@ -2926,7 +2926,7 @@ func UsersList(users []*models.User, currentUser *models.User) templ.Component {
 						var templ_7745c5c3_Var170 string
 						templ_7745c5c3_Var170, templ_7745c5c3_Err = templ.JoinStringErrs(string(role))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2508, Col: 58}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2639, Col: 58}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var170))
 						if templ_7745c5c3_Err != nil {
@@ -2944,7 +2944,7 @@ func UsersList(users []*models.User, currentUser *models.User) templ.Component {
 						var templ_7745c5c3_Var171 string
 						templ_7745c5c3_Var171, templ_7745c5c3_Err = templ.JoinStringErrs(string(role))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2510, Col: 59}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2641, Col: 59}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var171))
 						if templ_7745c5c3_Err != nil {
@@ -2962,7 +2962,7 @@ func UsersList(users []*models.User, currentUser *models.User) templ.Component {
 						var templ_7745c5c3_Var172 string
 						templ_7745c5c3_Var172, templ_7745c5c3_Err = templ.JoinStringErrs(string(role))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2512, Col: 56}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2643, Col: 56}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var172))
 						if templ_7745c5c3_Err != nil {
@@ -2980,7 +2980,7 @@ func UsersList(users []*models.User, currentUser *models.User) templ.Component {
 						var templ_7745c5c3_Var173 string
 						templ_7745c5c3_Var173, templ_7745c5c3_Err = templ.JoinStringErrs(string(role))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2514, Col: 61}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2645, Col: 61}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var173))
 						if templ_7745c5c3_Err != nil {
@@ -3019,7 +3019,7 @@ func UsersList(users []*models.User, currentUser *models.User) templ.Component {
 					var templ_7745c5c3_Var174 string
 					templ_7745c5c3_Var174, templ_7745c5c3_Err = templ.JoinStringErrs(user.LastLoginAt.Format("2006-01-02 15:04"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2528, Col: 61}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2659, Col: 61}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var174))
 					if templ_7745c5c3_Err != nil {
@@ -3042,7 +3042,7 @@ func UsersList(users []*models.User, currentUser *models.User) templ.Component {
 				var templ_7745c5c3_Var175 templ.SafeURL
 				templ_7745c5c3_Var175, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/users/%s", user.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2534, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2665, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var175))
 				if templ_7745c5c3_Err != nil {
@@ -3060,7 +3060,7 @@ func UsersList(users []*models.User, currentUser *models.User) templ.Component {
 					var templ_7745c5c3_Var176 templ.SafeURL
 					templ_7745c5c3_Var176, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/users/%s/edit", user.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2536, Col: 72}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2667, Col: 72}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var176))
 					if templ_7745c5c3_Err != nil {
@@ -3153,7 +3153,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 				var templ_7745c5c3_Var180 templ.SafeURL
 				templ_7745c5c3_Var180, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/users/%s/edit", user.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2643, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2774, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var180))
 				if templ_7745c5c3_Err != nil {
@@ -3171,7 +3171,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 			var templ_7745c5c3_Var181 string
 			templ_7745c5c3_Var181, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2654, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2785, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var181))
 			if templ_7745c5c3_Err != nil {
@@ -3184,7 +3184,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 			var templ_7745c5c3_Var182 string
 			templ_7745c5c3_Var182, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2658, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2789, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var182))
 			if templ_7745c5c3_Err != nil {
@@ -3197,7 +3197,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 			var templ_7745c5c3_Var183 string
 			templ_7745c5c3_Var183, templ_7745c5c3_Err = templ.JoinStringErrs(user.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2662, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2793, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var183))
 			if templ_7745c5c3_Err != nil {
@@ -3231,7 +3231,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 					var templ_7745c5c3_Var184 string
 					templ_7745c5c3_Var184, templ_7745c5c3_Err = templ.JoinStringErrs(string(role))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2680, Col: 54}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2811, Col: 54}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var184))
 					if templ_7745c5c3_Err != nil {
@@ -3249,7 +3249,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 					var templ_7745c5c3_Var185 string
 					templ_7745c5c3_Var185, templ_7745c5c3_Err = templ.JoinStringErrs(string(role))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2682, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2813, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var185))
 					if templ_7745c5c3_Err != nil {
@@ -3267,7 +3267,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 					var templ_7745c5c3_Var186 string
 					templ_7745c5c3_Var186, templ_7745c5c3_Err = templ.JoinStringErrs(string(role))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2684, Col: 52}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2815, Col: 52}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var186))
 					if templ_7745c5c3_Err != nil {
@@ -3285,7 +3285,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 					var templ_7745c5c3_Var187 string
 					templ_7745c5c3_Var187, templ_7745c5c3_Err = templ.JoinStringErrs(string(role))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2686, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2817, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var187))
 					if templ_7745c5c3_Err != nil {
@@ -3304,7 +3304,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 			var templ_7745c5c3_Var188 string
 			templ_7745c5c3_Var188, templ_7745c5c3_Err = templ.JoinStringErrs(user.CreatedAt.Format("2006-01-02 15:04:05"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2697, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2828, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var188))
 			if templ_7745c5c3_Err != nil {
@@ -3317,7 +3317,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 			var templ_7745c5c3_Var189 string
 			templ_7745c5c3_Var189, templ_7745c5c3_Err = templ.JoinStringErrs(user.UpdatedAt.Format("2006-01-02 15:04:05"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2701, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2832, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var189))
 			if templ_7745c5c3_Err != nil {
@@ -3335,7 +3335,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 				var templ_7745c5c3_Var190 string
 				templ_7745c5c3_Var190, templ_7745c5c3_Err = templ.JoinStringErrs(user.LastLoginAt.Format("2006-01-02 15:04:05"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2706, Col: 82}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2837, Col: 82}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var190))
 				if templ_7745c5c3_Err != nil {
@@ -3373,7 +3373,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 						var templ_7745c5c3_Var191 string
 						templ_7745c5c3_Var191, templ_7745c5c3_Err = templ.JoinStringErrs(key[:8])
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2721, Col: 24}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2852, Col: 24}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var191))
 						if templ_7745c5c3_Err != nil {
@@ -3386,7 +3386,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 						var templ_7745c5c3_Var192 string
 						templ_7745c5c3_Var192, templ_7745c5c3_Err = templ.JoinStringErrs(key[len(key)-8:])
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2721, Col: 47}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2852, Col: 47}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var192))
 						if templ_7745c5c3_Err != nil {
@@ -3399,7 +3399,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 						var templ_7745c5c3_Var193 templ.SafeURL
 						templ_7745c5c3_Var193, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/users/%s/api-keys/%d/revoke", user.ID, i)))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2722, Col: 108}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2853, Col: 108}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var193))
 						if templ_7745c5c3_Err != nil {
@@ -3427,7 +3427,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 				var templ_7745c5c3_Var194 templ.SafeURL
 				templ_7745c5c3_Var194, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/users/%s/api-keys/generate", user.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2731, Col: 100}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2862, Col: 100}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var194))
 				if templ_7745c5c3_Err != nil {
@@ -3445,7 +3445,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 			var templ_7745c5c3_Var195 string
 			templ_7745c5c3_Var195, templ_7745c5c3_Err = templ.JoinStringErrs(user.Context)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2742, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2873, Col: 54}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var195))
 			if templ_7745c5c3_Err != nil {
@@ -3458,7 +3458,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 			var templ_7745c5c3_Var196 string
 			templ_7745c5c3_Var196, templ_7745c5c3_Err = templ.JoinStringErrs(user.Type)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2746, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2877, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var196))
 			if templ_7745c5c3_Err != nil {
@@ -3471,7 +3471,7 @@ func UserDetail(user *models.User, currentUser *models.User, isAdmin bool) templ
 			var templ_7745c5c3_Var197 string
 			templ_7745c5c3_Var197, templ_7745c5c3_Err = templ.JoinStringErrs(user.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2750, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2881, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var197))
 			if templ_7745c5c3_Err != nil {
@@ -3636,7 +3636,7 @@ func userFormContent(user *models.User, isNew bool, errorMsg string) templ.Compo
 			var templ_7745c5c3_Var203 string
 			templ_7745c5c3_Var203, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2789, Col: 14}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2920, Col: 14}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var203))
 			if templ_7745c5c3_Err != nil {
@@ -3672,7 +3672,7 @@ func userFormContent(user *models.User, isNew bool, errorMsg string) templ.Compo
 			var templ_7745c5c3_Var204 templ.SafeURL
 			templ_7745c5c3_Var204, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/users/%s/update", user.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2799, Col: 88}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2930, Col: 88}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var204))
 			if templ_7745c5c3_Err != nil {
@@ -3728,7 +3728,7 @@ func userFormFields(user *models.User, isNew bool) templ.Component {
 		var templ_7745c5c3_Var206 string
 		templ_7745c5c3_Var206, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2813, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2944, Col: 76}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var206))
 		if templ_7745c5c3_Err != nil {
@@ -3761,7 +3761,7 @@ func userFormFields(user *models.User, isNew bool) templ.Component {
 		var templ_7745c5c3_Var207 string
 		templ_7745c5c3_Var207, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2821, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2952, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var207))
 		if templ_7745c5c3_Err != nil {
@@ -3774,7 +3774,7 @@ func userFormFields(user *models.User, isNew bool) templ.Component {
 		var templ_7745c5c3_Var208 string
 		templ_7745c5c3_Var208, templ_7745c5c3_Err = templ.JoinStringErrs(user.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2826, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2957, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var208))
 		if templ_7745c5c3_Err != nil {
@@ -3899,7 +3899,7 @@ func ProfilePage(user *models.User, errorMsg string, success string) templ.Compo
 				var templ_7745c5c3_Var211 string
 				templ_7745c5c3_Var211, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2895, Col: 14}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3026, Col: 14}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var211))
 				if templ_7745c5c3_Err != nil {
@@ -3922,7 +3922,7 @@ func ProfilePage(user *models.User, errorMsg string, success string) templ.Compo
 				var templ_7745c5c3_Var212 string
 				templ_7745c5c3_Var212, templ_7745c5c3_Err = templ.JoinStringErrs(success)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2901, Col: 13}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3032, Col: 13}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var212))
 				if templ_7745c5c3_Err != nil {
@@ -3940,7 +3940,7 @@ func ProfilePage(user *models.User, errorMsg string, success string) templ.Compo
 			var templ_7745c5c3_Var213 string
 			templ_7745c5c3_Var213, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2911, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3042, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var213))
 			if templ_7745c5c3_Err != nil {
@@ -3953,7 +3953,7 @@ func ProfilePage(user *models.User, errorMsg string, success string) templ.Compo
 			var templ_7745c5c3_Var214 string
 			templ_7745c5c3_Var214, templ_7745c5c3_Err = templ.JoinStringErrs(user.Email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2915, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3046, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var214))
 			if templ_7745c5c3_Err != nil {
@@ -3966,7 +3966,7 @@ func ProfilePage(user *models.User, errorMsg string, success string) templ.Compo
 			var templ_7745c5c3_Var215 string
 			templ_7745c5c3_Var215, templ_7745c5c3_Err = templ.JoinStringErrs(user.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2919, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3050, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var215))
 			if templ_7745c5c3_Err != nil {
@@ -3985,7 +3985,7 @@ func ProfilePage(user *models.User, errorMsg string, success string) templ.Compo
 					var templ_7745c5c3_Var216 string
 					templ_7745c5c3_Var216, templ_7745c5c3_Err = templ.JoinStringErrs(string(role))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2927, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3058, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var216))
 					if templ_7745c5c3_Err != nil {
@@ -4003,7 +4003,7 @@ func ProfilePage(user *models.User, errorMsg string, success string) templ.Compo
 					var templ_7745c5c3_Var217 string
 					templ_7745c5c3_Var217, templ_7745c5c3_Err = templ.JoinStringErrs(string(role))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2929, Col: 58}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3060, Col: 58}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var217))
 					if templ_7745c5c3_Err != nil {
@@ -4021,7 +4021,7 @@ func ProfilePage(user *models.User, errorMsg string, success string) templ.Compo
 					var templ_7745c5c3_Var218 string
 					templ_7745c5c3_Var218, templ_7745c5c3_Err = templ.JoinStringErrs(string(role))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2931, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3062, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var218))
 					if templ_7745c5c3_Err != nil {
@@ -4039,7 +4039,7 @@ func ProfilePage(user *models.User, errorMsg string, success string) templ.Compo
 					var templ_7745c5c3_Var219 string
 					templ_7745c5c3_Var219, templ_7745c5c3_Err = templ.JoinStringErrs(string(role))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2933, Col: 60}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3064, Col: 60}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var219))
 					if templ_7745c5c3_Err != nil {
@@ -4106,7 +4106,7 @@ func ContainerLogsView(container *models.Container, host *models.Host, user *mod
 			var templ_7745c5c3_Var222 templ.SafeURL
 			templ_7745c5c3_Var222, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2973, Col: 72}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3104, Col: 72}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var222))
 			if templ_7745c5c3_Err != nil {
@@ -4119,7 +4119,7 @@ func ContainerLogsView(container *models.Container, host *models.Host, user *mod
 			var templ_7745c5c3_Var223 string
 			templ_7745c5c3_Var223, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2974, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3105, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var223))
 			if templ_7745c5c3_Err != nil {
@@ -4132,7 +4132,7 @@ func ContainerLogsView(container *models.Container, host *models.Host, user *mod
 			var templ_7745c5c3_Var224 string
 			templ_7745c5c3_Var224, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2983, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3114, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var224))
 			if templ_7745c5c3_Err != nil {
@@ -4167,7 +4167,7 @@ func ContainerLogsView(container *models.Container, host *models.Host, user *mod
 			var templ_7745c5c3_Var227 string
 			templ_7745c5c3_Var227, templ_7745c5c3_Err = templ.JoinStringErrs(container.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2988, Col: 25}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3119, Col: 25}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var227))
 			if templ_7745c5c3_Err != nil {
@@ -4185,7 +4185,7 @@ func ContainerLogsView(container *models.Container, host *models.Host, user *mod
 				var templ_7745c5c3_Var228 templ.SafeURL
 				templ_7745c5c3_Var228, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2995, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3126, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var228))
 				if templ_7745c5c3_Err != nil {
@@ -4198,7 +4198,7 @@ func ContainerLogsView(container *models.Container, host *models.Host, user *mod
 				var templ_7745c5c3_Var229 string
 				templ_7745c5c3_Var229, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 2995, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3126, Col: 80}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var229))
 				if templ_7745c5c3_Err != nil {
@@ -4216,7 +4216,7 @@ func ContainerLogsView(container *models.Container, host *models.Host, user *mod
 			var templ_7745c5c3_Var230 templ.SafeURL
 			templ_7745c5c3_Var230, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/api/v1/containers/%s/logs/download?lines=1000", container.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3015, Col: 101}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3146, Col: 101}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var230))
 			if templ_7745c5c3_Err != nil {
@@ -4229,7 +4229,7 @@ func ContainerLogsView(container *models.Container, host *models.Host, user *mod
 			var templ_7745c5c3_Var231 string
 			templ_7745c5c3_Var231, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/api/v1/containers/%s/logs?tail=1000", container.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3021, Col: 84}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3152, Col: 84}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var231))
 			if templ_7745c5c3_Err != nil {
@@ -4335,7 +4335,7 @@ func StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInfo
 				var templ_7745c5c3_Var235 templ.SafeURL
 				templ_7745c5c3_Var235, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/web/stacks/" + stack.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3100, Col: 53}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3231, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var235))
 				if templ_7745c5c3_Err != nil {
@@ -4348,7 +4348,7 @@ func StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInfo
 				var templ_7745c5c3_Var236 string
 				templ_7745c5c3_Var236, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3100, Col: 115}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3231, Col: 115}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var236))
 				if templ_7745c5c3_Err != nil {
@@ -4366,7 +4366,7 @@ func StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInfo
 					var templ_7745c5c3_Var237 string
 					templ_7745c5c3_Var237, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Description)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3102, Col: 58}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3233, Col: 58}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var237))
 					if templ_7745c5c3_Err != nil {
@@ -4406,7 +4406,7 @@ func StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInfo
 				var templ_7745c5c3_Var240 string
 				templ_7745c5c3_Var240, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Status)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3106, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3237, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var240))
 				if templ_7745c5c3_Err != nil {
@@ -4419,7 +4419,7 @@ func StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInfo
 				var templ_7745c5c3_Var241 string
 				templ_7745c5c3_Var241, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Datacenter)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3108, Col: 28}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3239, Col: 28}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var241))
 				if templ_7745c5c3_Err != nil {
@@ -4432,7 +4432,7 @@ func StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInfo
 				var templ_7745c5c3_Var242 string
 				templ_7745c5c3_Var242, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Deployment.Mode)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3109, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3240, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var242))
 				if templ_7745c5c3_Err != nil {
@@ -4445,7 +4445,7 @@ func StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInfo
 				var templ_7745c5c3_Var243 string
 				templ_7745c5c3_Var243, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Deployment.PlacementStrategy)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3110, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3241, Col: 46}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var243))
 				if templ_7745c5c3_Err != nil {
@@ -4459,7 +4459,7 @@ func StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInfo
 					var templ_7745c5c3_Var244 string
 					templ_7745c5c3_Var244, templ_7745c5c3_Err = templ.JoinStringErrs(stack.DeployedAt.Format("2006-01-02 15:04"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3113, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3244, Col: 53}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var244))
 					if templ_7745c5c3_Err != nil {
@@ -4478,7 +4478,7 @@ func StacksTableWithPagination(stacks []*models.Stack, pagination PaginationInfo
 				var templ_7745c5c3_Var245 templ.SafeURL
 				templ_7745c5c3_Var245, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/web/stacks/" + stack.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3119, Col: 53}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3250, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var245))
 				if templ_7745c5c3_Err != nil {
@@ -4538,7 +4538,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 			var templ_7745c5c3_Var248 string
 			templ_7745c5c3_Var248, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3132, Col: 20}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3263, Col: 20}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var248))
 			if templ_7745c5c3_Err != nil {
@@ -4556,7 +4556,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 				var templ_7745c5c3_Var249 string
 				templ_7745c5c3_Var249, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Description)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3134, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3265, Col: 27}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var249))
 				if templ_7745c5c3_Err != nil {
@@ -4596,7 +4596,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 			var templ_7745c5c3_Var252 string
 			templ_7745c5c3_Var252, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3139, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3270, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var252))
 			if templ_7745c5c3_Err != nil {
@@ -4609,7 +4609,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 			var templ_7745c5c3_Var253 templ.SafeURL
 			templ_7745c5c3_Var253, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s/edit", stack.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3140, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3271, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var253))
 			if templ_7745c5c3_Err != nil {
@@ -4627,7 +4627,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 				var templ_7745c5c3_Var254 templ.SafeURL
 				templ_7745c5c3_Var254, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s/stop", stack.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3142, Col: 89}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3273, Col: 89}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var254))
 				if templ_7745c5c3_Err != nil {
@@ -4640,7 +4640,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 				var templ_7745c5c3_Var255 string
 				templ_7745c5c3_Var255, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3143, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3274, Col: 80}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var255))
 				if templ_7745c5c3_Err != nil {
@@ -4653,7 +4653,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 				var templ_7745c5c3_Var256 templ.SafeURL
 				templ_7745c5c3_Var256, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s/restart", stack.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3145, Col: 92}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3276, Col: 92}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var256))
 				if templ_7745c5c3_Err != nil {
@@ -4666,7 +4666,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 				var templ_7745c5c3_Var257 string
 				templ_7745c5c3_Var257, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3146, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3277, Col: 80}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var257))
 				if templ_7745c5c3_Err != nil {
@@ -4684,7 +4684,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 				var templ_7745c5c3_Var258 templ.SafeURL
 				templ_7745c5c3_Var258, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s/start", stack.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3149, Col: 90}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3280, Col: 90}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var258))
 				if templ_7745c5c3_Err != nil {
@@ -4702,7 +4702,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 			var templ_7745c5c3_Var259 templ.SafeURL
 			templ_7745c5c3_Var259, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s/delete", stack.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3153, Col: 90}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3284, Col: 90}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var259))
 			if templ_7745c5c3_Err != nil {
@@ -4715,7 +4715,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 			var templ_7745c5c3_Var260 string
 			templ_7745c5c3_Var260, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3154, Col: 78}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3285, Col: 78}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var260))
 			if templ_7745c5c3_Err != nil {
@@ -4728,7 +4728,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 			var templ_7745c5c3_Var261 string
 			templ_7745c5c3_Var261, templ_7745c5c3_Err = templ.JoinStringErrs(stack.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3163, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3294, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var261))
 			if templ_7745c5c3_Err != nil {
@@ -4741,7 +4741,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 			var templ_7745c5c3_Var262 string
 			templ_7745c5c3_Var262, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Datacenter)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3165, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3296, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var262))
 			if templ_7745c5c3_Err != nil {
@@ -4754,7 +4754,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 			var templ_7745c5c3_Var263 string
 			templ_7745c5c3_Var263, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Deployment.Mode)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3167, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3298, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var263))
 			if templ_7745c5c3_Err != nil {
@@ -4767,7 +4767,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 			var templ_7745c5c3_Var264 string
 			templ_7745c5c3_Var264, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Deployment.PlacementStrategy)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3169, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3300, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var264))
 			if templ_7745c5c3_Err != nil {
@@ -4780,7 +4780,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 			var templ_7745c5c3_Var265 string
 			templ_7745c5c3_Var265, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Deployment.NetworkMode)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3171, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3302, Col: 39}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var265))
 			if templ_7745c5c3_Err != nil {
@@ -4793,7 +4793,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 			var templ_7745c5c3_Var266 string
 			templ_7745c5c3_Var266, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Owner)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3173, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3304, Col: 22}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var266))
 			if templ_7745c5c3_Err != nil {
@@ -4806,7 +4806,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 			var templ_7745c5c3_Var267 string
 			templ_7745c5c3_Var267, templ_7745c5c3_Err = templ.JoinStringErrs(stack.CreatedAt.Format("2006-01-02 15:04:05"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3175, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3306, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var267))
 			if templ_7745c5c3_Err != nil {
@@ -4824,7 +4824,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 				var templ_7745c5c3_Var268 string
 				templ_7745c5c3_Var268, templ_7745c5c3_Err = templ.JoinStringErrs(stack.DeployedAt.Format("2006-01-02 15:04:05"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3178, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3309, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var268))
 				if templ_7745c5c3_Err != nil {
@@ -4847,7 +4847,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 				var templ_7745c5c3_Var269 string
 				templ_7745c5c3_Var269, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(containers)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3184, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3315, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var269))
 				if templ_7745c5c3_Err != nil {
@@ -4865,7 +4865,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var270 templ.SafeURL
 					templ_7745c5c3_Var270, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3199, Col: 78}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3330, Col: 78}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var270))
 					if templ_7745c5c3_Err != nil {
@@ -4878,7 +4878,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var271 string
 					templ_7745c5c3_Var271, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3199, Col: 144}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3330, Col: 144}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var271))
 					if templ_7745c5c3_Err != nil {
@@ -4891,7 +4891,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var272 string
 					templ_7745c5c3_Var272, templ_7745c5c3_Err = templ.JoinStringErrs(container.Image)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3201, Col: 30}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3332, Col: 30}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var272))
 					if templ_7745c5c3_Err != nil {
@@ -4926,7 +4926,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var275 string
 					templ_7745c5c3_Var275, templ_7745c5c3_Err = templ.JoinStringErrs(container.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3203, Col: 78}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3334, Col: 78}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var275))
 					if templ_7745c5c3_Err != nil {
@@ -4939,7 +4939,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var276 string
 					templ_7745c5c3_Var276, templ_7745c5c3_Err = templ.JoinStringErrs(container.HostedOn)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3205, Col: 33}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3336, Col: 33}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var276))
 					if templ_7745c5c3_Err != nil {
@@ -4952,7 +4952,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var277 templ.SafeURL
 					templ_7745c5c3_Var277, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/containers/%s", container.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3208, Col: 79}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3339, Col: 79}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var277))
 					if templ_7745c5c3_Err != nil {
@@ -4965,7 +4965,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var278 templ.SafeURL
 					templ_7745c5c3_Var278, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/containers/%s/logs", container.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3209, Col: 84}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3340, Col: 84}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var278))
 					if templ_7745c5c3_Err != nil {
@@ -4994,7 +4994,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var279 string
 					templ_7745c5c3_Var279, templ_7745c5c3_Err = templ.JoinStringErrs(placement.ContainerName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3235, Col: 38}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3366, Col: 38}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var279))
 					if templ_7745c5c3_Err != nil {
@@ -5007,7 +5007,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var280 string
 					templ_7745c5c3_Var280, templ_7745c5c3_Err = templ.JoinStringErrs(placement.HostID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3236, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3367, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var280))
 					if templ_7745c5c3_Err != nil {
@@ -5020,7 +5020,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var281 string
 					templ_7745c5c3_Var281, templ_7745c5c3_Err = templ.JoinStringErrs(placement.IPAddress)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3237, Col: 34}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3368, Col: 34}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var281))
 					if templ_7745c5c3_Err != nil {
@@ -5038,7 +5038,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 						var templ_7745c5c3_Var282 string
 						templ_7745c5c3_Var282, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d:%d", containerPort, hostPort))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3240, Col: 85}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3371, Col: 85}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var282))
 						if templ_7745c5c3_Err != nil {
@@ -5078,7 +5078,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var285 string
 					templ_7745c5c3_Var285, templ_7745c5c3_Err = templ.JoinStringErrs(placement.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3244, Col: 78}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3375, Col: 78}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var285))
 					if templ_7745c5c3_Err != nil {
@@ -5091,7 +5091,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var286 templ.SafeURL
 					templ_7745c5c3_Var286, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/containers/%s", placement.ContainerID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3248, Col: 88}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3379, Col: 88}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var286))
 					if templ_7745c5c3_Err != nil {
@@ -5104,7 +5104,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var287 templ.SafeURL
 					templ_7745c5c3_Var287, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/containers/%s/logs", placement.ContainerID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3249, Col: 93}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3380, Col: 93}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var287))
 					if templ_7745c5c3_Err != nil {
@@ -5133,7 +5133,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var288 string
 					templ_7745c5c3_Var288, templ_7745c5c3_Err = templ.JoinStringErrs(serviceName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3263, Col: 24}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3394, Col: 24}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var288))
 					if templ_7745c5c3_Err != nil {
@@ -5146,7 +5146,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 					var templ_7745c5c3_Var289 string
 					templ_7745c5c3_Var289, templ_7745c5c3_Err = templ.JoinStringErrs(endpoint)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3264, Col: 21}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3395, Col: 21}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var289))
 					if templ_7745c5c3_Err != nil {
@@ -5170,7 +5170,7 @@ func StackDetailWithUser(stack *models.Stack, deployment *models.StackDeployment
 				var templ_7745c5c3_Var290 string
 				templ_7745c5c3_Var290, templ_7745c5c3_Err = templ.JoinStringErrs(stack.ErrorMessage)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3272, Col: 28}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3403, Col: 28}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var290))
 				if templ_7745c5c3_Err != nil {
@@ -5241,7 +5241,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 				var templ_7745c5c3_Var293 string
 				templ_7745c5c3_Var293, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3293, Col: 14}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3424, Col: 14}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var293))
 				if templ_7745c5c3_Err != nil {
@@ -5269,7 +5269,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var294 string
 					templ_7745c5c3_Var294, templ_7745c5c3_Err = templ.JoinStringErrs(tmpl.Content)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3307, Col: 37}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3438, Col: 37}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var294))
 					if templ_7745c5c3_Err != nil {
@@ -5282,7 +5282,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var295 string
 					templ_7745c5c3_Var295, templ_7745c5c3_Err = templ.JoinStringErrs(tmpl.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3307, Col: 51}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3438, Col: 51}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var295))
 					if templ_7745c5c3_Err != nil {
@@ -5295,7 +5295,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var296 string
 					templ_7745c5c3_Var296, templ_7745c5c3_Err = templ.JoinStringErrs(tmpl.Description)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3307, Col: 74}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3438, Col: 74}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var296))
 					if templ_7745c5c3_Err != nil {
@@ -5338,7 +5338,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
   ]
 }`)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3341, Col: 2}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3472, Col: 2}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var297))
 			if templ_7745c5c3_Err != nil {
@@ -5361,7 +5361,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var298 string
 					templ_7745c5c3_Var298, templ_7745c5c3_Err = templ.JoinStringErrs(dc)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3369, Col: 27}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3500, Col: 27}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var298))
 					if templ_7745c5c3_Err != nil {
@@ -5374,7 +5374,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var299 string
 					templ_7745c5c3_Var299, templ_7745c5c3_Err = templ.JoinStringErrs(dc)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3369, Col: 34}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3500, Col: 34}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var299))
 					if templ_7745c5c3_Err != nil {
@@ -5403,7 +5403,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var300 string
 					templ_7745c5c3_Var300, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3381, Col: 70}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3512, Col: 70}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var300))
 					if templ_7745c5c3_Err != nil {
@@ -5416,7 +5416,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var301 string
 					templ_7745c5c3_Var301, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3383, Col: 30}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3514, Col: 30}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var301))
 					if templ_7745c5c3_Err != nil {
@@ -5429,7 +5429,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var302 string
 					templ_7745c5c3_Var302, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3383, Col: 52}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3514, Col: 52}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var302))
 					if templ_7745c5c3_Err != nil {
@@ -5447,7 +5447,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 						var templ_7745c5c3_Var303 string
 						templ_7745c5c3_Var303, templ_7745c5c3_Err = templ.JoinStringErrs(host.Datacenter)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3385, Col: 57}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3516, Col: 57}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var303))
 						if templ_7745c5c3_Err != nil {
@@ -5465,7 +5465,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var304 string
 					templ_7745c5c3_Var304, templ_7745c5c3_Err = templ.JoinStringErrs(host.IPAddress)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3387, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3518, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var304))
 					if templ_7745c5c3_Err != nil {
@@ -5500,7 +5500,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var307 string
 					templ_7745c5c3_Var307, templ_7745c5c3_Err = templ.JoinStringErrs(host.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3388, Col: 96}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3519, Col: 96}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var307))
 					if templ_7745c5c3_Err != nil {
@@ -5534,7 +5534,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var308 string
 					templ_7745c5c3_Var308, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3406, Col: 82}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3537, Col: 82}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var308))
 					if templ_7745c5c3_Err != nil {
@@ -5547,7 +5547,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var309 string
 					templ_7745c5c3_Var309, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3408, Col: 35}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3539, Col: 35}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var309))
 					if templ_7745c5c3_Err != nil {
@@ -5560,7 +5560,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var310 string
 					templ_7745c5c3_Var310, templ_7745c5c3_Err = templ.JoinStringErrs(container.Image)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3409, Col: 56}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3540, Col: 56}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var310))
 					if templ_7745c5c3_Err != nil {
@@ -5595,7 +5595,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var313 string
 					templ_7745c5c3_Var313, templ_7745c5c3_Err = templ.JoinStringErrs(container.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3410, Col: 106}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3541, Col: 106}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var313))
 					if templ_7745c5c3_Err != nil {
@@ -5608,7 +5608,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var314 string
 					templ_7745c5c3_Var314, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID[:12])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3412, Col: 56}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3543, Col: 56}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var314))
 					if templ_7745c5c3_Err != nil {
@@ -5621,7 +5621,7 @@ func DeployStackFormWithUser(templates []StackTemplate, hosts []*models.Host, co
 					var templ_7745c5c3_Var315 string
 					templ_7745c5c3_Var315, templ_7745c5c3_Err = templ.JoinStringErrs(container.HostedOn)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3412, Col: 82}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3543, Col: 82}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var315))
 					if templ_7745c5c3_Err != nil {
@@ -5692,7 +5692,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var318 templ.SafeURL
 			templ_7745c5c3_Var318, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3515, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3646, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var318))
 			if templ_7745c5c3_Err != nil {
@@ -5705,7 +5705,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var319 string
 			templ_7745c5c3_Var319, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3516, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3647, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var319))
 			if templ_7745c5c3_Err != nil {
@@ -5723,7 +5723,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 				var templ_7745c5c3_Var320 string
 				templ_7745c5c3_Var320, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3522, Col: 14}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3653, Col: 14}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var320))
 				if templ_7745c5c3_Err != nil {
@@ -5741,7 +5741,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var321 templ.SafeURL
 			templ_7745c5c3_Var321, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s/update", stack.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3526, Col: 89}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3657, Col: 89}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var321))
 			if templ_7745c5c3_Err != nil {
@@ -5754,7 +5754,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var322 string
 			templ_7745c5c3_Var322, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3531, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3662, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var322))
 			if templ_7745c5c3_Err != nil {
@@ -5767,7 +5767,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var323 string
 			templ_7745c5c3_Var323, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Description)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3536, Col: 102}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3667, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var323))
 			if templ_7745c5c3_Err != nil {
@@ -5780,7 +5780,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var324 string
 			templ_7745c5c3_Var324, templ_7745c5c3_Err = templ.JoinStringErrs(stack.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3544, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3675, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var324))
 			if templ_7745c5c3_Err != nil {
@@ -5793,7 +5793,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var325 string
 			templ_7745c5c3_Var325, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3548, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3679, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var325))
 			if templ_7745c5c3_Err != nil {
@@ -5806,7 +5806,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var326 string
 			templ_7745c5c3_Var326, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Deployment.PlacementStrategy)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3552, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3683, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var326))
 			if templ_7745c5c3_Err != nil {
@@ -5829,7 +5829,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 					var templ_7745c5c3_Var327 string
 					templ_7745c5c3_Var327, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3568, Col: 30}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3699, Col: 30}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var327))
 					if templ_7745c5c3_Err != nil {
@@ -5852,7 +5852,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 					var templ_7745c5c3_Var328 string
 					templ_7745c5c3_Var328, templ_7745c5c3_Err = templ.JoinStringErrs(container.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3574, Col: 34}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3705, Col: 34}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var328))
 					if templ_7745c5c3_Err != nil {
@@ -5865,7 +5865,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 					var templ_7745c5c3_Var329 string
 					templ_7745c5c3_Var329, templ_7745c5c3_Err = templ.JoinStringErrs(container.Image)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3575, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3706, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var329))
 					if templ_7745c5c3_Err != nil {
@@ -5900,7 +5900,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 					var templ_7745c5c3_Var332 string
 					templ_7745c5c3_Var332, templ_7745c5c3_Err = templ.JoinStringErrs(container.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3576, Col: 105}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3707, Col: 105}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var332))
 					if templ_7745c5c3_Err != nil {
@@ -5913,7 +5913,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 					var templ_7745c5c3_Var333 string
 					templ_7745c5c3_Var333, templ_7745c5c3_Err = templ.JoinStringErrs(container.ID[:12])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3578, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3709, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var333))
 					if templ_7745c5c3_Err != nil {
@@ -5926,7 +5926,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 					var templ_7745c5c3_Var334 string
 					templ_7745c5c3_Var334, templ_7745c5c3_Err = templ.JoinStringErrs(container.HostedOn)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3578, Col: 81}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3709, Col: 81}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var334))
 					if templ_7745c5c3_Err != nil {
@@ -5949,7 +5949,7 @@ func EditStackFormWithUser(stack *models.Stack, containers []*models.Container, 
 			var templ_7745c5c3_Var335 templ.SafeURL
 			templ_7745c5c3_Var335, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3588, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3719, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var335))
 			if templ_7745c5c3_Err != nil {
@@ -6010,7 +6010,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 			var templ_7745c5c3_Var338 templ.SafeURL
 			templ_7745c5c3_Var338, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3600, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3731, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var338))
 			if templ_7745c5c3_Err != nil {
@@ -6023,7 +6023,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 			var templ_7745c5c3_Var339 string
 			templ_7745c5c3_Var339, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3601, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3732, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var339))
 			if templ_7745c5c3_Err != nil {
@@ -6058,7 +6058,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 			var templ_7745c5c3_Var342 string
 			templ_7745c5c3_Var342, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3605, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3736, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var342))
 			if templ_7745c5c3_Err != nil {
@@ -6082,7 +6082,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 					var templ_7745c5c3_Var343 string
 					templ_7745c5c3_Var343, templ_7745c5c3_Err = templ.JoinStringErrs(placement.ContainerName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3617, Col: 36}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3748, Col: 36}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var343))
 					if templ_7745c5c3_Err != nil {
@@ -6095,7 +6095,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 					var templ_7745c5c3_Var344 string
 					templ_7745c5c3_Var344, templ_7745c5c3_Err = templ.JoinStringErrs(placement.HostID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3619, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3750, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var344))
 					if templ_7745c5c3_Err != nil {
@@ -6130,7 +6130,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 					var templ_7745c5c3_Var347 string
 					templ_7745c5c3_Var347, templ_7745c5c3_Err = templ.JoinStringErrs(placement.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3620, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3751, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var347))
 					if templ_7745c5c3_Err != nil {
@@ -6148,7 +6148,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 						var templ_7745c5c3_Var348 string
 						templ_7745c5c3_Var348, templ_7745c5c3_Err = templ.JoinStringErrs("logs-" + placement.ContainerID)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3624, Col: 68}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3755, Col: 68}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var348))
 						if templ_7745c5c3_Err != nil {
@@ -6161,7 +6161,7 @@ func StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment, 
 						var templ_7745c5c3_Var349 string
 						templ_7745c5c3_Var349, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/containers/%s/logs?tail=100", placement.ContainerID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3626, Col: 88}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3757, Col: 88}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var349))
 						if templ_7745c5c3_Err != nil {
@@ -6243,7 +6243,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 				var templ_7745c5c3_Var352 string
 				templ_7745c5c3_Var352, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3658, Col: 14}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3789, Col: 14}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var352))
 				if templ_7745c5c3_Err != nil {
@@ -6261,7 +6261,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 			var templ_7745c5c3_Var353 string
 			templ_7745c5c3_Var353, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3667, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3798, Col: 58}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var353))
 			if templ_7745c5c3_Err != nil {
@@ -6274,7 +6274,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 			var templ_7745c5c3_Var354 string
 			templ_7745c5c3_Var354, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3672, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3803, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var354))
 			if templ_7745c5c3_Err != nil {
@@ -6287,7 +6287,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 			var templ_7745c5c3_Var355 string
 			templ_7745c5c3_Var355, templ_7745c5c3_Err = templ.JoinStringErrs(host.IPAddress)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3677, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3808, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var355))
 			if templ_7745c5c3_Err != nil {
@@ -6300,7 +6300,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 			var templ_7745c5c3_Var356 string
 			templ_7745c5c3_Var356, templ_7745c5c3_Err = templ.JoinStringErrs(host.Datacenter)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3682, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3813, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var356))
 			if templ_7745c5c3_Err != nil {
@@ -6313,7 +6313,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 			var templ_7745c5c3_Var357 string
 			templ_7745c5c3_Var357, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", host.CPU))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3690, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3821, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var357))
 			if templ_7745c5c3_Err != nil {
@@ -6326,7 +6326,7 @@ func CreateHostFormWithUser(host *models.Host, errorMsg string, user *models.Use
 			var templ_7745c5c3_Var358 string
 			templ_7745c5c3_Var358, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", host.Memory))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3695, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3826, Col: 91}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var358))
 			if templ_7745c5c3_Err != nil {
@@ -6417,7 +6417,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var361 templ.SafeURL
 			templ_7745c5c3_Var361, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3731, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3862, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var361))
 			if templ_7745c5c3_Err != nil {
@@ -6430,7 +6430,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var362 string
 			templ_7745c5c3_Var362, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3732, Col: 30}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3863, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var362))
 			if templ_7745c5c3_Err != nil {
@@ -6448,7 +6448,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 				var templ_7745c5c3_Var363 string
 				templ_7745c5c3_Var363, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3737, Col: 14}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3868, Col: 14}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var363))
 				if templ_7745c5c3_Err != nil {
@@ -6466,7 +6466,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var364 templ.SafeURL
 			templ_7745c5c3_Var364, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/hosts/%s/update", host.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3741, Col: 87}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3872, Col: 87}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var364))
 			if templ_7745c5c3_Err != nil {
@@ -6479,7 +6479,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var365 string
 			templ_7745c5c3_Var365, templ_7745c5c3_Err = templ.JoinStringErrs(host.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3746, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3877, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var365))
 			if templ_7745c5c3_Err != nil {
@@ -6492,7 +6492,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var366 string
 			templ_7745c5c3_Var366, templ_7745c5c3_Err = templ.JoinStringErrs(host.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3751, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3882, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var366))
 			if templ_7745c5c3_Err != nil {
@@ -6505,7 +6505,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var367 string
 			templ_7745c5c3_Var367, templ_7745c5c3_Err = templ.JoinStringErrs(host.IPAddress)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3755, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3886, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var367))
 			if templ_7745c5c3_Err != nil {
@@ -6518,7 +6518,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var368 string
 			templ_7745c5c3_Var368, templ_7745c5c3_Err = templ.JoinStringErrs(host.Datacenter)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3760, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3891, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var368))
 			if templ_7745c5c3_Err != nil {
@@ -6531,7 +6531,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var369 string
 			templ_7745c5c3_Var369, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", host.CPU))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3767, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3898, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var369))
 			if templ_7745c5c3_Err != nil {
@@ -6544,7 +6544,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var370 string
 			templ_7745c5c3_Var370, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", host.Memory))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3771, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3902, Col: 91}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var370))
 			if templ_7745c5c3_Err != nil {
@@ -6587,7 +6587,7 @@ func EditHostFormWithUser(host *models.Host, errorMsg string, user *models.User)
 			var templ_7745c5c3_Var371 templ.SafeURL
 			templ_7745c5c3_Var371, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/hosts/%s", host.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3787, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3918, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var371))
 			if templ_7745c5c3_Err != nil {
@@ -6653,7 +6653,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 				var templ_7745c5c3_Var374 string
 				templ_7745c5c3_Var374, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3804, Col: 15}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3935, Col: 15}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var374))
 				if templ_7745c5c3_Err != nil {
@@ -6673,7 +6673,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 					var templ_7745c5c3_Var375 string
 					templ_7745c5c3_Var375, templ_7745c5c3_Err = templ.JoinStringErrs(validationResult.StackName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3812, Col: 46}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3943, Col: 46}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var375))
 					if templ_7745c5c3_Err != nil {
@@ -6686,7 +6686,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 					var templ_7745c5c3_Var376 string
 					templ_7745c5c3_Var376, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", validationResult.ContainerCount))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3813, Col: 75}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3944, Col: 75}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var376))
 					if templ_7745c5c3_Err != nil {
@@ -6699,7 +6699,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 					var templ_7745c5c3_Var377 string
 					templ_7745c5c3_Var377, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", validationResult.WaveCount))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3814, Col: 65}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3945, Col: 65}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var377))
 					if templ_7745c5c3_Err != nil {
@@ -6732,7 +6732,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 							var templ_7745c5c3_Var378 string
 							templ_7745c5c3_Var378, templ_7745c5c3_Err = templ.JoinStringErrs(warning)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3823, Col: 22}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3954, Col: 22}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var378))
 							if templ_7745c5c3_Err != nil {
@@ -6765,7 +6765,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 						var templ_7745c5c3_Var379 string
 						templ_7745c5c3_Var379, templ_7745c5c3_Err = templ.JoinStringErrs(err)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3833, Col: 17}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3964, Col: 17}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var379))
 						if templ_7745c5c3_Err != nil {
@@ -6789,7 +6789,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 			var templ_7745c5c3_Var380 string
 			templ_7745c5c3_Var380, templ_7745c5c3_Err = templ.JoinStringErrs("@context")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3882, Col: 29}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4013, Col: 29}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var380))
 			if templ_7745c5c3_Err != nil {
@@ -6802,7 +6802,7 @@ func JSONLDDeployPage(user *models.User, validationResult *parseResultResponse, 
 			var templ_7745c5c3_Var381 string
 			templ_7745c5c3_Var381, templ_7745c5c3_Err = templ.JoinStringErrs("@graph")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3883, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4014, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var381))
 			if templ_7745c5c3_Err != nil {
@@ -6863,7 +6863,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var384 string
 			templ_7745c5c3_Var384, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.StackID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3899, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4030, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var384))
 			if templ_7745c5c3_Err != nil {
@@ -6876,7 +6876,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var385 string
 			templ_7745c5c3_Var385, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3900, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4031, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var385))
 			if templ_7745c5c3_Err != nil {
@@ -6889,7 +6889,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var386 templ.SafeURL
 			templ_7745c5c3_Var386, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/stacks/%s", deployment.StackID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3903, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4034, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var386))
 			if templ_7745c5c3_Err != nil {
@@ -6924,7 +6924,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var389 string
 			templ_7745c5c3_Var389, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3912, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4043, Col: 81}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var389))
 			if templ_7745c5c3_Err != nil {
@@ -6937,7 +6937,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var390 string
 			templ_7745c5c3_Var390, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.Phase)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3916, Col: 30}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4047, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var390))
 			if templ_7745c5c3_Err != nil {
@@ -6950,7 +6950,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var391 string
 			templ_7745c5c3_Var391, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("width: %d%%", deployment.Progress))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3921, Col: 89}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4052, Col: 89}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var391))
 			if templ_7745c5c3_Err != nil {
@@ -6963,7 +6963,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var392 string
 			templ_7745c5c3_Var392, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d%%", deployment.Progress))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3923, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4054, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var392))
 			if templ_7745c5c3_Err != nil {
@@ -6976,7 +6976,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 			var templ_7745c5c3_Var393 string
 			templ_7745c5c3_Var393, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.StartedAt.Format("2006-01-02 15:04:05"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3927, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4058, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var393))
 			if templ_7745c5c3_Err != nil {
@@ -6994,7 +6994,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var394 string
 				templ_7745c5c3_Var394, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.CompletedAt.Format("2006-01-02 15:04:05"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3932, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4063, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var394))
 				if templ_7745c5c3_Err != nil {
@@ -7013,7 +7013,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var395 string
 				templ_7745c5c3_Var395, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.ErrorMessage)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3937, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4068, Col: 56}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var395))
 				if templ_7745c5c3_Err != nil {
@@ -7041,7 +7041,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var396 string
 					templ_7745c5c3_Var396, templ_7745c5c3_Err = templ.JoinStringErrs(containerName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3957, Col: 28}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4088, Col: 28}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var396))
 					if templ_7745c5c3_Err != nil {
@@ -7054,7 +7054,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var397 string
 					templ_7745c5c3_Var397, templ_7745c5c3_Err = templ.JoinStringErrs(placement.HostID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3958, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4089, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var397))
 					if templ_7745c5c3_Err != nil {
@@ -7072,7 +7072,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 						var templ_7745c5c3_Var398 string
 						templ_7745c5c3_Var398, templ_7745c5c3_Err = templ.JoinStringErrs(placement.ContainerID[:12])
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3961, Col: 45}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4092, Col: 45}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var398))
 						if templ_7745c5c3_Err != nil {
@@ -7117,7 +7117,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var401 string
 					templ_7745c5c3_Var401, templ_7745c5c3_Err = templ.JoinStringErrs(placement.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3967, Col: 83}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4098, Col: 83}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var401))
 					if templ_7745c5c3_Err != nil {
@@ -7141,7 +7141,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var402 string
 				templ_7745c5c3_Var402, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.NetworkInfo.NetworkName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3981, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4112, Col: 49}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var402))
 				if templ_7745c5c3_Err != nil {
@@ -7154,7 +7154,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var403 string
 				templ_7745c5c3_Var403, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.NetworkInfo.NetworkID[:12])
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3985, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4116, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var403))
 				if templ_7745c5c3_Err != nil {
@@ -7167,7 +7167,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var404 string
 				templ_7745c5c3_Var404, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.NetworkInfo.Driver)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 3989, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4120, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var404))
 				if templ_7745c5c3_Err != nil {
@@ -7209,7 +7209,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var407 string
 					templ_7745c5c3_Var407, templ_7745c5c3_Err = templ.JoinStringErrs(event.Timestamp.Format("15:04:05"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4001, Col: 70}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4132, Col: 70}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var407))
 					if templ_7745c5c3_Err != nil {
@@ -7244,7 +7244,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var410 string
 					templ_7745c5c3_Var410, templ_7745c5c3_Err = templ.JoinStringErrs(event.Type)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4002, Col: 74}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4133, Col: 74}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var410))
 					if templ_7745c5c3_Err != nil {
@@ -7257,7 +7257,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var411 string
 					templ_7745c5c3_Var411, templ_7745c5c3_Err = templ.JoinStringErrs(event.Phase)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4003, Col: 48}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4134, Col: 48}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var411))
 					if templ_7745c5c3_Err != nil {
@@ -7275,7 +7275,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 						var templ_7745c5c3_Var412 string
 						templ_7745c5c3_Var412, templ_7745c5c3_Err = templ.JoinStringErrs(event.Container)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4007, Col: 35}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4138, Col: 35}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var412))
 						if templ_7745c5c3_Err != nil {
@@ -7289,7 +7289,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var413 string
 					templ_7745c5c3_Var413, templ_7745c5c3_Err = templ.JoinStringErrs(event.Message)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4009, Col: 24}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4140, Col: 24}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var413))
 					if templ_7745c5c3_Err != nil {
@@ -7313,7 +7313,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var414 string
 				templ_7745c5c3_Var414, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.RollbackState.Status)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4020, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4151, Col: 59}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var414))
 				if templ_7745c5c3_Err != nil {
@@ -7326,7 +7326,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 				var templ_7745c5c3_Var415 string
 				templ_7745c5c3_Var415, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.RollbackState.StartedAt.Format("2006-01-02 15:04:05"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4021, Col: 84}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4152, Col: 84}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var415))
 				if templ_7745c5c3_Err != nil {
@@ -7344,7 +7344,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var416 string
 					templ_7745c5c3_Var416, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.RollbackState.CompletedAt.Format("2006-01-02 15:04:05"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4023, Col: 89}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4154, Col: 89}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var416))
 					if templ_7745c5c3_Err != nil {
@@ -7368,7 +7368,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 						var templ_7745c5c3_Var417 string
 						templ_7745c5c3_Var417, templ_7745c5c3_Err = templ.JoinStringErrs(containerName)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4029, Col: 28}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4160, Col: 28}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var417))
 						if templ_7745c5c3_Err != nil {
@@ -7392,7 +7392,7 @@ func JSONLDDeploymentDetailPage(deployment *deploymentStateResponse, user *model
 					var templ_7745c5c3_Var418 string
 					templ_7745c5c3_Var418, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.RollbackState.ErrorMessage)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4034, Col: 73}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4165, Col: 73}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var418))
 					if templ_7745c5c3_Err != nil {
@@ -7528,7 +7528,7 @@ func AgentsTable(agents []AgentInfo) templ.Component {
 			var templ_7745c5c3_Var422 string
 			templ_7745c5c3_Var422, templ_7745c5c3_Err = templ.JoinStringErrs(agent.Config.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4109, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4240, Col: 34}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var422))
 			if templ_7745c5c3_Err != nil {
@@ -7541,7 +7541,7 @@ func AgentsTable(agents []AgentInfo) templ.Component {
 			var templ_7745c5c3_Var423 string
 			templ_7745c5c3_Var423, templ_7745c5c3_Err = templ.JoinStringErrs(agent.Config.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4111, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4242, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var423))
 			if templ_7745c5c3_Err != nil {
@@ -7554,7 +7554,7 @@ func AgentsTable(agents []AgentInfo) templ.Component {
 			var templ_7745c5c3_Var424 string
 			templ_7745c5c3_Var424, templ_7745c5c3_Err = templ.JoinStringErrs(agent.Config.HostID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4113, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4244, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var424))
 			if templ_7745c5c3_Err != nil {
@@ -7567,7 +7567,7 @@ func AgentsTable(agents []AgentInfo) templ.Component {
 			var templ_7745c5c3_Var425 string
 			templ_7745c5c3_Var425, templ_7745c5c3_Err = templ.JoinStringErrs(agent.Config.DockerSocket)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4115, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4246, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var425))
 			if templ_7745c5c3_Err != nil {
@@ -7602,7 +7602,7 @@ func AgentsTable(agents []AgentInfo) templ.Component {
 			var templ_7745c5c3_Var428 string
 			templ_7745c5c3_Var428, templ_7745c5c3_Err = templ.JoinStringErrs(agent.State.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4119, Col: 28}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4250, Col: 28}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var428))
 			if templ_7745c5c3_Err != nil {
@@ -7615,7 +7615,7 @@ func AgentsTable(agents []AgentInfo) templ.Component {
 			var templ_7745c5c3_Var429 string
 			templ_7745c5c3_Var429, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", agent.State.ContainerCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4122, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4253, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var429))
 			if templ_7745c5c3_Err != nil {
@@ -7633,7 +7633,7 @@ func AgentsTable(agents []AgentInfo) templ.Component {
 				var templ_7745c5c3_Var430 string
 				templ_7745c5c3_Var430, templ_7745c5c3_Err = templ.JoinStringErrs(formatTimeAgo(*agent.State.LastHeartbeat))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4125, Col: 76}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4256, Col: 76}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var430))
 				if templ_7745c5c3_Err != nil {
@@ -7661,7 +7661,7 @@ func AgentsTable(agents []AgentInfo) templ.Component {
 				var templ_7745c5c3_Var431 string
 				templ_7745c5c3_Var431, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/agents/%s/stop", agent.Config.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4136, Col: 71}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4267, Col: 71}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var431))
 				if templ_7745c5c3_Err != nil {
@@ -7674,7 +7674,7 @@ func AgentsTable(agents []AgentInfo) templ.Component {
 				var templ_7745c5c3_Var432 string
 				templ_7745c5c3_Var432, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/agents/%s/restart", agent.Config.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4143, Col: 74}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4274, Col: 74}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var432))
 				if templ_7745c5c3_Err != nil {
@@ -7692,7 +7692,7 @@ func AgentsTable(agents []AgentInfo) templ.Component {
 				var templ_7745c5c3_Var433 string
 				templ_7745c5c3_Var433, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/agents/%s/start", agent.Config.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4151, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4282, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var433))
 				if templ_7745c5c3_Err != nil {
@@ -7710,7 +7710,7 @@ func AgentsTable(agents []AgentInfo) templ.Component {
 			var templ_7745c5c3_Var434 templ.SafeURL
 			templ_7745c5c3_Var434, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/agents/%s", agent.Config.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4156, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4287, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var434))
 			if templ_7745c5c3_Err != nil {
@@ -7723,7 +7723,7 @@ func AgentsTable(agents []AgentInfo) templ.Component {
 			var templ_7745c5c3_Var435 string
 			templ_7745c5c3_Var435, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/agents/%s", agent.Config.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4160, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4291, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var435))
 			if templ_7745c5c3_Err != nil {
@@ -7741,7 +7741,7 @@ func AgentsTable(agents []AgentInfo) templ.Component {
 		var templ_7745c5c3_Var436 string
 		templ_7745c5c3_Var436, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(agents)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4172, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4303, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var436))
 		if templ_7745c5c3_Err != nil {
@@ -7796,7 +7796,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 			var templ_7745c5c3_Var439 string
 			templ_7745c5c3_Var439, templ_7745c5c3_Err = templ.JoinStringErrs(agent.Config.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4181, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4312, Col: 33}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var439))
 			if templ_7745c5c3_Err != nil {
@@ -7814,7 +7814,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 				var templ_7745c5c3_Var440 string
 				templ_7745c5c3_Var440, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/agents/%s/stop", agent.Config.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4187, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4318, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var440))
 				if templ_7745c5c3_Err != nil {
@@ -7827,7 +7827,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 				var templ_7745c5c3_Var441 string
 				templ_7745c5c3_Var441, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/agents/%s/restart", agent.Config.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4193, Col: 70}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4324, Col: 70}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var441))
 				if templ_7745c5c3_Err != nil {
@@ -7845,7 +7845,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 				var templ_7745c5c3_Var442 string
 				templ_7745c5c3_Var442, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/agents/%s/start", agent.Config.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4200, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4331, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var442))
 				if templ_7745c5c3_Err != nil {
@@ -7863,7 +7863,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 			var templ_7745c5c3_Var443 string
 			templ_7745c5c3_Var443, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/agents/%s", agent.Config.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4207, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4338, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var443))
 			if templ_7745c5c3_Err != nil {
@@ -7876,7 +7876,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 			var templ_7745c5c3_Var444 string
 			templ_7745c5c3_Var444, templ_7745c5c3_Err = templ.JoinStringErrs(agent.Config.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4220, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4351, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var444))
 			if templ_7745c5c3_Err != nil {
@@ -7889,7 +7889,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 			var templ_7745c5c3_Var445 string
 			templ_7745c5c3_Var445, templ_7745c5c3_Err = templ.JoinStringErrs(agent.Config.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4224, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4355, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var445))
 			if templ_7745c5c3_Err != nil {
@@ -7902,7 +7902,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 			var templ_7745c5c3_Var446 string
 			templ_7745c5c3_Var446, templ_7745c5c3_Err = templ.JoinStringErrs(agent.Config.HostID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4228, Col: 53}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4359, Col: 53}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var446))
 			if templ_7745c5c3_Err != nil {
@@ -7915,7 +7915,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 			var templ_7745c5c3_Var447 string
 			templ_7745c5c3_Var447, templ_7745c5c3_Err = templ.JoinStringErrs(agent.Config.DockerSocket)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4232, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4363, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var447))
 			if templ_7745c5c3_Err != nil {
@@ -7929,7 +7929,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 				var templ_7745c5c3_Var448 string
 				templ_7745c5c3_Var448, templ_7745c5c3_Err = templ.JoinStringErrs(agent.Config.SSHKeyPath)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4238, Col: 31}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4369, Col: 31}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var448))
 				if templ_7745c5c3_Err != nil {
@@ -7948,7 +7948,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 			var templ_7745c5c3_Var449 string
 			templ_7745c5c3_Var449, templ_7745c5c3_Err = templ.JoinStringErrs(agent.Config.Datacenter)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4246, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4377, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var449))
 			if templ_7745c5c3_Err != nil {
@@ -7961,7 +7961,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 			var templ_7745c5c3_Var450 string
 			templ_7745c5c3_Var450, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d seconds", agent.Config.SyncInterval))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4250, Col: 86}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4381, Col: 86}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var450))
 			if templ_7745c5c3_Err != nil {
@@ -8026,7 +8026,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 			var templ_7745c5c3_Var453 string
 			templ_7745c5c3_Var453, templ_7745c5c3_Err = templ.JoinStringErrs(agent.State.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4280, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4411, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var453))
 			if templ_7745c5c3_Err != nil {
@@ -8040,7 +8040,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 				var templ_7745c5c3_Var454 string
 				templ_7745c5c3_Var454, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", agent.State.ProcessID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4288, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4419, Col: 49}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var454))
 				if templ_7745c5c3_Err != nil {
@@ -8059,7 +8059,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 			var templ_7745c5c3_Var455 string
 			templ_7745c5c3_Var455, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", agent.State.ContainerCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4296, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4427, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var455))
 			if templ_7745c5c3_Err != nil {
@@ -8073,7 +8073,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 				var templ_7745c5c3_Var456 string
 				templ_7745c5c3_Var456, templ_7745c5c3_Err = templ.JoinStringErrs(agent.State.StartedAt.Format("2006-01-02 15:04:05"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4302, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4433, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var456))
 				if templ_7745c5c3_Err != nil {
@@ -8093,7 +8093,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 				var templ_7745c5c3_Var457 string
 				templ_7745c5c3_Var457, templ_7745c5c3_Err = templ.JoinStringErrs(agent.State.LastHeartbeat.Format("2006-01-02 15:04:05"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4312, Col: 64}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4443, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var457))
 				if templ_7745c5c3_Err != nil {
@@ -8106,7 +8106,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 				var templ_7745c5c3_Var458 string
 				templ_7745c5c3_Var458, templ_7745c5c3_Err = templ.JoinStringErrs(formatTimeAgo(*agent.State.LastHeartbeat))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4313, Col: 77}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4444, Col: 77}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var458))
 				if templ_7745c5c3_Err != nil {
@@ -8130,7 +8130,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 				var templ_7745c5c3_Var459 string
 				templ_7745c5c3_Var459, templ_7745c5c3_Err = templ.JoinStringErrs(agent.State.LastSyncAt.Format("2006-01-02 15:04:05"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4323, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4454, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var459))
 				if templ_7745c5c3_Err != nil {
@@ -8154,7 +8154,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 				var templ_7745c5c3_Var460 string
 				templ_7745c5c3_Var460, templ_7745c5c3_Err = templ.JoinStringErrs(agent.State.ErrorMessage)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4332, Col: 71}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4463, Col: 71}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var460))
 				if templ_7745c5c3_Err != nil {
@@ -8172,7 +8172,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 			var templ_7745c5c3_Var461 templ.SafeURL
 			templ_7745c5c3_Var461, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/web/agents/%s/logs/download?lines=1000", agent.Config.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4351, Col: 95}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4482, Col: 95}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var461))
 			if templ_7745c5c3_Err != nil {
@@ -8185,7 +8185,7 @@ func AgentDetailWithUser(agent AgentInfo, user *models.User) templ.Component {
 			var templ_7745c5c3_Var462 string
 			templ_7745c5c3_Var462, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/web/agents/%s/logs?tail=1000", agent.Config.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4364, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4495, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var462))
 			if templ_7745c5c3_Err != nil {
@@ -8251,7 +8251,7 @@ func CreateAgentFormWithUser(errorMsg string, user *models.User) templ.Component
 				var templ_7745c5c3_Var465 string
 				templ_7745c5c3_Var465, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4400, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates.templ`, Line: 4531, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var465))
 				if templ_7745c5c3_Err != nil {

@@ -1119,19 +1119,36 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 			<h2>Infrastructure Graph</h2>
 			<div class="filters">
 				<div class="graph-control-group">
+					<label for="view-mode-select">View Mode:</label>
+					<select id="view-mode-select" name="view-mode">
+						<option value="stack" selected>Stack View</option>
+						<option value="host">Host View (Legacy)</option>
+						<option value="hybrid">Hybrid (Stacks + Orphans)</option>
+						<option value="stack-only">Stack Overview</option>
+					</select>
+				</div>
+				<div class="graph-control-group">
 					<label for="layout-select">Layout:</label>
 					<select id="layout-select" name="layout">
+						<option value="cose-bilkent">Hierarchical (COSE-Bilkent)</option>
 						<option value="cose">Force Directed (COSE)</option>
+						<option value="breadthfirst">Breadthfirst</option>
 						<option value="grid">Grid</option>
 						<option value="circle">Circle</option>
-						<option value="breadthfirst">Hierarchical</option>
 						<option value="concentric">Concentric</option>
 					</select>
+				</div>
+				<div class="graph-control-group">
+					<label>
+						<input type="checkbox" id="show-orphans" name="orphans">
+						Show orphaned containers
+					</label>
 				</div>
 				<div class="graph-control-group">
 					<label for="filter-type">Node Type:</label>
 					<select id="filter-type" name="type">
 						<option value="all">All Types</option>
+						<option value="stack">Stacks Only</option>
 						<option value="host">Hosts Only</option>
 						<option value="container">Containers Only</option>
 					</select>
@@ -1158,6 +1175,10 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 		<div class="graph-container">
 			<div class="graph-legend">
 				<div class="legend-item">
+					<div class="legend-color stack"></div>
+					<span>Stacks</span>
+				</div>
+				<div class="legend-item">
 					<div class="legend-color host"></div>
 					<span>Hosts</span>
 				</div>
@@ -1169,12 +1190,20 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 					<div class="legend-color container-stopped"></div>
 					<span>Stopped Containers</span>
 				</div>
+				<div class="legend-item">
+					<div class="legend-color orphan"></div>
+					<span>Orphaned Containers</span>
+				</div>
 			</div>
 
 			<div id="graph-stats" class="graph-stats">
 				<div class="graph-stat-item">
 					<div class="label">Total Nodes</div>
 					<div class="value" id="stat-nodes">-</div>
+				</div>
+				<div class="graph-stat-item">
+					<div class="label">Stacks</div>
+					<div class="value" id="stat-stacks">-</div>
 				</div>
 				<div class="graph-stat-item">
 					<div class="label">Hosts</div>
@@ -1205,15 +1234,37 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 		</div>
 
 		<script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+		<script src="https://unpkg.com/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.js"></script>
 		<script>
 		(function() {
 			let cy;
 			let originalData = { nodes: [], edges: [] };
 			let currentFilters = { type: 'all', status: 'all', datacenter: 'all' };
+			let currentViewMode = 'stack';
+			let showOrphans = false;
+
+			// Register cose-bilkent layout
+			if (typeof cytoscape !== 'undefined' && typeof cytoscapeCoseBilkent !== 'undefined') {
+				cytoscape.use(cytoscapeCoseBilkent);
+			}
+
+			// Build API URL based on view mode
+			function getGraphAPIUrl() {
+				const viewMode = document.getElementById('view-mode-select').value || 'stack';
+				const orphans = document.getElementById('show-orphans').checked;
+
+				if (viewMode === 'host') {
+					return '/api/v1/graph'; // Legacy host-centric endpoint
+				}
+
+				return `/api/v1/graph/stack-view?view=${viewMode}&orphans=${orphans}`;
+			}
 
 			// Initialize Cytoscape
-			function initGraph(layout = 'cose') {
-				fetch('/api/v1/graph')
+			function initGraph(layout = 'cose-bilkent') {
+				const apiUrl = getGraphAPIUrl();
+
+				fetch(apiUrl)
 					.then(response => response.json())
 					.then(data => {
 						// Store original data
@@ -1231,12 +1282,14 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 						// Update stats
 						const stats = {
 							nodes: elements.nodes.length,
+							stacks: elements.nodes.filter(n => n.data.type === 'stack').length,
 							hosts: elements.nodes.filter(n => n.data.type === 'host').length,
 							containers: elements.nodes.filter(n => n.data.type === 'container').length,
 							edges: elements.edges.length
 						};
 
 						document.getElementById('stat-nodes').textContent = stats.nodes;
+						document.getElementById('stat-stacks').textContent = stats.stacks;
 						document.getElementById('stat-hosts').textContent = stats.hosts;
 						document.getElementById('stat-containers').textContent = stats.containers;
 						document.getElementById('stat-edges').textContent = stats.edges;
@@ -1265,14 +1318,42 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 										'border-color': '#8b5cf6'
 									}
 								},
+								// Stack nodes (compound/parent nodes)
+								{
+									selector: 'node[type="stack"]',
+									style: {
+										'background-color': '#f0f9ff',
+										'background-opacity': 0.2,
+										'shape': 'roundrectangle',
+										'border-width': 4,
+										'border-color': '#3b82f6',
+										'border-style': 'solid',
+										'label': 'data(label)',
+										'text-valign': 'top',
+										'text-halign': 'center',
+										'text-margin-y': -10,
+										'font-size': '18px',
+										'font-weight': 'bold',
+										'color': '#1e40af',
+										'padding': '20px'
+									}
+								},
 								{
 									selector: 'node[type="host"]',
 									style: {
-										'background-color': '#6366f1',
-										'shape': 'rectangle',
-										'width': 80,
-										'height': 60,
-										'border-color': '#4f46e5'
+										'background-color': '#ede9fe',
+										'background-opacity': 0.3,
+										'shape': 'roundrectangle',
+										'width': 100,
+										'height': 80,
+										'border-width': 3,
+										'border-color': '#8b5cf6',
+										'label': 'data(label)',
+										'text-valign': 'top',
+										'text-halign': 'center',
+										'font-size': '14px',
+										'color': '#6d28d9',
+										'padding': '15px'
 									}
 								},
 								{
@@ -1280,8 +1361,18 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 									style: {
 										'background-color': '#10b981',
 										'shape': 'ellipse',
-										'width': 60,
-										'height': 60
+										'width': 50,
+										'height': 50,
+										'font-size': '11px'
+									}
+								},
+								// Orphaned containers
+								{
+									selector: 'node[metadata.orphan="true"]',
+									style: {
+										'background-color': '#f59e0b',
+										'border-color': '#d97706',
+										'border-width': 3
 									}
 								},
 								{
@@ -1326,7 +1417,17 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 								componentSpacing: 100,
 								nodeRepulsion: 400000,
 								idealEdgeLength: 100,
-								edgeElasticity: 100
+								edgeElasticity: 100,
+								// Compound node options (for cose-bilkent)
+								nestingFactor: 0.1,
+								gravity: 0.25,
+								numIter: 2500,
+								tile: true,
+								tilingPaddingVertical: 10,
+								tilingPaddingHorizontal: 10,
+								gravityRangeCompound: 1.5,
+								gravityCompound: 1.0,
+								gravityRange: 3.8
 							}
 						});
 
@@ -1335,10 +1436,21 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 							const node = evt.target;
 							const data = node.data();
 							let info = `Type: ${data.type}\\nID: ${data.id}\\nStatus: ${data.status || 'N/A'}`;
-							if (data.type === 'host') {
+							if (data.type === 'stack') {
+								info += `\\nContainers: ${data.containerCount || 0}\\nHosts: ${data.hostCount || 0}`;
+								if (data.metadata && data.metadata.deploymentMode) {
+									info += `\\nMode: ${data.metadata.deploymentMode}`;
+								}
+							} else if (data.type === 'host') {
 								info += `\\nIP: ${data.ip || 'N/A'}\\nCPU: ${data.cpu || 'N/A'}\\nMemory: ${data.memory ? (data.memory / 1024 / 1024 / 1024).toFixed(1) + ' GB' : 'N/A'}`;
 							} else if (data.type === 'container') {
 								info += `\\nImage: ${data.image || 'N/A'}`;
+								if (data.metadata && data.metadata.stack) {
+									info += `\\nStack: ${data.metadata.stack}`;
+								}
+								if (data.metadata && data.metadata.orphan) {
+									info += `\\n⚠️ Orphaned Container`;
+								}
 							}
 							showNodeInfoModal(data);
 						});
@@ -1349,6 +1461,20 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 					});
 			}
 
+			// View mode selector
+			document.getElementById('view-mode-select').addEventListener('change', function(e) {
+				currentViewMode = e.target.value;
+				const currentLayout = document.getElementById('layout-select').value;
+				initGraph(currentLayout);
+			});
+
+			// Orphans checkbox
+			document.getElementById('show-orphans').addEventListener('change', function(e) {
+				showOrphans = e.target.checked;
+				const currentLayout = document.getElementById('layout-select').value;
+				initGraph(currentLayout);
+			});
+
 			// Layout selector
 			document.getElementById('layout-select').addEventListener('change', function(e) {
 				if (cy) {
@@ -1357,7 +1483,12 @@ templ GraphViewWithUser(cfg *config.Config, user *models.User) {
 						animate: true,
 						animationDuration: 500,
 						fit: true,
-						padding: 50
+						padding: 50,
+						// Compound node options
+						nestingFactor: 0.1,
+						gravity: 0.25,
+						numIter: 2500,
+						tile: true
 					}).run();
 				}
 			});

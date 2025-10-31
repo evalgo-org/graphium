@@ -360,3 +360,163 @@ func (s *Statistics) String() string {
 		len(s.HostContainerCounts),
 	)
 }
+
+// GetStackTopology returns the complete topology of a stack including all hosts and containers.
+// This method is used for stack-centric graph visualization.
+func (s *Storage) GetStackTopology(stackID string) (*StackTopology, error) {
+	// Get stack metadata
+	stack, err := s.GetStack(stackID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get stack: %w", err)
+	}
+
+	// Get deployment state for this stack
+	deployments, err := s.GetDeploymentsByStackID(stackID)
+	if err != nil || len(deployments) == 0 {
+		// Stack exists but has no deployments - return empty topology
+		return &StackTopology{
+			Stack: stack,
+			Hosts: make(map[string]*StackHostTopology),
+		}, nil
+	}
+
+	// Use the most recent deployment state
+	deployment := deployments[len(deployments)-1]
+
+	// Build topology by grouping containers by host
+	topology := &StackTopology{
+		Stack: stack,
+		Hosts: make(map[string]*StackHostTopology),
+	}
+
+	// Group placements by host
+	for _, placement := range deployment.Placements {
+		if placement == nil {
+			continue
+		}
+
+		hostID := placement.HostID
+
+		// Initialize host topology if not exists
+		if topology.Hosts[hostID] == nil {
+			host, err := s.GetHost(hostID)
+			if err != nil {
+				// Log warning but continue - might be a deleted host
+				s.debugLog("Warning: Host %s not found for stack %s", hostID, stackID)
+				continue
+			}
+
+			topology.Hosts[hostID] = &StackHostTopology{
+				Host:       host,
+				Containers: make([]*models.Container, 0),
+			}
+		}
+
+		// Get container details
+		container, err := s.GetContainer(placement.ContainerID)
+		if err != nil {
+			s.debugLog("Warning: Container %s not found for stack %s", placement.ContainerID, stackID)
+			continue
+		}
+
+		// Add container to host topology
+		topology.Hosts[hostID].Containers = append(
+			topology.Hosts[hostID].Containers,
+			container,
+		)
+	}
+
+	return topology, nil
+}
+
+// FindOrphanedContainers returns containers that don't belong to any stack.
+// These are containers discovered by agents but not managed through stack deployments.
+func (s *Storage) FindOrphanedContainers() ([]*models.Container, error) {
+	// Get all containers
+	allContainers, err := s.ListContainers(nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list containers: %w", err)
+	}
+
+	// Get all stacks and build a set of stack-managed container IDs
+	stacks, err := s.ListStacks(nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list stacks: %w", err)
+	}
+
+	stackContainerIDs := make(map[string]bool)
+
+	for _, stack := range stacks {
+		deployments, err := s.GetDeploymentsByStackID(stack.ID)
+		if err != nil || len(deployments) == 0 {
+			continue
+		}
+
+		// Use most recent deployment
+		deployment := deployments[len(deployments)-1]
+
+		// Mark all containers in this deployment as managed
+		for _, placement := range deployment.Placements {
+			if placement != nil {
+				stackContainerIDs[placement.ContainerID] = true
+			}
+		}
+	}
+
+	// Find containers that are not in any stack
+	orphans := make([]*models.Container, 0)
+	for _, container := range allContainers {
+		if !stackContainerIDs[container.ID] {
+			orphans = append(orphans, container)
+		}
+	}
+
+	return orphans, nil
+}
+
+// CountUniqueHosts counts the number of unique hosts in a set of container placements.
+func CountUniqueHosts(placements map[string]*models.ContainerPlacement) int {
+	hosts := make(map[string]bool)
+	for _, placement := range placements {
+		if placement != nil {
+			hosts[placement.HostID] = true
+		}
+	}
+	return len(hosts)
+}
+
+// GroupPlacementsByHost groups container placements by their host ID.
+// Returns a map of hostID -> map of containerName -> placement.
+func GroupPlacementsByHost(placements map[string]*models.ContainerPlacement) map[string]map[string]*models.ContainerPlacement {
+	result := make(map[string]map[string]*models.ContainerPlacement)
+
+	for containerName, placement := range placements {
+		if placement == nil {
+			continue
+		}
+
+		hostID := placement.HostID
+
+		// Initialize host's container map if needed
+		if result[hostID] == nil {
+			result[hostID] = make(map[string]*models.ContainerPlacement)
+		}
+
+		result[hostID][containerName] = placement
+	}
+
+	return result
+}
+
+// StackTopology represents the complete view of a stack's deployment topology.
+// Used for stack-centric graph visualization.
+type StackTopology struct {
+	Stack *models.Stack
+	Hosts map[string]*StackHostTopology
+}
+
+// StackHostTopology represents a host and its containers within a stack context.
+type StackHostTopology struct {
+	Host       *models.Host
+	Containers []*models.Container
+}

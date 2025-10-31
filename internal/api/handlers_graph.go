@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/models"
 )
 
@@ -16,16 +17,24 @@ type GraphNode struct {
 
 // GraphNodeData contains the node's properties
 type GraphNodeData struct {
-	ID       string            `json:"id"`
-	Label    string            `json:"label"`
-	Type     string            `json:"type"` // "host", "container"
-	Status   string            `json:"status,omitempty"`
-	Image    string            `json:"image,omitempty"`
-	IP       string            `json:"ip,omitempty"`
-	CPU      int               `json:"cpu,omitempty"`
-	Memory   int64             `json:"memory,omitempty"`
-	Location string            `json:"location,omitempty"`
-	Metadata map[string]string `json:"metadata,omitempty"`
+	ID             string            `json:"id"`
+	Label          string            `json:"label"`
+	Type           string            `json:"type"` // "stack", "host", "container"
+	Status         string            `json:"status,omitempty"`
+	Image          string            `json:"image,omitempty"`
+	IP             string            `json:"ip,omitempty"`
+	CPU            int               `json:"cpu,omitempty"`
+	Memory         int64             `json:"memory,omitempty"`
+	Location       string            `json:"location,omitempty"`
+
+	// Stack-specific fields
+	ContainerCount int               `json:"containerCount,omitempty"`
+	HostCount      int               `json:"hostCount,omitempty"`
+
+	// Cytoscape.js compound node support
+	Parent         string            `json:"parent,omitempty"` // Parent node ID for nesting
+
+	Metadata       map[string]string `json:"metadata,omitempty"`
 }
 
 // GraphEdge represents an edge (relationship) in the graph
@@ -545,4 +554,283 @@ func (s *Server) buildDependencyTree(containerIDs []string, maxDepth, currentDep
 	}
 
 	return nodes
+}
+
+// GetGraphDataStackView returns the stack-centric graph visualization
+// @Summary Get stack-centric graph data
+// @Description Get graph with stacks as primary nodes, hosts nested within
+// @Tags Graph
+// @Accept json
+// @Produce json
+// @Param view query string false "View mode" Enums(stack, host, hybrid, stack-only) default(stack)
+// @Param orphans query boolean false "Include orphaned containers" default(false)
+// @Success 200 {object} GraphData
+// @Failure 500 {object} ErrorResponse
+// @Router /graph/stack-view [get]
+func (s *Server) GetGraphDataStackView(c echo.Context) error {
+	viewMode := c.QueryParam("view")
+	if viewMode == "" {
+		viewMode = "stack" // Default to stack view
+	}
+
+	includeOrphans := c.QueryParam("orphans") == "true"
+
+	switch viewMode {
+	case "stack":
+		return s.getStackCentricGraph(c, includeOrphans)
+	case "host":
+		return s.GetGraphData(c) // Use existing host-centric view
+	case "hybrid":
+		return s.getStackCentricGraph(c, true) // Always include orphans in hybrid
+	case "stack-only":
+		return s.getStackOnlyGraph(c)
+	default:
+		return BadRequestError("Invalid view mode", "Must be one of: stack, host, hybrid, stack-only")
+	}
+}
+
+// getStackCentricGraph builds stack-centric graph data with compound nodes
+func (s *Server) getStackCentricGraph(c echo.Context, includeOrphans bool) error {
+	graphData := GraphData{
+		Nodes: make([]GraphNode, 0),
+		Edges: make([]GraphEdge, 0),
+	}
+
+	// Get all stacks
+	stacks, err := s.storage.ListStacks(nil)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "failed to list stacks",
+			Details: err.Error(),
+		})
+	}
+
+	// Build a set of all container IDs that belong to stacks
+	stackContainerIDs := make(map[string]bool)
+
+	// For each stack, get deployment state and build compound nodes
+	for _, stack := range stacks {
+		deployments, err := s.storage.GetDeploymentsByStackID(stack.ID)
+		if err != nil || len(deployments) == 0 {
+			continue // Skip stacks without deployments
+		}
+
+		deployment := deployments[len(deployments)-1] // Get latest deployment
+
+		// Add stack node (compound/parent node)
+		stackNode := GraphNode{
+			Data: GraphNodeData{
+				ID:             stack.ID,
+				Label:          stack.Name,
+				Type:           "stack",
+				Status:         stack.Status,
+				ContainerCount: len(deployment.Placements),
+				HostCount:      storage.CountUniqueHosts(deployment.Placements),
+				Metadata: map[string]string{
+					"description":      stack.Description,
+					"deploymentMode":   stack.Deployment.Mode,
+					"placementStrategy": stack.Deployment.PlacementStrategy,
+				},
+			},
+		}
+		graphData.Nodes = append(graphData.Nodes, stackNode)
+
+		// Group placements by host
+		hostContainers := storage.GroupPlacementsByHost(deployment.Placements)
+
+		// Add host nodes (as children of stack)
+		for hostID, containers := range hostContainers {
+			host, err := s.storage.GetHost(hostID)
+			if err != nil {
+				continue // Skip missing hosts
+			}
+
+			hostNode := GraphNode{
+				Data: GraphNodeData{
+					ID:       hostID,
+					Label:    host.Name,
+					Type:     "host",
+					Status:   host.Status,
+					IP:       host.IPAddress,
+					CPU:      host.CPU,
+					Memory:   host.Memory,
+					Location: host.Datacenter,
+					Parent:   stack.ID, // Nest within stack (compound node)
+				},
+			}
+			graphData.Nodes = append(graphData.Nodes, hostNode)
+
+			// Add container nodes (as children of host)
+			for containerName, placement := range containers {
+				container, err := s.storage.GetContainer(placement.ContainerID)
+				if err != nil {
+					continue // Skip missing containers
+				}
+
+				// Track that this container belongs to a stack
+				stackContainerIDs[container.ID] = true
+
+				containerNode := GraphNode{
+					Data: GraphNodeData{
+						ID:     container.ID,
+						Label:  container.Name,
+						Type:   "container",
+						Status: container.Status,
+						Image:  container.Image,
+						Parent: hostID, // Nest within host
+						Metadata: map[string]string{
+							"stack":         stack.ID,
+							"containerName": containerName,
+						},
+					},
+				}
+				graphData.Nodes = append(graphData.Nodes, containerNode)
+
+				// Add dependency edges (container to container)
+				for _, depID := range container.DependsOn {
+					edge := GraphEdge{
+						Data: GraphEdgeData{
+							ID:     container.ID + "-depends-" + depID,
+							Source: container.ID,
+							Target: depID,
+							Label:  "depends on",
+							Type:   "depends_on",
+						},
+					}
+					graphData.Edges = append(graphData.Edges, edge)
+				}
+			}
+		}
+	}
+
+	// Optionally include orphaned containers (not in any stack)
+	if includeOrphans {
+		orphans, err := s.storage.FindOrphanedContainers()
+		if err == nil && len(orphans) > 0 {
+			// Group orphans by host
+			orphansByHost := make(map[string][]*models.Container)
+			for _, container := range orphans {
+				if container.HostedOn != "" {
+					orphansByHost[container.HostedOn] = append(orphansByHost[container.HostedOn], container)
+				}
+			}
+
+			// Add orphan container nodes (no parent = top-level)
+			for hostID, hostOrphans := range orphansByHost {
+				// Check if host node already exists
+				hostExists := false
+				for _, node := range graphData.Nodes {
+					if node.Data.ID == hostID && node.Data.Type == "host" {
+						hostExists = true
+						break
+					}
+				}
+
+				// Add host node if not already present
+				if !hostExists {
+					host, err := s.storage.GetHost(hostID)
+					if err == nil {
+						hostNode := GraphNode{
+							Data: GraphNodeData{
+								ID:       hostID,
+								Label:    host.Name,
+								Type:     "host",
+								Status:   host.Status,
+								IP:       host.IPAddress,
+								Location: host.Datacenter,
+								// No parent = top-level node
+							},
+						}
+						graphData.Nodes = append(graphData.Nodes, hostNode)
+					}
+				}
+
+				// Add orphan containers
+				for _, container := range hostOrphans {
+					containerNode := GraphNode{
+						Data: GraphNodeData{
+							ID:     container.ID,
+							Label:  container.Name,
+							Type:   "container",
+							Status: container.Status,
+							Image:  container.Image,
+							Parent: hostID, // Nest within host
+							Metadata: map[string]string{
+								"orphan": "true",
+							},
+						},
+					}
+					graphData.Nodes = append(graphData.Nodes, containerNode)
+
+					// Add dependency edges for orphans too
+					for _, depID := range container.DependsOn {
+						edge := GraphEdge{
+							Data: GraphEdgeData{
+								ID:     container.ID + "-depends-" + depID,
+								Source: container.ID,
+								Target: depID,
+								Label:  "depends on",
+								Type:   "depends_on",
+							},
+						}
+						graphData.Edges = append(graphData.Edges, edge)
+					}
+				}
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, graphData)
+}
+
+// getStackOnlyGraph returns a high-level view with only stack nodes
+func (s *Server) getStackOnlyGraph(c echo.Context) error {
+	graphData := GraphData{
+		Nodes: make([]GraphNode, 0),
+		Edges: make([]GraphEdge, 0),
+	}
+
+	// Get all stacks
+	stacks, err := s.storage.ListStacks(nil)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "failed to list stacks",
+			Details: err.Error(),
+		})
+	}
+
+	// Add only stack nodes (no children)
+	for _, stack := range stacks {
+		deployments, err := s.storage.GetDeploymentsByStackID(stack.ID)
+
+		containerCount := 0
+		hostCount := 0
+
+		if err == nil && len(deployments) > 0 {
+			deployment := deployments[len(deployments)-1]
+			containerCount = len(deployment.Placements)
+			hostCount = storage.CountUniqueHosts(deployment.Placements)
+		}
+
+		stackNode := GraphNode{
+			Data: GraphNodeData{
+				ID:             stack.ID,
+				Label:          stack.Name,
+				Type:           "stack",
+				Status:         stack.Status,
+				ContainerCount: containerCount,
+				HostCount:      hostCount,
+				Metadata: map[string]string{
+					"description":      stack.Description,
+					"deploymentMode":   stack.Deployment.Mode,
+					"placementStrategy": stack.Deployment.PlacementStrategy,
+				},
+			},
+		}
+		graphData.Nodes = append(graphData.Nodes, stackNode)
+	}
+
+	// TODO: Add stack-to-stack dependency edges if needed in the future
+
+	return c.JSON(http.StatusOK, graphData)
 }

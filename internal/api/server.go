@@ -250,6 +250,7 @@ func (s *Server) setupRoutes() {
 	// Graph visualization routes (support both JWT and session auth for web UI compatibility)
 	graph := v1.Group("/graph")
 	graph.GET("", s.GetGraphData, webHandler.WebAuthMiddleware)
+	graph.GET("/stack-view", s.GetGraphDataStackView, webHandler.WebAuthMiddleware) // New stack-centric view
 	graph.GET("/stats", s.GetGraphStats, webHandler.WebAuthMiddleware)
 	graph.GET("/layout", s.GetGraphLayout, webHandler.WebAuthMiddleware)
 	graph.GET("/containers/:id/dependencies", s.getContainerDependencies, ValidateIDFormat, webHandler.WebAuthMiddleware)
