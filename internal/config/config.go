@@ -42,7 +42,7 @@ import (
 )
 
 // Config is the root configuration structure for Graphium.
-// It contains all configuration sections for server, database, agent, logging, and security.
+// It contains all configuration sections for server, database, agent manager, logging, and security.
 type Config struct {
 	// Server contains HTTP server configuration
 	Server ServerConfig `mapstructure:"server"`
@@ -50,8 +50,11 @@ type Config struct {
 	// CouchDB contains database connection settings
 	CouchDB CouchDBConfig `mapstructure:"couchdb"`
 
-	// Agent contains Docker agent configuration
+	// Agent contains Docker agent configuration (deprecated - kept for backward compatibility)
 	Agent AgentConfig `mapstructure:"agent"`
+
+	// Agents contains agent manager configuration for managing remote agents
+	Agents AgentsManagerConfig `mapstructure:"agents"`
 
 	// Logging contains logging and observability settings
 	Logging LoggingConfig `mapstructure:"logging"`
@@ -111,7 +114,7 @@ type CouchDBConfig struct {
 	Timeout int `mapstructure:"timeout"`
 }
 
-// AgentConfig contains Docker agent configuration.
+// AgentConfig contains Docker agent configuration (deprecated - kept for backward compatibility).
 type AgentConfig struct {
 	// Enabled determines if the agent should run
 	Enabled bool `mapstructure:"enabled"`
@@ -133,6 +136,13 @@ type AgentConfig struct {
 
 	// AgentToken is the JWT token for agent authentication
 	AgentToken string `mapstructure:"agent_token"`
+}
+
+// AgentsManagerConfig contains configuration for the agent manager.
+type AgentsManagerConfig struct {
+	// LogsPath is the directory where agent logs will be stored
+	// Each agent will have its own log file: {LogsPath}/{host-id}.log
+	LogsPath string `mapstructure:"logs_path"`
 }
 
 // LoggingConfig contains logging configuration.
@@ -266,6 +276,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("agent.api_url", "http://localhost:8080")
 	v.SetDefault("agent.sync_interval", "30s")
 	v.SetDefault("agent.docker_socket", "/var/run/docker.sock")
+
+	v.SetDefault("agents.logs_path", "./logs")
 
 	v.SetDefault("logging.level", "info")
 	v.SetDefault("logging.format", "json")

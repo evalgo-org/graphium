@@ -56,6 +56,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -66,6 +67,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	dockerclient "github.com/docker/docker/client"
 
+	"evalgo.org/eve/network"
 	"evalgo.org/graphium/models"
 )
 
@@ -80,6 +82,7 @@ type Agent struct {
 	dockerSocket  string
 	docker        *dockerclient.Client
 	httpClient    *http.Client
+	sshTunnel     *network.SSHTunnel
 	syncInterval  time.Duration
 	hostInfo      *models.Host
 	authToken     string
@@ -105,29 +108,96 @@ func NewAgent(apiURL, hostID, datacenter, dockerSocket, agentToken string) (*Age
 		dockerSocket = "/var/run/docker.sock"
 	}
 
-	// Prepare Docker host URL
-	// If dockerSocket is already a URL (ssh://, tcp://, unix://), use it as-is
-	// Otherwise, assume it's a Unix socket path and prefix with unix://
-	dockerHost := dockerSocket
-	if !strings.Contains(dockerSocket, "://") {
-		dockerHost = "unix://" + dockerSocket
-	}
+	var tunnel *network.SSHTunnel
+	var dockerClient *dockerclient.Client
 
-	// Create Docker client
-	dockerClient, err := dockerclient.NewClientWithOpts(
-		dockerclient.FromEnv,
-		dockerclient.WithHost(dockerHost),
-		dockerclient.WithAPIVersionNegotiation(),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Docker client: %w", err)
+	// Check if using SSH connection
+	if strings.HasPrefix(dockerSocket, "ssh://") {
+		// Parse SSH URL: ssh://user@host:port
+		u, err := url.Parse(dockerSocket)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse SSH URL: %w", err)
+		}
+
+		// Extract username from URL
+		username := u.User.Username()
+		if username == "" {
+			return nil, fmt.Errorf("SSH URL must include username (e.g., ssh://user@host)")
+		}
+
+		// Extract host and port
+		host := u.Hostname()
+		port := u.Port()
+		if port == "" {
+			port = "22" // Default SSH port
+		}
+		sshAddress := net.JoinHostPort(host, port)
+
+		// Get SSH key path from environment
+		sshKeyPath := os.Getenv("DOCKER_SSH_IDENTITY")
+		if sshKeyPath == "" {
+			sshKeyPath = os.Getenv("HOME") + "/.ssh/id_rsa"
+		}
+
+		log.Printf("Creating SSH tunnel to %s@%s using key %s", username, sshAddress, sshKeyPath)
+
+		// Create SSH tunnel
+		tunnel, err = network.NewSSHTunnel(sshAddress, username, sshKeyPath, "")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create SSH tunnel: %w", err)
+		}
+
+		log.Printf("✓ SSH tunnel established to %s", sshAddress)
+
+		// Create custom HTTP client with tunnel
+		customHTTPClient := &http.Client{
+			Transport: &http.Transport{
+				DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+					// For Docker over SSH, we connect to the remote Docker socket
+					return tunnel.Dial("unix", "/var/run/docker.sock")
+				},
+			},
+		}
+
+		// Create Docker client with custom HTTP client
+		dockerClient, err = dockerclient.NewClientWithOpts(
+			dockerclient.WithHost("http://docker"),
+			dockerclient.WithHTTPClient(customHTTPClient),
+			dockerclient.WithAPIVersionNegotiation(),
+		)
+		if err != nil {
+			tunnel.Close()
+			return nil, fmt.Errorf("failed to create Docker client: %w", err)
+		}
+	} else {
+		// Non-SSH connection (unix://, tcp://, or plain path)
+		dockerHost := dockerSocket
+		if !strings.Contains(dockerSocket, "://") {
+			dockerHost = "unix://" + dockerSocket
+		}
+
+		// Set DOCKER_HOST for non-SSH connections
+		os.Setenv("DOCKER_HOST", dockerHost)
+
+		// Create standard Docker client
+		var err error
+		dockerClient, err = dockerclient.NewClientWithOpts(
+			dockerclient.FromEnv,
+			dockerclient.WithAPIVersionNegotiation(),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Docker client: %w", err)
+		}
 	}
 
 	// Verify Docker connection
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_, err = dockerClient.Ping(ctx)
+	_, err := dockerClient.Ping(ctx)
 	if err != nil {
+		if tunnel != nil {
+			tunnel.Close()
+		}
 		return nil, fmt.Errorf("failed to connect to Docker: %w", err)
 	}
 
@@ -140,9 +210,18 @@ func NewAgent(apiURL, hostID, datacenter, dockerSocket, agentToken string) (*Age
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		sshTunnel:    tunnel,
 		syncInterval: 30 * time.Second,
 		authToken:    agentToken,
 	}, nil
+}
+
+// Close closes the agent and cleans up resources.
+func (a *Agent) Close() error {
+	if a.sshTunnel != nil {
+		return a.sshTunnel.Close()
+	}
+	return nil
 }
 
 // Start starts the agent and begins monitoring Docker events.

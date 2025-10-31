@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -33,6 +34,7 @@ type AgentProcess struct {
 	State     *models.AgentState
 	Cmd       *exec.Cmd
 	StartedAt time.Time
+	LogFile   *os.File // Log file for this agent's output
 	mu        sync.Mutex
 }
 
@@ -147,12 +149,37 @@ func (m *Manager) StartAgent(configID string) error {
 	// Set environment
 	cmd.Env = append(os.Environ(), "TOKEN="+agentToken)
 
-	// Redirect output to logs
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	// If SSH key path is configured, set it for Docker SSH connections
+	if cfg.SSHKeyPath != "" {
+		cmd.Env = append(cmd.Env, "DOCKER_SSH_IDENTITY="+cfg.SSHKeyPath)
+		log.Printf("Agent %s: Using SSH key: %s", cfg.Name, cfg.SSHKeyPath)
+	}
+
+	// Create logs directory if it doesn't exist
+	logsPath := m.config.Agents.LogsPath
+	if logsPath == "" {
+		logsPath = "./logs"
+	}
+	if err := os.MkdirAll(logsPath, 0755); err != nil {
+		return fmt.Errorf("failed to create logs directory: %w", err)
+	}
+
+	// Open log file for this agent
+	logFilePath := filepath.Join(logsPath, fmt.Sprintf("%s.log", cfg.HostID))
+	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open log file: %w", err)
+	}
+
+	// Redirect output to agent-specific log file
+	cmd.Stdout = logFile
+	cmd.Stderr = logFile
+
+	log.Printf("Agent %s: Logging to %s", cfg.Name, logFilePath)
 
 	// Start the process
 	if err := cmd.Start(); err != nil {
+		logFile.Close() // Clean up log file if process fails to start
 		return fmt.Errorf("failed to start agent process: %w", err)
 	}
 
@@ -162,6 +189,7 @@ func (m *Manager) StartAgent(configID string) error {
 		Config:    cfg,
 		Cmd:       cmd,
 		StartedAt: now,
+		LogFile:   logFile,
 		State: &models.AgentState{
 			ConfigID:  cfg.ID,
 			Status:    "running",
@@ -225,6 +253,14 @@ func (m *Manager) stopAgentProcess(agent *AgentProcess) error {
 		case <-done:
 			// Process exited
 		}
+	}
+
+	// Close log file
+	if agent.LogFile != nil {
+		if err := agent.LogFile.Close(); err != nil {
+			log.Printf("Warning: Failed to close log file for agent %s: %v", agent.Config.Name, err)
+		}
+		agent.LogFile = nil
 	}
 
 	now := time.Now()
