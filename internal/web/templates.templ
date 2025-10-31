@@ -212,6 +212,30 @@ templ DashboardWithUser(stats *storage.Statistics, user *models.User) {
 						<p class="stat-value" id="stat-running-agents">{ fmt.Sprintf("%d", stats.RunningAgents) }</p>
 					</div>
 				</div>
+
+				<div class="stat-card">
+					<div class="stat-icon">⏰</div>
+					<div class="stat-content">
+						<h3>Total Actions</h3>
+						<p class="stat-value" id="stat-total-actions">{ fmt.Sprintf("%d", stats.TotalActions) }</p>
+					</div>
+				</div>
+
+				<div class="stat-card stat-success">
+					<div class="stat-icon">✔️</div>
+					<div class="stat-content">
+						<h3>Successful Actions</h3>
+						<p class="stat-value" id="stat-successful-actions">{ fmt.Sprintf("%d", stats.SuccessfulActions) }</p>
+					</div>
+				</div>
+
+				<div class="stat-card stat-error">
+					<div class="stat-icon">❌</div>
+					<div class="stat-content">
+						<h3>Failed Actions</h3>
+						<p class="stat-value" id="stat-failed-actions">{ fmt.Sprintf("%d", stats.FailedActions) }</p>
+					</div>
+				</div>
 			</div>
 
 
@@ -3552,12 +3576,100 @@ templ ActionsListWithUser(actions []*models.ScheduledAction, user *models.User) 
 		<div id="actions-table">
 			@ActionsTable(actions)
 		</div>
+
+		<!-- Delete Confirmation Modal -->
+		<div id="deleteModal" class="modal" style="display: none;">
+			<div class="modal-content">
+				<h3>Confirm Delete</h3>
+				<p id="deleteMessage">Are you sure you want to delete this action?</p>
+				<div class="modal-actions">
+					<button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+					<button
+						id="confirmDeleteBtn"
+						class="btn btn-danger"
+						hx-delete=""
+						hx-target="#actions-table"
+						hx-swap="outerHTML"
+						onclick="closeDeleteModal()"
+					>Delete</button>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			function showDeleteModal(actionId, actionName) {
+				const modal = document.getElementById('deleteModal');
+				const message = document.getElementById('deleteMessage');
+				const confirmBtn = document.getElementById('confirmDeleteBtn');
+
+				message.textContent = `Are you sure you want to delete "${actionName}"? This action cannot be undone.`;
+				confirmBtn.setAttribute('hx-delete', `/web/actions/${actionId}/delete`);
+
+				// Re-process HTMX attributes
+				htmx.process(confirmBtn);
+
+				modal.style.display = 'flex';
+			}
+
+			function closeDeleteModal() {
+				const modal = document.getElementById('deleteModal');
+				modal.style.display = 'none';
+			}
+
+			// Close modal on click outside
+			document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+				if (e.target === this) {
+					closeDeleteModal();
+				}
+			});
+		</script>
+
+		<style>
+			.modal {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.7);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 1000;
+			}
+
+			.modal-content {
+				background: var(--bg-primary, #1a1a1a);
+				border: 1px solid var(--border-color, #333);
+				border-radius: 8px;
+				padding: 2rem;
+				min-width: 400px;
+				max-width: 500px;
+				box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+			}
+
+			.modal-content h3 {
+				margin: 0 0 1rem 0;
+				color: var(--text-primary, #fff);
+			}
+
+			.modal-content p {
+				margin: 0 0 1.5rem 0;
+				color: var(--text-secondary, #ccc);
+			}
+
+			.modal-actions {
+				display: flex;
+				gap: 1rem;
+				justify-content: flex-end;
+			}
+		</style>
 	}
 }
 
 // Actions table component (for HTMX updates)
 templ ActionsTable(actions []*models.ScheduledAction) {
-	<div class="table-container">
+	<div class="table-container" id="actions-table">
 		<table class="data-table">
 			<thead>
 				<tr>
@@ -3613,16 +3725,13 @@ templ ActionsTable(actions []*models.ScheduledAction) {
 								<button
 									class="btn-icon"
 									title="Execute Now"
-									hx-post={ fmt.Sprintf("/api/v1/actions/%s/execute", action.ID) }
-									hx-swap="none"
+									hx-post={ fmt.Sprintf("/web/actions/%s/execute", action.ID) }
+									hx-swap="beforeend" hx-target="body"
 								>▶️</button>
 								<button
 									class="btn-icon btn-danger"
 									title="Delete"
-									hx-delete={ fmt.Sprintf("/api/v1/actions/%s", action.ID) }
-									hx-target="#actions-table"
-									hx-swap="outerHTML"
-									hx-confirm="Are you sure you want to delete this action?"
+									onclick={ templ.ComponentScript{Call: fmt.Sprintf("showDeleteModal('%s', '%s')", action.ID, action.Name)} }
 								>🗑️</button>
 							</div>
 						</td>
@@ -3636,8 +3745,48 @@ templ ActionsTable(actions []*models.ScheduledAction) {
 	</div>
 }
 
+// ExecutionHistoryRows renders just the table rows for HTMX updates
+templ ExecutionHistoryRows(tasks []*TaskWithResult) {
+	for _, taskWrapper := range tasks {
+		<tr>
+			<td><code>{ taskWrapper.Task.ID[:16] }...</code></td>
+			<td>
+				<span class={ fmt.Sprintf("badge badge-%s", taskWrapper.Task.Status) }>
+					{ taskWrapper.Task.Status }
+				</span>
+			</td>
+			<td>{ taskWrapper.Task.CreatedAt.Format("2006-01-02 15:04") }</td>
+			<td>
+				if taskWrapper.Task.CompletedAt != nil {
+					{ taskWrapper.Task.CompletedAt.Format("2006-01-02 15:04") }
+				} else {
+					<span class="text-muted">-</span>
+				}
+			</td>
+			<td>
+				if taskWrapper.Task.CompletedAt != nil && taskWrapper.Task.StartedAt != nil {
+					{ fmt.Sprintf("%.1fs", taskWrapper.Task.CompletedAt.Sub(*taskWrapper.Task.StartedAt).Seconds()) }
+				} else {
+					<span class="text-muted">-</span>
+				}
+			</td>
+			<td>
+				if taskWrapper.Result != nil && taskWrapper.Result.Message != "" {
+					if taskWrapper.Result.Success {
+						<span style="color: #10b981;">{ taskWrapper.Result.Message }</span>
+					} else {
+						<span style="color: #ef4444;">{ taskWrapper.Result.Message }</span>
+					}
+				} else {
+					<span class="text-muted">-</span>
+				}
+			</td>
+		</tr>
+	}
+}
+
 // Action detail page
-templ ActionDetailWithUser(action *models.ScheduledAction, tasks []*models.AgentTask, user *models.User) {
+templ ActionDetailWithUser(action *models.ScheduledAction, tasks []*TaskWithResult, user *models.User) {
 	@LayoutWithUser(fmt.Sprintf("Action: %s", action.Name), user) {
 		<div class="page-header">
 			<h2>{ action.Name }</h2>
@@ -3645,18 +3794,67 @@ templ ActionDetailWithUser(action *models.ScheduledAction, tasks []*models.Agent
 				<a href="/web/actions" class="btn btn-secondary">← Back to Actions</a>
 				<button
 					class="btn btn-primary"
-					hx-post={ fmt.Sprintf("/api/v1/actions/%s/execute", action.ID) }
-					hx-swap="none"
+					hx-post={ fmt.Sprintf("/web/actions/%s/execute", action.ID) }
+					hx-swap="innerHTML"
+					hx-target="#execution-response"
+					onclick="setTimeout(() => { htmx.ajax('GET', window.location.pathname + '/history', {target:'#execution-history-tbody', swap:'innerHTML'}); }, 3000);"
 				>▶️ Execute Now</button>
 				<button
 					class="btn btn-danger"
-					hx-delete={ fmt.Sprintf("/api/v1/actions/%s", action.ID) }
-					hx-confirm="Are you sure you want to delete this action?"
-					hx-target="body"
-					hx-swap="outerHTML"
+					onclick={ templ.ComponentScript{Call: fmt.Sprintf("showDeleteModalDetail('%s', '%s')", action.ID, action.Name)} }
 				>🗑️ Delete</button>
 			</div>
 		</div>
+
+		<!-- Execution Response Container -->
+		<div id="execution-response" style="margin: 1rem 0;"></div>
+
+		<!-- Delete Confirmation Modal -->
+		<div id="deleteModalDetail" class="modal" style="display: none;">
+			<div class="modal-content">
+				<h3>Confirm Delete</h3>
+				<p id="deleteMessageDetail">Are you sure you want to delete this action?</p>
+				<div class="modal-actions">
+					<button class="btn btn-secondary" onclick="closeDeleteModalDetail()">Cancel</button>
+					<button
+						id="confirmDeleteBtnDetail"
+						class="btn btn-danger"
+						hx-delete=""
+						hx-target="body"
+						hx-swap="outerHTML"
+						onclick="closeDeleteModalDetail()"
+					>Delete</button>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			function showDeleteModalDetail(actionId, actionName) {
+				const modal = document.getElementById('deleteModalDetail');
+				const message = document.getElementById('deleteMessageDetail');
+				const confirmBtn = document.getElementById('confirmDeleteBtnDetail');
+
+				message.textContent = `Are you sure you want to delete "${actionName}"? This action cannot be undone.`;
+				confirmBtn.setAttribute('hx-delete', `/web/actions/${actionId}/delete`);
+
+				// Re-process HTMX attributes
+				htmx.process(confirmBtn);
+
+				modal.style.display = 'flex';
+			}
+
+			function closeDeleteModalDetail() {
+				const modal = document.getElementById('deleteModalDetail');
+				modal.style.display = 'none';
+			}
+
+			// Close modal on click outside
+			document.getElementById('deleteModalDetail')?.addEventListener('click', function(e) {
+				if (e.target === this) {
+					closeDeleteModalDetail();
+				}
+			});
+		</script>
 
 		<div class="detail-grid">
 			<div class="detail-card">
@@ -3726,7 +3924,7 @@ templ ActionDetailWithUser(action *models.ScheduledAction, tasks []*models.Agent
 			</div>
 		</div>
 
-		<div class="detail-card" style="margin-top: 2rem;">
+		<div class="detail-card" style="margin-top: 2rem;" id="execution-history-card">
 			<h3>Execution History</h3>
 			if len(tasks) == 0 {
 				<p class="text-muted">No executions yet</p>
@@ -3739,28 +3937,40 @@ templ ActionDetailWithUser(action *models.ScheduledAction, tasks []*models.Agent
 							<th>Created</th>
 							<th>Completed</th>
 							<th>Duration</th>
+							<th>Result</th>
 						</tr>
 					</thead>
-					<tbody>
-						for _, task := range tasks {
+					<tbody id="execution-history-tbody">
+						for _, taskWrapper := range tasks {
 							<tr>
-								<td><code>{ task.ID[:16] }...</code></td>
+								<td><code>{ taskWrapper.Task.ID[:16] }...</code></td>
 								<td>
-									<span class={ fmt.Sprintf("badge badge-%s", task.Status) }>
-										{ task.Status }
+									<span class={ fmt.Sprintf("badge badge-%s", taskWrapper.Task.Status) }>
+										{ taskWrapper.Task.Status }
 									</span>
 								</td>
-								<td>{ task.CreatedAt.Format("2006-01-02 15:04") }</td>
+								<td>{ taskWrapper.Task.CreatedAt.Format("2006-01-02 15:04") }</td>
 								<td>
-									if task.CompletedAt != nil {
-										{ task.CompletedAt.Format("2006-01-02 15:04") }
+									if taskWrapper.Task.CompletedAt != nil {
+										{ taskWrapper.Task.CompletedAt.Format("2006-01-02 15:04") }
 									} else {
 										<span class="text-muted">-</span>
 									}
 								</td>
 								<td>
-									if task.CompletedAt != nil && task.StartedAt != nil {
-										{ fmt.Sprintf("%.1fs", task.CompletedAt.Sub(*task.StartedAt).Seconds()) }
+									if taskWrapper.Task.CompletedAt != nil && taskWrapper.Task.StartedAt != nil {
+										{ fmt.Sprintf("%.1fs", taskWrapper.Task.CompletedAt.Sub(*taskWrapper.Task.StartedAt).Seconds()) }
+									} else {
+										<span class="text-muted">-</span>
+									}
+								</td>
+								<td>
+									if taskWrapper.Result != nil && taskWrapper.Result.Message != "" {
+										if taskWrapper.Result.Success {
+											<span style="color: #10b981;">{ taskWrapper.Result.Message }</span>
+										} else {
+											<span style="color: #ef4444;">{ taskWrapper.Result.Message }</span>
+										}
 									} else {
 										<span class="text-muted">-</span>
 									}
@@ -3789,151 +3999,195 @@ templ CreateActionFormWithUser(errorMsg string, user *models.User) {
 		}
 
 		<div class="form-container">
+			<!-- Tab Navigation -->
+			<div class="tabs">
+				<button type="button" class="tab-button active" onclick="switchTab(event, 'form-tab')">Form</button>
+				<button type="button" class="tab-button" onclick="switchTab(event, 'jsonld-tab')">JSON-LD</button>
+			</div>
+
 			<form method="POST" action="/web/actions/create">
-				<div class="form-section">
-					<h3>Basic Information</h3>
-					<div class="form-group">
-						<label for="name">Name *</label>
-						<input
-							type="text"
-							id="name"
-							name="name"
-							required
-							placeholder="e.g., Nginx Health Check"
-						/>
-					</div>
-
-					<div class="form-group">
-						<label for="description">Description</label>
-						<textarea
-							id="description"
-							name="description"
-							rows="3"
-							placeholder="Describe what this action does..."
-						></textarea>
-					</div>
-
-					<div class="form-group">
-						<label for="type">Action Type *</label>
-						<select id="type" name="type" class="form-select" required>
-							<option value="CheckAction">CheckAction - Health checks, probes</option>
-							<option value="ControlAction">ControlAction - Start/stop operations</option>
-							<option value="CreateAction">CreateAction - Create resources</option>
-							<option value="UpdateAction">UpdateAction - Update existing resources</option>
-							<option value="TransferAction">TransferAction - Data transfers</option>
-						</select>
-					</div>
-
-					<div class="form-group">
-						<label for="agent">Target Agent/Host *</label>
-						<input
-							type="text"
-							id="agent"
-							name="agent"
-							required
-							placeholder="e.g., localhost-docker or host:vm1"
-						/>
-						<small class="form-help">Agent ID or Host ID that will execute this action</small>
-					</div>
-				</div>
-
-				<div class="form-section">
-					<h3>Schedule</h3>
-					<div class="form-group">
-						<label for="repeat_frequency">Repeat Frequency *</label>
-						<select id="repeat_frequency" name="repeat_frequency" class="form-select" required>
-							<option value="PT5M">Every 5 minutes</option>
-							<option value="PT15M">Every 15 minutes</option>
-							<option value="PT30M">Every 30 minutes</option>
-							<option value="PT1H">Every hour</option>
-							<option value="PT6H">Every 6 hours</option>
-							<option value="P1D">Daily</option>
-							<option value="P1W">Weekly</option>
-							<option value="custom">Custom (ISO 8601)</option>
-						</select>
-					</div>
-
-					<div class="form-group" id="custom-frequency" style="display: none;">
-						<label for="custom_frequency">Custom Frequency</label>
-						<input
-							type="text"
-							id="custom_frequency"
-							name="custom_frequency"
-							placeholder="e.g., PT10M or P2D"
-						/>
-						<small class="form-help">ISO 8601 duration format (PT5M = 5 minutes, P1D = 1 day)</small>
-					</div>
-
-					<div class="form-group">
-						<label for="timezone">Timezone</label>
-						<input
-							type="text"
-							id="timezone"
-							name="timezone"
-							value="UTC"
-							placeholder="e.g., UTC, America/New_York"
-						/>
-					</div>
-				</div>
-
-				<div class="form-section">
-					<h3>Action Parameters</h3>
-					<div class="form-group">
-						<label for="url">URL (for CheckAction) *</label>
-						<input
-							type="url"
-							id="url"
-							name="url"
-							placeholder="http://localhost:8080/health"
-						/>
-					</div>
-
-					<div class="form-group">
-						<label for="method">HTTP Method</label>
-						<select id="method" name="method" class="form-select">
-							<option value="GET">GET</option>
-							<option value="POST">POST</option>
-							<option value="HEAD">HEAD</option>
-						</select>
-					</div>
-
-					<div class="form-group">
-						<label for="expected_status">Expected Status Code</label>
-						<input
-							type="number"
-							id="expected_status"
-							name="expected_status"
-							value="200"
-							min="100"
-							max="599"
-						/>
-					</div>
-
-					<div class="form-group">
-						<label for="timeout">Timeout (seconds)</label>
-						<input
-							type="number"
-							id="timeout"
-							name="timeout"
-							value="5"
-							min="1"
-							max="60"
-						/>
-					</div>
-				</div>
-
-				<div class="form-section">
-					<h3>Options</h3>
-					<div class="form-group">
-						<label class="checkbox-label">
+				<!-- Tab 1: Form Input -->
+				<div id="form-tab" class="tab-content active">
+					<div class="form-section">
+						<h3>Basic Information</h3>
+						<div class="form-group">
+							<label for="name">Name *</label>
 							<input
-								type="checkbox"
-								name="enabled"
-								value="true"
-								checked
+								type="text"
+								id="name"
+								name="name"
+								placeholder="e.g., Nginx Health Check"
 							/>
-							<span>Enable on creation</span>
-						</label>
+						</div>
+
+						<div class="form-group">
+							<label for="description">Description</label>
+							<textarea
+								id="description"
+								name="description"
+								rows="3"
+								placeholder="Describe what this action does..."
+							></textarea>
+						</div>
+
+						<div class="form-group">
+							<label for="action_type">Action Type *</label>
+							<select id="action_type" name="action_type" class="form-select">
+								<option value="CheckAction">CheckAction - Health checks, probes</option>
+								<option value="ControlAction">ControlAction - Start/stop operations</option>
+								<option value="CreateAction">CreateAction - Create resources</option>
+								<option value="UpdateAction">UpdateAction - Update existing resources</option>
+								<option value="TransferAction">TransferAction - Data transfers</option>
+							</select>
+						</div>
+
+						<div class="form-group">
+							<label for="agent_id">Target Agent/Host *</label>
+							<input
+								type="text"
+								id="agent_id"
+								name="agent_id"
+								placeholder="e.g., localhost-docker or host:vm1"
+							/>
+							<small class="form-help">Agent ID or Host ID that will execute this action</small>
+						</div>
+					</div>
+
+					<div class="form-section">
+						<h3>Schedule</h3>
+						<div class="form-group">
+							<label for="repeat_frequency">Repeat Frequency *</label>
+							<select id="repeat_frequency" name="repeat_frequency" class="form-select">
+								<option value="PT5M">Every 5 minutes</option>
+								<option value="PT15M">Every 15 minutes</option>
+								<option value="PT30M">Every 30 minutes</option>
+								<option value="PT1H">Every hour</option>
+								<option value="PT6H">Every 6 hours</option>
+								<option value="P1D">Daily</option>
+								<option value="P1W">Weekly</option>
+								<option value="custom">Custom (ISO 8601)</option>
+							</select>
+						</div>
+
+						<div class="form-group" id="custom-frequency" style="display: none;">
+							<label for="custom_frequency">Custom Frequency</label>
+							<input
+								type="text"
+								id="custom_frequency"
+								name="custom_frequency"
+								placeholder="e.g., PT10M or P2D"
+							/>
+							<small class="form-help">ISO 8601 duration format (PT5M = 5 minutes, P1D = 1 day)</small>
+						</div>
+
+						<div class="form-group">
+							<label for="timezone">Timezone</label>
+							<input
+								type="text"
+								id="timezone"
+								name="timezone"
+								value="UTC"
+								placeholder="e.g., UTC, America/New_York"
+							/>
+						</div>
+					</div>
+
+					<div class="form-section">
+						<h3>Action Parameters (for CheckAction)</h3>
+						<div class="form-group">
+							<label for="check_url">URL *</label>
+							<input
+								type="url"
+								id="check_url"
+								name="check_url"
+								placeholder="http://localhost:8080/health"
+							/>
+						</div>
+
+						<div class="form-group">
+							<label for="check_method">HTTP Method</label>
+							<select id="check_method" name="check_method" class="form-select">
+								<option value="GET">GET</option>
+								<option value="POST">POST</option>
+								<option value="HEAD">HEAD</option>
+							</select>
+						</div>
+
+						<div class="form-group">
+							<label for="check_expected_status">Expected Status Code</label>
+							<input
+								type="number"
+								id="check_expected_status"
+								name="check_expected_status"
+								value="200"
+								min="100"
+								max="599"
+							/>
+						</div>
+
+						<div class="form-group">
+							<label for="check_timeout">Timeout (seconds)</label>
+							<input
+								type="number"
+								id="check_timeout"
+								name="check_timeout"
+								value="5"
+								min="1"
+								max="60"
+							/>
+						</div>
+					</div>
+
+					<div class="form-section">
+						<h3>Options</h3>
+						<div class="form-group">
+							<label class="checkbox-label">
+								<input
+									type="checkbox"
+									name="enabled"
+									value="true"
+									checked
+								/>
+								<span>Enable on creation</span>
+							</label>
+						</div>
+					</div>
+				</div>
+
+				<!-- Tab 2: JSON-LD Input -->
+				<div id="jsonld-tab" class="tab-content" style="display: none;">
+					<div class="form-section">
+						<h3>JSON-LD Action Definition</h3>
+						<p class="form-help">Paste a JSON-LD scheduled action definition. See examples in the <code>examples/</code> directory.</p>
+						<div class="form-group">
+							<label for="action_json">Action Definition (JSON-LD)</label>
+							<textarea
+								id="action_json"
+								name="action_json"
+								rows="25"
+								class="form-textarea code-editor"
+								placeholder={`{
+  "@context": "https://schema.org",
+  "@type": "CheckAction",
+  "name": "Web Service Health Check",
+  "description": "Periodic health check...",
+  "agent": "localhost-docker",
+  "actionStatus": "PotentialActionStatus",
+  "enabled": true,
+  "schedule": {
+    "@type": "Schedule",
+    "repeatFrequency": "PT5M",
+    "scheduleTimezone": "UTC"
+  },
+  "instrument": {
+    "url": "http://localhost:8080/health",
+    "method": "GET",
+    "expectedStatusCode": 200,
+    "timeout": 5
+  }
+}`}
+							></textarea>
+						</div>
 					</div>
 				</div>
 
@@ -3944,7 +4198,86 @@ templ CreateActionFormWithUser(errorMsg string, user *models.User) {
 			</form>
 		</div>
 
+		<style>
+			/* Tab styling */
+			.tabs {
+				display: flex;
+				border-bottom: 2px solid var(--border-color, #333);
+				margin-bottom: 1.5rem;
+			}
+
+			.tab-button {
+				padding: 0.75rem 1.5rem;
+				background: transparent;
+				border: none;
+				border-bottom: 3px solid transparent;
+				color: var(--text-muted, #888);
+				font-size: 1rem;
+				font-weight: 500;
+				cursor: pointer;
+				transition: all 0.2s ease;
+			}
+
+			.tab-button:hover {
+				color: var(--text-primary, #fff);
+				background: rgba(255, 255, 255, 0.05);
+			}
+
+			.tab-button.active {
+				color: var(--primary-color, #4a9eff);
+				border-bottom-color: var(--primary-color, #4a9eff);
+			}
+
+			.tab-content {
+				display: none;
+			}
+
+			.tab-content.active {
+				display: block;
+			}
+
+			.code-editor {
+				font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+				font-size: 0.9rem;
+				line-height: 1.5;
+				background: var(--bg-secondary, #1a1a1a);
+				border: 1px solid var(--border-color, #333);
+				border-radius: 4px;
+				padding: 1rem;
+				resize: vertical;
+			}
+		</style>
+
 		<script>
+			// Tab switching
+			function switchTab(evt, tabName) {
+				// Hide all tab content
+				const tabContents = document.getElementsByClassName('tab-content');
+				for (let i = 0; i < tabContents.length; i++) {
+					tabContents[i].style.display = 'none';
+					tabContents[i].classList.remove('active');
+				}
+
+				// Remove active class from all buttons
+				const tabButtons = document.getElementsByClassName('tab-button');
+				for (let i = 0; i < tabButtons.length; i++) {
+					tabButtons[i].classList.remove('active');
+				}
+
+				// Show the selected tab and mark button as active
+				document.getElementById(tabName).style.display = 'block';
+				document.getElementById(tabName).classList.add('active');
+				evt.currentTarget.classList.add('active');
+
+				// Clear the other tab's required fields to avoid validation issues
+				if (tabName === 'form-tab') {
+					document.getElementById('action_json').value = '';
+				} else {
+					// Optional: clear form fields when switching to JSON-LD
+				}
+			}
+
+			// Custom frequency toggle
 			document.getElementById('repeat_frequency').addEventListener('change', function(e) {
 				const customDiv = document.getElementById('custom-frequency');
 				if (e.target.value === 'custom') {
@@ -3953,6 +4286,105 @@ templ CreateActionFormWithUser(errorMsg string, user *models.User) {
 					customDiv.style.display = 'none';
 				}
 			});
+
+			// JSON-LD validation
+			let validationTimeout;
+			const actionJsonTextarea = document.getElementById('action_json');
+
+			if (actionJsonTextarea) {
+				// Auto-validate on input with debounce
+				actionJsonTextarea.addEventListener('input', function() {
+					clearTimeout(validationTimeout);
+					validationTimeout = setTimeout(validateActionJSON, 500);
+				});
+
+				// Validate on tab switch
+				document.querySelectorAll('.tab-button').forEach(button => {
+					button.addEventListener('click', function() {
+						if (this.textContent.includes('JSON-LD')) {
+							setTimeout(validateActionJSON, 100);
+						}
+					});
+				});
+			}
+
+			function validateActionJSON() {
+				const jsonStr = actionJsonTextarea.value.trim();
+
+				// Remove any existing validation messages
+				const existingMsg = document.getElementById('json-validation');
+				if (existingMsg) {
+					existingMsg.remove();
+				}
+
+				if (!jsonStr) {
+					return;
+				}
+
+				const validationDiv = document.createElement('div');
+				validationDiv.id = 'json-validation';
+				validationDiv.style.marginTop = '10px';
+				validationDiv.style.padding = '10px';
+				validationDiv.style.borderRadius = '4px';
+
+				try {
+					const parsed = JSON.parse(jsonStr);
+
+					// Check required fields for ScheduledAction
+					const errors = [];
+					const warnings = [];
+
+					// Required fields
+					if (!parsed.name) {
+						errors.push('Missing required field: "name"');
+					}
+					if (!parsed.agent) {
+						errors.push('Missing required field: "agent"');
+					}
+					if (!parsed.schedule) {
+						errors.push('Missing required field: "schedule"');
+					} else {
+						if (!parsed.schedule.repeatFrequency) {
+							errors.push('Missing required field in schedule: "repeatFrequency"');
+						}
+					}
+
+					// Type validation
+					if (!parsed['@type']) {
+						warnings.push('Missing "@type" field (will default to "CheckAction")');
+					}
+					if (!parsed['@context']) {
+						warnings.push('Missing "@context" field (will default to "https://schema.org")');
+					}
+
+					// Action-specific validation
+					if (parsed['@type'] === 'CheckAction' && parsed.instrument) {
+						if (!parsed.instrument.url) {
+							errors.push('CheckAction requires "instrument.url"');
+						}
+					}
+
+					if (errors.length > 0) {
+						validationDiv.className = 'alert alert-error';
+						validationDiv.innerHTML = '<strong>Validation Errors:</strong><ul style="margin: 5px 0 0 20px;">' +
+							errors.map(e => '<li>' + e + '</li>').join('') + '</ul>';
+					} else if (warnings.length > 0) {
+						validationDiv.className = 'alert alert-warning';
+						validationDiv.innerHTML = '<strong>Validation Warnings:</strong><ul style="margin: 5px 0 0 20px;">' +
+							warnings.map(w => '<li>' + w + '</li>').join('') + '</ul>';
+					} else {
+						validationDiv.className = 'alert alert-success';
+						const actionType = parsed['@type'] || 'Action';
+						const frequency = parsed.schedule?.repeatFrequency || 'N/A';
+						validationDiv.innerHTML = '✓ Valid ' + actionType + ' (frequency: ' + frequency + ')';
+					}
+				} catch (e) {
+					validationDiv.className = 'alert alert-error';
+					validationDiv.innerHTML = '<strong>JSON Syntax Error:</strong> ' + e.message;
+				}
+
+				actionJsonTextarea.parentNode.appendChild(validationDiv);
+			}
 		</script>
 	}
 }

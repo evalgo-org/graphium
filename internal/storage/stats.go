@@ -17,6 +17,9 @@ type Statistics struct {
 	HostContainerCounts  map[string]int // host ID -> container count
 	TotalAgents          int
 	RunningAgents        int
+	TotalActions         int // Total scheduled actions
+	SuccessfulActions    int // Scheduled actions with last execution successful
+	FailedActions        int // Scheduled actions with last execution failed
 }
 
 // DatacenterTopology contains the topology information for a single datacenter
@@ -91,6 +94,39 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 		// For now, we'll consider all configured agents as running
 		// In the future, this could check actual agent status
 		stats.RunningAgents = len(agentConfigs)
+	}
+
+	// Get scheduled actions statistics
+	actions, err := s.ListScheduledActions(nil)
+	if err == nil {
+		stats.TotalActions = len(actions)
+
+		// For each action, get the most recent task to determine success/failure
+		for _, action := range actions {
+			tasks, err := s.GetTasksByScheduledAction(action.ID)
+			if err != nil || len(tasks) == 0 {
+				continue
+			}
+
+			// Find the most recent completed task
+			var mostRecentTask *models.AgentTask
+			for _, task := range tasks {
+				if task.Status == "completed" || task.Status == "failed" {
+					if mostRecentTask == nil || (task.CompletedAt != nil && mostRecentTask.CompletedAt != nil && task.CompletedAt.After(*mostRecentTask.CompletedAt)) {
+						mostRecentTask = task
+					}
+				}
+			}
+
+			// Count success or failure based on most recent task
+			if mostRecentTask != nil {
+				if mostRecentTask.Status == "completed" {
+					stats.SuccessfulActions++
+				} else if mostRecentTask.Status == "failed" {
+					stats.FailedActions++
+				}
+			}
+		}
 	}
 
 	return stats, nil

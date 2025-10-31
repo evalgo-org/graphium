@@ -3,13 +3,18 @@ package agent
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
+	"github.com/docker/docker/api/types/container"
 	"evalgo.org/graphium/models"
 )
 
@@ -170,6 +175,12 @@ func (e *TaskExecutor) executeTask(ctx context.Context, task *models.AgentTask) 
 	case "check":
 		result, err = e.executeCheck(ctx, task)
 
+	case "control":
+		result, err = e.executeControl(ctx, task)
+
+	case "transfer":
+		result, err = e.executeTransfer(ctx, task)
+
 	default:
 		err = fmt.Errorf("unsupported task type: %s", task.TaskType)
 	}
@@ -236,6 +247,18 @@ func (e *TaskExecutor) executeRestart(ctx context.Context, task *models.AgentTas
 
 // executeCheck executes a health check task.
 func (e *TaskExecutor) executeCheck(ctx context.Context, task *models.AgentTask) (*models.TaskResult, error) {
+	// First, check if this is a TLS certificate check
+	var rawPayload map[string]interface{}
+	if err := task.GetPayloadAs(&rawPayload); err != nil {
+		return nil, fmt.Errorf("invalid check payload: %w", err)
+	}
+
+	// Route to TLS certificate check if specified
+	if checkType, ok := rawPayload["checkType"].(string); ok && checkType == "tls-certificate" {
+		return e.executeTLSCertificateCheck(ctx, rawPayload)
+	}
+
+	// Otherwise, execute HTTP health check
 	var payload models.CheckHealthPayload
 	if err := task.GetPayloadAs(&payload); err != nil {
 		return nil, fmt.Errorf("invalid check payload: %w", err)
@@ -313,6 +336,370 @@ func (e *TaskExecutor) executeCheck(ctx context.Context, task *models.AgentTask)
 			"container_id":      payload.ContainerID,
 			"content_length":    resp.ContentLength,
 			"content_type":      resp.Header.Get("Content-Type"),
+		},
+	}, nil
+}
+
+// executeControl executes a control task (dispatches to specific operations).
+func (e *TaskExecutor) executeControl(ctx context.Context, task *models.AgentTask) (*models.TaskResult, error) {
+	// Parse payload to get control parameters
+	var payload map[string]interface{}
+	if err := task.GetPayloadAs(&payload); err != nil {
+		return nil, fmt.Errorf("invalid control payload: %w", err)
+	}
+
+	// Get action type from payload
+	action, ok := payload["action"].(string)
+	if !ok {
+		return nil, fmt.Errorf("missing or invalid 'action' field in payload")
+	}
+
+	containerID, ok := payload["containerId"].(string)
+	if !ok {
+		return nil, fmt.Errorf("missing or invalid 'containerId' field in payload")
+	}
+
+	timeout := 30.0 // default timeout
+	if timeoutVal, ok := payload["timeout"].(float64); ok {
+		timeout = timeoutVal
+	}
+
+	// Create control payload
+	controlPayload := &models.ControlContainerPayload{
+		ContainerID: containerID,
+		Timeout:     int(timeout),
+	}
+
+	// Execute based on action
+	switch action {
+	case "restart":
+		return e.deployer.RestartContainer(ctx, controlPayload)
+	case "stop":
+		return e.deployer.StopContainer(ctx, controlPayload)
+	case "start":
+		return e.deployer.StartContainer(ctx, controlPayload)
+	case "pause":
+		// Pause operation would be similar to stop
+		return e.deployer.StopContainer(ctx, controlPayload)
+	case "unpause":
+		// Unpause operation would be similar to start
+		return e.deployer.StartContainer(ctx, controlPayload)
+	default:
+		return nil, fmt.Errorf("unsupported control action: %s", action)
+	}
+}
+
+// executeTransfer executes a transfer task (log collection).
+func (e *TaskExecutor) executeTransfer(ctx context.Context, task *models.AgentTask) (*models.TaskResult, error) {
+	// Parse payload to get transfer parameters
+	var payload map[string]interface{}
+	if err := task.GetPayloadAs(&payload); err != nil {
+		return nil, fmt.Errorf("invalid transfer payload: %w", err)
+	}
+
+	action, _ := payload["action"].(string)
+	containerID, ok := payload["containerId"].(string)
+	if !ok {
+		return nil, fmt.Errorf("missing or invalid 'containerId' field in payload")
+	}
+
+	// Route to log collection if specified
+	if action == "collect-logs" {
+		return e.executeLogCollection(ctx, payload)
+	}
+
+	// For other transfer actions, return not implemented
+	return &models.TaskResult{
+		Success: false,
+		Message: fmt.Sprintf("Transfer action '%s' not yet implemented", action),
+		Data: map[string]interface{}{
+			"action":       action,
+			"container_id": containerID,
+		},
+	}, nil
+}
+
+// executeLogCollection collects logs from a container.
+func (e *TaskExecutor) executeLogCollection(ctx context.Context, payload map[string]interface{}) (*models.TaskResult, error) {
+	// Extract parameters
+	containerID, ok := payload["containerId"].(string)
+	if !ok || containerID == "" {
+		return nil, fmt.Errorf("missing or invalid 'containerId' field in payload")
+	}
+
+	// Extract optional parameters with defaults
+	lines := int64(100) // default to 100 lines
+	if linesVal, ok := payload["lines"].(float64); ok {
+		lines = int64(linesVal)
+	}
+
+	since := ""
+	if sinceVal, ok := payload["since"].(string); ok {
+		since = sinceVal
+	}
+
+	destination := "/tmp/graphium-logs" // default destination
+	if destVal, ok := payload["destination"].(string); ok {
+		destination = destVal
+	}
+
+	// Parse destination to get file path
+	// Expected format: file:///path/to/destination/
+	destinationPath := strings.TrimPrefix(destination, "file://")
+	if destinationPath == "" {
+		destinationPath = "/tmp/graphium-logs"
+	}
+
+	// Ensure destination directory exists
+	if err := os.MkdirAll(destinationPath, 0755); err != nil {
+		return &models.TaskResult{
+			Success: false,
+			Message: fmt.Sprintf("Failed to create destination directory: %v", err),
+			Data: map[string]interface{}{
+				"container_id": containerID,
+				"destination":  destinationPath,
+				"error":        err.Error(),
+			},
+		}, nil
+	}
+
+	// Get container logs using Docker API
+	startTime := time.Now()
+
+	options := container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Tail:       fmt.Sprintf("%d", lines),
+		Timestamps: true,
+	}
+
+	// Add time filter if specified
+	if since != "" {
+		options.Since = since
+	}
+
+	logReader, err := e.agent.docker.ContainerLogs(ctx, containerID, options)
+	if err != nil {
+		return &models.TaskResult{
+			Success: false,
+			Message: fmt.Sprintf("Failed to fetch container logs: %v", err),
+			Data: map[string]interface{}{
+				"container_id": containerID,
+				"lines":        lines,
+				"since":        since,
+				"error":        err.Error(),
+			},
+		}, nil
+	}
+	defer logReader.Close()
+
+	// Read all logs
+	logBytes, err := io.ReadAll(logReader)
+	if err != nil {
+		return &models.TaskResult{
+			Success: false,
+			Message: fmt.Sprintf("Failed to read container logs: %v", err),
+			Data: map[string]interface{}{
+				"container_id": containerID,
+				"error":        err.Error(),
+			},
+		}, nil
+	}
+
+	duration := time.Since(startTime)
+
+	// Create log file with timestamp
+	timestamp := time.Now().Format("20060102-150405")
+	logFileName := fmt.Sprintf("%s-%s.log", containerID, timestamp)
+	logFilePath := fmt.Sprintf("%s/%s", destinationPath, logFileName)
+
+	// Write logs to file
+	if err := os.WriteFile(logFilePath, logBytes, 0644); err != nil {
+		return &models.TaskResult{
+			Success: false,
+			Message: fmt.Sprintf("Failed to write logs to file: %v", err),
+			Data: map[string]interface{}{
+				"container_id": containerID,
+				"destination":  logFilePath,
+				"error":        err.Error(),
+			},
+		}, nil
+	}
+
+	logSize := len(logBytes)
+	logLines := bytes.Count(logBytes, []byte("\n"))
+
+	return &models.TaskResult{
+		Success: true,
+		Message: fmt.Sprintf("Successfully collected %d lines (%d bytes) of logs from container %s", logLines, logSize, containerID),
+		Data: map[string]interface{}{
+			"container_id":  containerID,
+			"log_file":      logFilePath,
+			"log_size":      logSize,
+			"log_lines":     logLines,
+			"duration_ms":   duration.Milliseconds(),
+			"lines_requested": lines,
+			"since":         since,
+		},
+	}, nil
+}
+
+// executeTLSCertificateCheck executes a TLS certificate expiration check.
+func (e *TaskExecutor) executeTLSCertificateCheck(ctx context.Context, payload map[string]interface{}) (*models.TaskResult, error) {
+	// Extract parameters
+	urlStr, ok := payload["url"].(string)
+	if !ok || urlStr == "" {
+		return nil, fmt.Errorf("missing or invalid 'url' field in payload")
+	}
+
+	warnDays := 30.0 // default warning threshold
+	if warnVal, ok := payload["warnDays"].(float64); ok {
+		warnDays = warnVal
+	}
+
+	// Parse URL to extract host and port
+	// Remove protocol if present
+	host := strings.TrimPrefix(urlStr, "https://")
+	host = strings.TrimPrefix(host, "http://")
+
+	// If no port specified, use 443
+	if !strings.Contains(host, ":") {
+		host = host + ":443"
+	}
+
+	// Create TLS dialer with default config
+	dialer := &tls.Dialer{
+		Config: &tls.Config{
+			InsecureSkipVerify: false, // Verify certificate chain
+		},
+	}
+
+	// Connect and get certificate
+	startTime := time.Now()
+	conn, err := dialer.DialContext(ctx, "tcp", host)
+	duration := time.Since(startTime)
+
+	if err != nil {
+		return &models.TaskResult{
+			Success: false,
+			Message: fmt.Sprintf("TLS certificate check failed: %v", err),
+			Data: map[string]interface{}{
+				"url":         urlStr,
+				"host":        host,
+				"error":       err.Error(),
+				"duration_ms": duration.Milliseconds(),
+			},
+		}, nil
+	}
+	defer conn.Close()
+
+	// Get TLS connection state
+	tlsConn, ok := conn.(*tls.Conn)
+	if !ok {
+		return nil, fmt.Errorf("failed to get TLS connection")
+	}
+
+	// Get certificate chain
+	state := tlsConn.ConnectionState()
+	if len(state.PeerCertificates) == 0 {
+		return &models.TaskResult{
+			Success: false,
+			Message: "No certificates found in TLS handshake",
+			Data: map[string]interface{}{
+				"url":         urlStr,
+				"host":        host,
+				"duration_ms": duration.Milliseconds(),
+			},
+		}, nil
+	}
+
+	// Get the leaf certificate (first in chain)
+	cert := state.PeerCertificates[0]
+
+	// Calculate days until expiration
+	now := time.Now()
+	daysUntilExpiry := int(cert.NotAfter.Sub(now).Hours() / 24)
+
+	// Check if certificate is expired
+	if now.After(cert.NotAfter) {
+		return &models.TaskResult{
+			Success: false,
+			Message: fmt.Sprintf("Certificate EXPIRED on %s (%d days ago)", cert.NotAfter.Format("2006-01-02 15:04:05 MST"), -daysUntilExpiry),
+			Data: map[string]interface{}{
+				"url":              urlStr,
+				"host":             host,
+				"subject":          cert.Subject.CommonName,
+				"issuer":           cert.Issuer.CommonName,
+				"not_before":       cert.NotBefore.Format("2006-01-02 15:04:05 MST"),
+				"not_after":        cert.NotAfter.Format("2006-01-02 15:04:05 MST"),
+				"expires_in_days":  daysUntilExpiry,
+				"is_expired":       true,
+				"dns_names":        cert.DNSNames,
+				"serial_number":    cert.SerialNumber.String(),
+				"duration_ms":      duration.Milliseconds(),
+				"signature_algorithm": cert.SignatureAlgorithm.String(),
+			},
+		}, nil
+	}
+
+	// Check if certificate is not yet valid
+	if now.Before(cert.NotBefore) {
+		return &models.TaskResult{
+			Success: false,
+			Message: fmt.Sprintf("Certificate not yet valid (valid from %s)", cert.NotBefore.Format("2006-01-02 15:04:05 MST")),
+			Data: map[string]interface{}{
+				"url":              urlStr,
+				"host":             host,
+				"subject":          cert.Subject.CommonName,
+				"issuer":           cert.Issuer.CommonName,
+				"not_before":       cert.NotBefore.Format("2006-01-02 15:04:05 MST"),
+				"not_after":        cert.NotAfter.Format("2006-01-02 15:04:05 MST"),
+				"expires_in_days":  daysUntilExpiry,
+				"dns_names":        cert.DNSNames,
+				"serial_number":    cert.SerialNumber.String(),
+				"duration_ms":      duration.Milliseconds(),
+			},
+		}, nil
+	}
+
+	// Check warning threshold
+	warningThreshold := int(warnDays)
+	success := daysUntilExpiry > warningThreshold
+
+	var message string
+	if success {
+		message = fmt.Sprintf("Certificate valid - expires on %s (in %d days)", cert.NotAfter.Format("2006-01-02 15:04:05 MST"), daysUntilExpiry)
+	} else {
+		message = fmt.Sprintf("WARNING: Certificate expires soon on %s (in %d days, threshold: %d days)", cert.NotAfter.Format("2006-01-02 15:04:05 MST"), daysUntilExpiry, warningThreshold)
+	}
+
+	// Verify certificate chain
+	opts := x509.VerifyOptions{
+		DNSName: strings.Split(host, ":")[0], // Remove port for DNS verification
+	}
+	_, err = cert.Verify(opts)
+	chainValid := err == nil
+
+	return &models.TaskResult{
+		Success: success,
+		Message: message,
+		Data: map[string]interface{}{
+			"url":                  urlStr,
+			"host":                 host,
+			"subject":              cert.Subject.CommonName,
+			"issuer":               cert.Issuer.CommonName,
+			"not_before":           cert.NotBefore.Format("2006-01-02 15:04:05 MST"),
+			"not_after":            cert.NotAfter.Format("2006-01-02 15:04:05 MST"),
+			"expires_in_days":      daysUntilExpiry,
+			"warning_threshold":    warningThreshold,
+			"is_expired":           false,
+			"is_valid":             success,
+			"chain_valid":          chainValid,
+			"dns_names":            cert.DNSNames,
+			"serial_number":        cert.SerialNumber.String(),
+			"signature_algorithm":  cert.SignatureAlgorithm.String(),
+			"duration_ms":          duration.Milliseconds(),
+			"cert_version":         cert.Version,
 		},
 	}, nil
 }
