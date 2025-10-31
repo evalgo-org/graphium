@@ -347,20 +347,33 @@ func (s *Scheduler) createTaskFromAction(action *models.ScheduledAction) (*model
 		ScheduledBy: action.ID, // Link task to the action that created it
 	}
 
-	// Map action type to task type
-	switch action.Type {
-	case models.ActionTypeCheck:
-		task.TaskType = "check"
-	case models.ActionTypeControl:
-		task.TaskType = "control"
-	case models.ActionTypeCreate:
-		task.TaskType = "create"
-	case models.ActionTypeUpdate:
-		task.TaskType = "update"
-	case models.ActionTypeTransfer:
-		task.TaskType = "transfer"
-	default:
-		task.TaskType = "action"
+	// Check if this is a composite action (workflow)
+	isCompositeAction := false
+	if action.Instrument != nil {
+		if compositeVal, ok := action.Instrument["compositeAction"]; ok {
+			isCompositeAction, _ = compositeVal.(bool)
+		}
+	}
+
+	// Set task type based on whether it's a composite action (workflow)
+	if isCompositeAction {
+		task.TaskType = "workflow"
+	} else {
+		// Map action type to task type
+		switch action.Type {
+		case models.ActionTypeCheck:
+			task.TaskType = "check"
+		case models.ActionTypeControl:
+			task.TaskType = "control"
+		case models.ActionTypeCreate:
+			task.TaskType = "create"
+		case models.ActionTypeUpdate:
+			task.TaskType = "update"
+		case models.ActionTypeTransfer:
+			task.TaskType = "transfer"
+		default:
+			task.TaskType = "action"
+		}
 	}
 
 	// Build payload from action instrument and object

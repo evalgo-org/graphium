@@ -181,6 +181,9 @@ func (e *TaskExecutor) executeTask(ctx context.Context, task *models.AgentTask) 
 	case "transfer":
 		result, err = e.executeTransfer(ctx, task)
 
+	case "workflow":
+		result, err = e.executeWorkflow(ctx, task)
+
 	default:
 		err = fmt.Errorf("unsupported task type: %s", task.TaskType)
 	}
