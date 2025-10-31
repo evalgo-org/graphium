@@ -102,7 +102,25 @@ type AgentTask struct {
 
 	// DependsOn lists task IDs that must complete before this task
 	DependsOn []string `json:"dependsOn,omitempty"`
+
+	// ScheduledBy is the ID of the ScheduledAction that created this task (optional)
+	// Links tasks created by the scheduler back to their source action
+	ScheduledBy string `json:"scheduledBy,omitempty" couchdb:"index"`
 }
+
+// Aliases for convenience and consistency with scheduler
+type Task = AgentTask
+type Params = map[string]interface{}
+
+// Task status constants
+const (
+	TaskStatusPending   = "pending"
+	TaskStatusAssigned  = "assigned"
+	TaskStatusRunning   = "running"
+	TaskStatusCompleted = "completed"
+	TaskStatusFailed    = "failed"
+	TaskStatusCancelled = "cancelled"
+)
 
 // DeployContainerPayload contains data for deploying a container.
 type DeployContainerPayload struct {
@@ -172,6 +190,30 @@ type ContainerUpdateSpec struct {
 
 	// Resources are updated resource constraints (uses ResourceConstraints from stack_deployment.go)
 	Resources *ResourceConstraints `json:"resources,omitempty"`
+}
+
+// CheckHealthPayload contains data for health check operations.
+type CheckHealthPayload struct {
+	// URL is the health check endpoint
+	URL string `json:"url"`
+
+	// Method is the HTTP method (default: GET)
+	Method string `json:"method,omitempty"`
+
+	// ExpectedStatusCode is the expected HTTP response code (default: 200)
+	ExpectedStatusCode int `json:"expectedStatusCode,omitempty"`
+
+	// Timeout is the timeout in seconds (default: 5)
+	Timeout int `json:"timeout,omitempty"`
+
+	// Headers are optional HTTP headers to send
+	Headers map[string]string `json:"headers,omitempty"`
+
+	// Body is optional HTTP request body
+	Body string `json:"body,omitempty"`
+
+	// ContainerID is the container to check (optional, for logging)
+	ContainerID string `json:"containerId,omitempty"`
 }
 
 // TaskResult contains the result of a task execution.
