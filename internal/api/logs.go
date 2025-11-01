@@ -61,9 +61,17 @@ func (s *Server) getContainerLogs(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, "Container not found")
 	}
 
-	// Connect to Docker socket
-	// Note: This requires the API server to have access to the Docker socket
-	// In production, you might want to proxy this through the agent instead
+	// Check if we need to proxy through agent HTTP server
+	if cont.HostedOn != "" && s.agentManager != nil {
+		// Try to get agent HTTP URL
+		agentURL := s.agentManager.GetAgentHTTPURL(cont.HostedOn)
+		if agentURL != "" {
+			// Proxy request to agent HTTP server
+			return s.proxyLogsToAgent(c, containerID, agentURL)
+		}
+	}
+
+	// Fall back to local Docker client
 	dockerClient, err := client.NewClientWithOpts(
 		client.FromEnv,
 		client.WithAPIVersionNegotiation(),
@@ -167,6 +175,78 @@ func (s *Server) getContainerLogs(c echo.Context) error {
 	return nil
 }
 
+// proxyLogsToAgent proxies container logs request to an agent HTTP server
+func (s *Server) proxyLogsToAgent(c echo.Context, containerID, agentURL string) error {
+	// Build URL to agent HTTP server
+	url := fmt.Sprintf("%s/containers/%s/logs", agentURL, containerID)
+
+	// Forward all query parameters
+	if c.Request().URL.RawQuery != "" {
+		url += "?" + c.Request().URL.RawQuery
+	}
+
+	// Create HTTP request to agent
+	req, err := http.NewRequestWithContext(c.Request().Context(), "GET", url, nil)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Failed to create request: %v", err))
+	}
+
+	// Forward relevant headers
+	if userAgent := c.Request().Header.Get("User-Agent"); userAgent != "" {
+		req.Header.Set("User-Agent", userAgent)
+	}
+
+	// Create HTTP client with no timeout for streaming
+	client := &http.Client{
+		Timeout: 0, // No timeout for streaming logs
+	}
+
+	// Execute request to agent
+	resp, err := client.Do(req)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusServiceUnavailable, fmt.Sprintf("Failed to connect to agent: %v", err))
+	}
+	defer resp.Body.Close()
+
+	// Check response status
+	if resp.StatusCode != http.StatusOK {
+		return echo.NewHTTPError(resp.StatusCode, "Agent returned error")
+	}
+
+	// Forward response headers
+	for key, values := range resp.Header {
+		for _, value := range values {
+			c.Response().Header().Add(key, value)
+		}
+	}
+
+	// Set status code
+	c.Response().WriteHeader(resp.StatusCode)
+
+	// Stream response body to client
+	buf := make([]byte, 8192)
+	for {
+		n, err := resp.Body.Read(buf)
+		if n > 0 {
+			if _, writeErr := c.Response().Write(buf[:n]); writeErr != nil {
+				return writeErr
+			}
+			// Flush if possible (for streaming)
+			if flusher, ok := c.Response().Writer.(http.Flusher); ok {
+				flusher.Flush()
+			}
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // downloadContainerLogs downloads container logs as a file
 func (s *Server) downloadContainerLogs(c echo.Context) error {
 	containerID := c.Param("id")
@@ -189,15 +269,32 @@ func (s *Server) downloadContainerLogs(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, "Container not found")
 	}
 
-	// Connect to Docker
-	dockerClient, err := client.NewClientWithOpts(
-		client.FromEnv,
-		client.WithAPIVersionNegotiation(),
-	)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to connect to Docker")
+	// Check if container is on a remote host (needs agent proxy)
+	var dockerClient *client.Client
+	var isRemote bool
+
+	if cont.HostedOn != "" && s.agentManager != nil {
+		// Try to get Docker client from agent
+		dockerClient, err = s.agentManager.GetDockerClient(cont.HostedOn)
+		if err == nil {
+			isRemote = true
+		}
 	}
-	defer dockerClient.Close()
+
+	// If no agent or agent not available, try local Docker
+	if dockerClient == nil {
+		dockerClient, err = client.NewClientWithOpts(
+			client.FromEnv,
+			client.WithAPIVersionNegotiation(),
+		)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to connect to Docker")
+		}
+	}
+	// Only close if it's a local client we created
+	if !isRemote {
+		defer dockerClient.Close()
+	}
 
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 30*time.Second)
 	defer cancel()

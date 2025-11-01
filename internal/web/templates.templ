@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"strings"
 	"time"
 	"evalgo.org/graphium/models"
 	"evalgo.org/graphium/internal/storage"
@@ -1145,6 +1146,7 @@ templ ContainerDetailWithUser(container *models.Container, host *models.Host, st
 			</div>
 			<div class="action-buttons">
 				<a href="/web/containers" class="btn btn-secondary">← Back to Containers</a>
+				<a href={ templ.URL(fmt.Sprintf("/web/containers/%s/logs", container.ID)) } class="btn btn-primary">📄 View Logs</a>
 				if belongsToStack && stack != nil {
 					<div class="alert alert-info" style="margin: 0; padding: 8px 12px; display: inline-block;">
 						📦 Part of stack: <a href={ templ.URL(fmt.Sprintf("/web/stacks/%s", stack.ID)) } style="color: inherit; font-weight: bold;">{ stack.Name }</a>
@@ -2606,7 +2608,7 @@ templ StackLogsWithUser(stack *models.Stack, deployment *models.StackDeployment,
 						if placement.ContainerID != "" {
 							<div class="log-content" id={ "logs-" + placement.ContainerID }>
 								<div
-									hx-get={ fmt.Sprintf("/web/containers/%s/logs?tail=100", placement.ContainerID) }
+									hx-get={ fmt.Sprintf("/api/v1/containers/%s/logs?tail=100", placement.ContainerID) }
 									hx-trigger="load"
 									hx-swap="innerHTML">
 									<div class="loading">Loading logs...</div>
@@ -3464,6 +3466,23 @@ templ CreateAgentFormWithUser(errorMsg string, user *models.User) {
 				</div>
 
 				<div class="form-group">
+					<label for="http_port">HTTP Port *</label>
+					<input
+						type="number"
+						id="http_port"
+						name="http_port"
+						required
+						placeholder="e.g., 9001"
+						min="1024"
+						max="65535"
+					/>
+					<small class="form-help">
+						Port for agent HTTP server (required for remote log viewing and operations).<br/>
+						Each agent must have a unique port. Common range: 9001-9010.
+					</small>
+				</div>
+
+				<div class="form-group">
 					<label class="checkbox-label">
 						<input
 							type="checkbox"
@@ -3544,8 +3563,26 @@ func formatTimeAgo(t time.Time) string {
 	return fmt.Sprintf("%d days ago", days)
 }
 
+// Helper function to format command for display
+func formatCommand(cmd interface{}) string {
+	switch v := cmd.(type) {
+	case string:
+		return v
+	case []interface{}:
+		parts := make([]string, len(v))
+		for i, part := range v {
+			parts[i] = fmt.Sprintf("%v", part)
+		}
+		return strings.Join(parts, " ")
+	case []string:
+		return strings.Join(v, " ")
+	default:
+		return fmt.Sprintf("%v", cmd)
+	}
+}
+
 // ============================================================================
-// SCHEDULED ACTIONS TEMPLATES  
+// SCHEDULED ACTIONS TEMPLATES
 // ============================================================================
 
 // Actions list page with user
@@ -3766,11 +3803,84 @@ templ ExecutionHistoryRows(tasks []*TaskWithResult) {
 					} else {
 						<span style="color: #ef4444;">{ taskWrapper.Result.Message }</span>
 					}
+					// Add expandable details for workflow tasks
+					if taskWrapper.Task.TaskType == "workflow" && taskWrapper.Result.Data != nil {
+						if actionOutputs, ok := taskWrapper.Result.Data["action_outputs"]; ok {
+							<br/>
+							<details style="margin-top: 0.5rem;">
+								<summary style="cursor: pointer; color: #6366f1; font-size: 0.875rem;">
+									▸ View detailed workflow steps
+								</summary>
+								<div style="margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border-radius: 0.25rem; font-family: monospace; font-size: 0.875rem;">
+									@renderActionOutputs(actionOutputs)
+								</div>
+							</details>
+						}
+					}
 				} else {
 					<span class="text-muted">-</span>
 				}
 			</td>
 		</tr>
+	}
+}
+
+// Helper to render action outputs from workflow execution
+templ renderActionOutputs(actionOutputs interface{}) {
+	if outputs, ok := actionOutputs.(map[string]interface{}); ok {
+		for stepName, stepData := range outputs {
+			<div style="margin-bottom: 1rem; padding: 0.5rem; border-left: 3px solid #6366f1; background: white;">
+				<div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">
+					Step: { stepName }
+				</div>
+				if stepMap, ok := stepData.(map[string]interface{}); ok {
+					// Show description if available
+					if desc, ok := stepMap["description"].(string); ok && desc != "" {
+						<div style="color: #6b7280; font-size: 0.8rem; margin-bottom: 0.5rem;">
+							{ desc }
+						</div>
+					}
+
+					// Show command
+					if cmd, ok := stepMap["command"]; ok {
+						<div style="margin-bottom: 0.25rem;">
+							<span style="color: #6b7280;">Command:</span>
+							<code style="background: #f3f4f6; padding: 0.125rem 0.25rem; border-radius: 0.125rem;">
+								{ formatCommand(cmd) }
+							</code>
+						</div>
+					}
+
+					// Show exit code
+					if exitCode, ok := stepMap["exit_code"]; ok {
+						<div style="margin-bottom: 0.25rem;">
+							<span style="color: #6b7280;">Exit Code:</span>
+							if exitCodeFloat, ok := exitCode.(float64); ok && exitCodeFloat == 0 {
+								<span style="color: #10b981; font-weight: 600;">0 (success)</span>
+							} else {
+								<span style="color: #ef4444; font-weight: 600;">{ fmt.Sprintf("%v", exitCode) }</span>
+							}
+						</div>
+					}
+
+					// Show duration
+					if duration, ok := stepMap["duration_ms"]; ok {
+						<div style="margin-bottom: 0.25rem;">
+							<span style="color: #6b7280;">Duration:</span>
+							<span>{ fmt.Sprintf("%v ms", duration) }</span>
+						</div>
+					}
+
+					// Show output
+					if output, ok := stepMap["output"].(string); ok && output != "" {
+						<div style="margin-top: 0.5rem;">
+							<div style="color: #6b7280; margin-bottom: 0.25rem;">Output:</div>
+							<pre style="background: #1f2937; color: #f9fafb; padding: 0.5rem; border-radius: 0.25rem; overflow-x: auto; margin: 0; white-space: pre-wrap; word-break: break-all;">{ output }</pre>
+						</div>
+					}
+				}
+			</div>
+		}
 	}
 }
 
@@ -3959,6 +4069,20 @@ templ ActionDetailWithUser(action *models.ScheduledAction, tasks []*TaskWithResu
 											<span style="color: #10b981;">{ taskWrapper.Result.Message }</span>
 										} else {
 											<span style="color: #ef4444;">{ taskWrapper.Result.Message }</span>
+										}
+										// Add expandable details for workflow tasks
+										if taskWrapper.Task.TaskType == "workflow" && taskWrapper.Result.Data != nil {
+											if actionOutputs, ok := taskWrapper.Result.Data["action_outputs"]; ok {
+												<br/>
+												<details style="margin-top: 0.5rem;">
+													<summary style="cursor: pointer; color: #6366f1; font-size: 0.875rem;">
+														▸ View detailed workflow steps
+													</summary>
+													<div style="margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border-radius: 0.25rem; font-family: monospace; font-size: 0.875rem;">
+														@renderActionOutputs(actionOutputs)
+													</div>
+												</details>
+											}
 										}
 									} else {
 										<span class="text-muted">-</span>
