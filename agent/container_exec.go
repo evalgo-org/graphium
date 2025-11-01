@@ -6,8 +6,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/docker/docker/api/types/container"
 	"evalgo.org/graphium/models"
+	"github.com/docker/docker/api/types/container"
 )
 
 // executeContainerExec executes a command inside a running container
@@ -145,12 +145,12 @@ func (e *TaskExecutor) executeContainerExec(ctx context.Context, payload map[str
 		Success: success,
 		Message: message,
 		Data: map[string]interface{}{
-			"container_id":  containerID,
-			"command":       cmd,
-			"exit_code":     exitCode,
-			"output":        string(output),
-			"duration_ms":   duration.Milliseconds(),
-			"exec_id":       execResp.ID,
+			"container_id": containerID,
+			"command":      cmd,
+			"exit_code":    exitCode,
+			"output":       string(output),
+			"duration_ms":  duration.Milliseconds(),
+			"exec_id":      execResp.ID,
 		},
 	}, nil
 }

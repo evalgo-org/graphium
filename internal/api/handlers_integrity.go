@@ -119,7 +119,7 @@ func (s *Server) getScanReport(c echo.Context) error {
 	report, err := integrityService.GetScanReport(c.Request().Context(), scanID)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, ErrorResponse{
-			Error: "Scan report not found",
+			Error:   "Scan report not found",
 			Details: err.Error(),
 		})
 	}
@@ -160,10 +160,10 @@ func (s *Server) listScans(c echo.Context) error {
 
 // CreateRepairPlanRequest contains options for creating a repair plan.
 type CreateRepairPlanRequest struct {
-	ScanID         string                       `json:"scan_id"`
-	Strategy       integrity.ResolutionStrategy `json:"strategy"`
-	RiskFilter     []integrity.RiskLevel        `json:"risk_filter"`
-	DryRun         bool                         `json:"dry_run"`
+	ScanID     string                       `json:"scan_id"`
+	Strategy   integrity.ResolutionStrategy `json:"strategy"`
+	RiskFilter []integrity.RiskLevel        `json:"risk_filter"`
+	DryRun     bool                         `json:"dry_run"`
 }
 
 // createRepairPlan handles POST /api/v1/integrity/repair-plans

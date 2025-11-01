@@ -250,9 +250,9 @@ func (s *Server) ExecuteScheduledAction(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"success": true,
-		"message": "Task created for immediate execution",
-		"taskId":  task.ID,
+		"success":  true,
+		"message":  "Task created for immediate execution",
+		"taskId":   task.ID,
 		"actionId": action.ID,
 	})
 }
@@ -282,4 +282,3 @@ func (s *Server) GetScheduledActionHistory(c echo.Context) error {
 		"tasks":    tasks,
 	})
 }
-

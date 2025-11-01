@@ -43,16 +43,16 @@ func TestStackCreationFromDeploymentState(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name              string
-		deploymentState   *models.DeploymentState
-		stackNode         *models.GraphNode
-		existingStack     *models.Stack
-		getStackError     error
-		saveStackError    error
-		updateStackError  error
-		wantStackCreated  bool
-		wantStackUpdated  bool
-		wantContainerIDs  []string
+		name             string
+		deploymentState  *models.DeploymentState
+		stackNode        *models.GraphNode
+		existingStack    *models.Stack
+		getStackError    error
+		saveStackError   error
+		updateStackError error
+		wantStackCreated bool
+		wantStackUpdated bool
+		wantContainerIDs []string
 	}{
 		{
 			name: "creates new stack when none exists",
@@ -493,10 +493,10 @@ func TestDuplicateContainerIDHandling(t *testing.T) {
 // TestStackOperationFailureDoesNotFailDeployment verifies deployment continues even if stack ops fail
 func TestStackOperationFailureDoesNotFailDeployment(t *testing.T) {
 	tests := []struct {
-		name         string
-		getError     error
-		saveError    error
-		updateError  error
+		name          string
+		getError      error
+		saveError     error
+		updateError   error
 		shouldSucceed bool
 	}{
 		{

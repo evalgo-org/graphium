@@ -14,16 +14,16 @@ import (
 	dockerclient "github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 
-	evecommon "eve.evalgo.org/common"
 	"evalgo.org/graphium/models"
+	evecommon "eve.evalgo.org/common"
 )
 
 // AgentDeployer handles container lifecycle operations for tasks.
 // It provides methods to deploy, delete, start, stop, and manage containers
 // on the local Docker daemon.
 type AgentDeployer struct {
-	docker *dockerclient.Client
-	hostID string
+	docker  *dockerclient.Client
+	hostID  string
 	agentID string
 }
 

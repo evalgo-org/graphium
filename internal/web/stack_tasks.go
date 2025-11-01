@@ -282,4 +282,3 @@ type DeploymentStatus struct {
 	TasksByStatus map[string]int
 	Tasks         []*models.AgentTask
 }
-

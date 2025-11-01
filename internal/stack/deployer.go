@@ -11,8 +11,8 @@ import (
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/go-connections/nat"
 
-	"eve.evalgo.org/common"
 	"evalgo.org/graphium/models"
+	"eve.evalgo.org/common"
 )
 
 // Database is an interface for storing deployment state.
@@ -443,8 +443,8 @@ func (d *Deployer) deployContainer(ctx context.Context, plan *models.DeploymentP
 // buildContainerConfig builds the Docker container.Config from ContainerSpec.
 func (d *Deployer) buildContainerConfig(spec *models.ContainerSpec) *container.Config {
 	config := &container.Config{
-		Image: spec.Image,
-		Env:   []string{},
+		Image:  spec.Image,
+		Env:    []string{},
 		Labels: spec.Labels,
 	}
 

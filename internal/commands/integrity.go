@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/spf13/cobra"
 	"eve.evalgo.org/db"
+	"github.com/spf13/cobra"
 
 	"evalgo.org/graphium/internal/integrity"
 )

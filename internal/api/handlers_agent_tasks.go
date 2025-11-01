@@ -390,7 +390,7 @@ func (s *Server) createTask(c echo.Context) error {
 
 // TaskStatusUpdate represents a task status update request.
 type TaskStatusUpdate struct {
-	Status string              `json:"status"`
-	Error  string              `json:"error,omitempty"`
-	Result *models.TaskResult  `json:"result,omitempty"`
+	Status string             `json:"status"`
+	Error  string             `json:"error,omitempty"`
+	Result *models.TaskResult `json:"result,omitempty"`
 }

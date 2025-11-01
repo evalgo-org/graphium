@@ -11,23 +11,23 @@ import (
 	"syscall"
 	"time"
 
-	dockerclient "github.com/docker/docker/client"
-	"eve.evalgo.org/network"
 	"evalgo.org/graphium/internal/auth"
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/models"
+	"eve.evalgo.org/network"
+	dockerclient "github.com/docker/docker/client"
 )
 
 // Manager manages agent processes for the Graphium server.
 // It starts, stops, and monitors agent processes that connect to remote Docker hosts.
 type Manager struct {
-	storage   *storage.Storage
-	config    *config.Config
-	agents    map[string]*AgentProcess // agentID -> process
-	mu        sync.RWMutex
-	ctx       context.Context
-	cancel    context.CancelFunc
+	storage    *storage.Storage
+	config     *config.Config
+	agents     map[string]*AgentProcess // agentID -> process
+	mu         sync.RWMutex
+	ctx        context.Context
+	cancel     context.CancelFunc
 	executable string // Path to graphium executable
 }
 
@@ -37,9 +37,9 @@ type AgentProcess struct {
 	State        *models.AgentState
 	Cmd          *exec.Cmd
 	StartedAt    time.Time
-	LogFile      *os.File // Log file for this agent's output
+	LogFile      *os.File             // Log file for this agent's output
 	DockerClient *dockerclient.Client // Cached Docker client for this agent
-	SSHTunnel    *network.SSHTunnel // SSH tunnel for remote Docker connections
+	SSHTunnel    *network.SSHTunnel   // SSH tunnel for remote Docker connections
 	mu           sync.Mutex
 }
 

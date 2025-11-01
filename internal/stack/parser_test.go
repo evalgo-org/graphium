@@ -352,8 +352,8 @@ func TestStackParser_PortValidation(t *testing.T) {
 		Name:  "web",
 		Image: "nginx:latest",
 		Ports: []models.PortMapping{
-			{ContainerPort: 80, HostPort: 8080, Protocol: ""},     // Missing protocol
-			{ContainerPort: 0, HostPort: 8081, Protocol: "tcp"},   // Invalid container port
+			{ContainerPort: 80, HostPort: 8080, Protocol: ""},      // Missing protocol
+			{ContainerPort: 0, HostPort: 8081, Protocol: "tcp"},    // Invalid container port
 			{ContainerPort: 443, HostPort: 70000, Protocol: "tcp"}, // Invalid host port
 		},
 	}

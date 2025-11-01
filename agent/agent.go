@@ -67,8 +67,8 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	dockerclient "github.com/docker/docker/client"
 
-	"eve.evalgo.org/network"
 	"evalgo.org/graphium/models"
+	"eve.evalgo.org/network"
 )
 
 // Agent manages Docker container discovery and synchronization with the API server.
@@ -76,22 +76,22 @@ import (
 // to the Graphium API, providing real-time visibility into container state across
 // distributed hosts.
 type Agent struct {
-	apiURL        string
-	hostID        string
-	datacenter    string
-	dockerSocket  string
-	docker        *dockerclient.Client
-	httpClient    *http.Client
-	sshTunnel     *network.SSHTunnel
-	syncInterval  time.Duration
-	hostInfo      *models.Host
-	authToken     string
-	httpPort      int  // HTTP server port (0 = disabled)
-	startTime     time.Time
-	syncCount     int64
-	failedSyncs   int64
-	eventsCount   int64
-	lastSyncTime  time.Time
+	apiURL           string
+	hostID           string
+	datacenter       string
+	dockerSocket     string
+	docker           *dockerclient.Client
+	httpClient       *http.Client
+	sshTunnel        *network.SSHTunnel
+	syncInterval     time.Duration
+	hostInfo         *models.Host
+	authToken        string
+	httpPort         int // HTTP server port (0 = disabled)
+	startTime        time.Time
+	syncCount        int64
+	failedSyncs      int64
+	eventsCount      int64
+	lastSyncTime     time.Time
 	lastSyncDuration time.Duration
 }
 
@@ -415,9 +415,9 @@ func (a *Agent) syncContainers(ctx context.Context) error {
 //  3. If GET returns any other status (404, 401, etc.): use POST to CREATE
 //
 // This approach handles various scenarios:
-//  - New containers that don't exist yet (404 → POST)
-//  - Authentication issues on GET (401 → POST, which may succeed)
-//  - Existing containers that need updates (200 → PUT)
+//   - New containers that don't exist yet (404 → POST)
+//   - Authentication issues on GET (401 → POST, which may succeed)
+//   - Existing containers that need updates (200 → PUT)
 //
 // The function also handles the case where a container no longer exists in
 // Docker (IsErrNotFound), which is normal when containers are removed.

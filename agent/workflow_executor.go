@@ -11,7 +11,7 @@ import (
 
 // WorkflowExecutor handles composite action execution with variable substitution
 type WorkflowExecutor struct {
-	taskExecutor *TaskExecutor
+	taskExecutor  *TaskExecutor
 	actionOutputs map[string]map[string]interface{} // outputAs -> result data
 }
 
@@ -88,8 +88,8 @@ func (w *WorkflowExecutor) ExecuteCompositeAction(ctx context.Context, task *mod
 				Success: false,
 				Message: fmt.Sprintf("Action %d failed: %s", i, result.Message),
 				Data: map[string]interface{}{
-					"failed_step":   i,
-					"step_result":   result,
+					"failed_step": i,
+					"step_result": result,
 				},
 			}, nil
 		}
@@ -106,9 +106,9 @@ func (w *WorkflowExecutor) ExecuteCompositeAction(ctx context.Context, task *mod
 		Success: true,
 		Message: fmt.Sprintf("Successfully executed %d actions", len(actionsRaw)),
 		Data: map[string]interface{}{
-			"actions_count":   len(actionsRaw),
-			"last_result":     lastResult,
-			"action_outputs":  w.actionOutputs,
+			"actions_count":  len(actionsRaw),
+			"last_result":    lastResult,
+			"action_outputs": w.actionOutputs,
 		},
 	}, nil
 }

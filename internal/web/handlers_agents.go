@@ -89,7 +89,7 @@ func (h *Handler) StartAgentHandler(c echo.Context) error {
 	}
 
 	// TODO: Add auth token from context
-	
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to start agent: %v", err))

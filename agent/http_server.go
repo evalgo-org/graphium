@@ -70,14 +70,14 @@ func (a *Agent) handleHealth(w http.ResponseWriter, r *http.Request) {
 	uptime := time.Since(a.startTime)
 
 	response := map[string]interface{}{
-		"status":       "healthy",
-		"hostId":       a.hostID,
-		"datacenter":   a.datacenter,
-		"uptime":       uptime.Seconds(),
-		"syncCount":    a.syncCount,
-		"failedSyncs":  a.failedSyncs,
-		"eventsCount":  a.eventsCount,
-		"lastSync":     a.lastSyncTime,
+		"status":           "healthy",
+		"hostId":           a.hostID,
+		"datacenter":       a.datacenter,
+		"uptime":           uptime.Seconds(),
+		"syncCount":        a.syncCount,
+		"failedSyncs":      a.failedSyncs,
+		"eventsCount":      a.eventsCount,
+		"lastSync":         a.lastSyncTime,
 		"lastSyncDuration": a.lastSyncDuration.Milliseconds(),
 	}
 

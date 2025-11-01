@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"eve.evalgo.org/db"
+	"github.com/google/uuid"
 )
 
 // DocumentMetadata contains minimal information needed for duplicate detection.

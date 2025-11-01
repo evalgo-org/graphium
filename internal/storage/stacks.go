@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"eve.evalgo.org/db"
 	"evalgo.org/graphium/models"
+	"eve.evalgo.org/db"
 )
 
 // SaveStack saves a stack to the database.

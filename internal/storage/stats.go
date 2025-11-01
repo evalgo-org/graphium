@@ -3,23 +3,23 @@ package storage
 import (
 	"encoding/json"
 
-	"eve.evalgo.org/db"
 	"evalgo.org/graphium/models"
+	"eve.evalgo.org/db"
 )
 
 // Statistics contains overview statistics for the dashboard
 type Statistics struct {
-	TotalContainers      int
-	RunningContainers    int
-	TotalHosts           int
-	TotalStacks          int
-	RunningStacks        int
-	HostContainerCounts  map[string]int // host ID -> container count
-	TotalAgents          int
-	RunningAgents        int
-	TotalActions         int // Total scheduled actions
-	SuccessfulActions    int // Scheduled actions with last execution successful
-	FailedActions        int // Scheduled actions with last execution failed
+	TotalContainers     int
+	RunningContainers   int
+	TotalHosts          int
+	TotalStacks         int
+	RunningStacks       int
+	HostContainerCounts map[string]int // host ID -> container count
+	TotalAgents         int
+	RunningAgents       int
+	TotalActions        int // Total scheduled actions
+	SuccessfulActions   int // Scheduled actions with last execution successful
+	FailedActions       int // Scheduled actions with last execution failed
 }
 
 // DatacenterTopology contains the topology information for a single datacenter

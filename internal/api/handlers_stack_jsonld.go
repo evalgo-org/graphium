@@ -8,10 +8,10 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"eve.evalgo.org/common"
 	"evalgo.org/graphium/internal/stack"
 	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/models"
+	"eve.evalgo.org/common"
 )
 
 // DeployJSONLDStackRequest represents a JSON-LD @graph stack deployment request.
@@ -21,36 +21,36 @@ type DeployJSONLDStackRequest struct {
 
 	// Options for deployment
 	Timeout         int  `json:"timeout"`          // Timeout in seconds (default: 300)
-	RollbackOnError bool `json::"rollbackOnError"` // Auto-rollback on error (default: true)
+	RollbackOnError bool `json:"rollbackOnError"` // Auto-rollback on error (default: true)
 	PullImages      bool `json:"pullImages"`       // Pull images before deployment (default: false)
 }
 
 // DeploymentStateResponse represents a deployment state in API responses.
 type DeploymentStateResponse struct {
-	ID            string                              `json:"id"`
-	StackID       string                              `json:"stackId"`
-	Status        string                              `json:"status"`
-	Phase         string                              `json:"phase,omitempty"`
-	Progress      int                                 `json:"progress"`
+	ID            string                                `json:"id"`
+	StackID       string                                `json:"stackId"`
+	Status        string                                `json:"status"`
+	Phase         string                                `json:"phase,omitempty"`
+	Progress      int                                   `json:"progress"`
 	Placements    map[string]*models.ContainerPlacement `json:"placements"`
-	NetworkInfo   *models.DeployedNetworkInfo         `json:"networkInfo,omitempty"`
-	VolumeInfo    map[string]*models.VolumeInfo       `json:"volumeInfo,omitempty"`
-	Events        []models.DeploymentEvent            `json:"events,omitempty"`
-	StartedAt     time.Time                           `json:"startedAt"`
-	CompletedAt   *time.Time                          `json:"completedAt,omitempty"`
-	ErrorMessage  string                              `json:"errorMessage,omitempty"`
-	RollbackState *models.RollbackState               `json:"rollbackState,omitempty"`
+	NetworkInfo   *models.DeployedNetworkInfo           `json:"networkInfo,omitempty"`
+	VolumeInfo    map[string]*models.VolumeInfo         `json:"volumeInfo,omitempty"`
+	Events        []models.DeploymentEvent              `json:"events,omitempty"`
+	StartedAt     time.Time                             `json:"startedAt"`
+	CompletedAt   *time.Time                            `json:"completedAt,omitempty"`
+	ErrorMessage  string                                `json:"errorMessage,omitempty"`
+	RollbackState *models.RollbackState                 `json:"rollbackState,omitempty"`
 }
 
 // ParseResultResponse represents the result of parsing a stack definition.
 type ParseResultResponse struct {
-	Valid        bool                  `json:"valid"`
-	Warnings     []string              `json:"warnings"`
-	Errors       []string              `json:"errors"`
-	StackName    string                `json:"stackName,omitempty"`
-	ContainerCount int                 `json:"containerCount"`
-	HasNetwork   bool                  `json:"hasNetwork"`
-	WaveCount    int                   `json:"waveCount"`
+	Valid          bool     `json:"valid"`
+	Warnings       []string `json:"warnings"`
+	Errors         []string `json:"errors"`
+	StackName      string   `json:"stackName,omitempty"`
+	ContainerCount int      `json:"containerCount"`
+	HasNetwork     bool     `json:"hasNetwork"`
+	WaveCount      int      `json:"waveCount"`
 }
 
 // deployJSONLDStack deploys a stack from JSON-LD @graph definition.
@@ -150,7 +150,7 @@ func (s *Server) deployJSONLDStack(c echo.Context) error {
 				Description: parseResult.Plan.StackNode.Description,
 				Status:      "running",
 				Containers:  containerIDs,
-				Datacenter:  "",  // Datacenter is optional, leave empty for now
+				Datacenter:  "", // Datacenter is optional, leave empty for now
 				DeployedAt:  &deploymentState.StartedAt,
 				CreatedAt:   deploymentState.StartedAt,
 				UpdatedAt:   deploymentState.StartedAt,
@@ -464,6 +464,7 @@ func (f *APIDockerClientFactory) GetClient(ctx context.Context, hostID string) (
 	// Docker SDK client already implements common.DockerClient
 	return cli, nil
 }
+
 // listStacks returns all stacks.
 // @Summary List all stacks
 // @Description Get a list of all stacks in the system
@@ -511,18 +512,18 @@ func (s *Server) getStack(c echo.Context) error {
 // @Router /api/v1/stacks/{id}/deployment [get]
 func (s *Server) getStackDeployment(c echo.Context) error {
 	id := c.Param("id")
-	
+
 	// Try DeploymentState first (JSON-LD deployments)
 	deploymentState, err := s.storage.GetDeploymentState(id)
 	if err == nil && deploymentState != nil {
 		return c.JSON(http.StatusOK, deploymentState)
 	}
-	
+
 	// Fall back to old StackDeployment format
 	deployment, err := s.storage.GetDeployment(id)
 	if err != nil {
 		return NotFoundError("Deployment not found", id)
 	}
-	
+
 	return c.JSON(http.StatusOK, deployment)
 }

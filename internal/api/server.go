@@ -32,8 +32,8 @@ type Server struct {
 	config       *config.Config
 	wsHub        *Hub // WebSocket hub for real-time updates
 	authMiddle   *auth.Middleware
-	integrity    *integrity.Service // Database integrity service
-	agentManager *agents.Manager    // Agent process manager
+	integrity    *integrity.Service   // Database integrity service
+	agentManager *agents.Manager      // Agent process manager
 	scheduler    *scheduler.Scheduler // Scheduled actions scheduler
 }
 

@@ -31,7 +31,7 @@ type ScheduledAction struct {
 	EndTime   *time.Time `json:"endTime,omitempty"`   // schema:endTime - Last execution end
 
 	// Graphium extensions
-	Enabled   bool      `json:"enabled"`   // Whether schedule is active
+	Enabled   bool      `json:"enabled"` // Whether schedule is active
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }

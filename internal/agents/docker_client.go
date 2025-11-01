@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	dockerclient "github.com/docker/docker/client"
 	"eve.evalgo.org/network"
+	dockerclient "github.com/docker/docker/client"
 )
 
 // GetDockerClient returns a Docker client for the specified host.

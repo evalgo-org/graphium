@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"eve.evalgo.org/db"
 	"evalgo.org/graphium/models"
+	"eve.evalgo.org/db"
 )
 
 // CreateTask creates a new agent task in the database.
@@ -440,6 +440,7 @@ func (s *Storage) AreTaskDependenciesMet(taskID string) (bool, error) {
 
 	return true, nil
 }
+
 // GetTasksByScheduledAction retrieves all tasks created by a specific scheduled action
 func (s *Storage) GetTasksByScheduledAction(actionID string) ([]*models.AgentTask, error) {
 	return s.ListTasks(map[string]interface{}{

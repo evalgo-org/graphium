@@ -20,14 +20,14 @@ type SystemMetrics struct {
 
 // cpuStat holds CPU statistics from /proc/stat
 type cpuStat struct {
-	user   uint64
-	nice   uint64
-	system uint64
-	idle   uint64
-	iowait uint64
-	irq    uint64
+	user    uint64
+	nice    uint64
+	system  uint64
+	idle    uint64
+	iowait  uint64
+	irq     uint64
 	softirq uint64
-	steal  uint64
+	steal   uint64
 }
 
 // GetSystemMetrics collects current system metrics (CPU and memory usage).

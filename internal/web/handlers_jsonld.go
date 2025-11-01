@@ -152,9 +152,9 @@ func (h *Handler) JSONLDDeploy(c echo.Context) error {
 	// Parse the stack definition directly (expecting the full request format)
 	var deployReq struct {
 		StackDefinition models.StackDefinition `json:"stackDefinition"`
-		Timeout         int                     `json:"timeout"`
-		RollbackOnError bool                    `json:"rollbackOnError"`
-		PullImages      bool                    `json:"pullImages"`
+		Timeout         int                    `json:"timeout"`
+		RollbackOnError bool                   `json:"rollbackOnError"`
+		PullImages      bool                   `json:"pullImages"`
 	}
 
 	// Try to parse as full request first
@@ -225,7 +225,6 @@ func (h *Handler) JSONLDDeploy(c echo.Context) error {
 	// Redirect to deployment detail page
 	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/web/stacks/jsonld/deployments/%s", deployResp.ID))
 }
-
 
 // JSONLDDeploymentDetail shows details of a single deployment
 func (h *Handler) JSONLDDeploymentDetail(c echo.Context) error {

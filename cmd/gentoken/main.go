@@ -1,9 +1,9 @@
 package main
 
 import (
+	"evalgo.org/graphium/internal/auth"
 	"fmt"
 	"time"
-	"evalgo.org/graphium/internal/auth"
 )
 
 func main() {

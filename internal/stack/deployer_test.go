@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"eve.evalgo.org/common"
 	"evalgo.org/graphium/models"
+	"eve.evalgo.org/common"
 )
 
 // MockDatabase is a test implementation of the Database interface
@@ -275,8 +275,8 @@ func TestDeployer_DeployWithDependencies(t *testing.T) {
 			"api": "host1",
 		},
 		DependencyGraph: [][]string{
-			{"db"},   // Wave 1: db
-			{"api"},  // Wave 2: api (depends on db)
+			{"db"},  // Wave 1: db
+			{"api"}, // Wave 2: api (depends on db)
 		},
 	}
 
@@ -490,10 +490,10 @@ func TestDeployer_BuildContainerConfig(t *testing.T) {
 		Environment: []models.EnvironmentVariable{
 			{Name: "ENV", Value: "production"},
 		},
-		Command: []string{"/bin/sh"},
-		Args:    []string{"-c", "nginx -g 'daemon off;'"},
+		Command:    []string{"/bin/sh"},
+		Args:       []string{"-c", "nginx -g 'daemon off;'"},
 		WorkingDir: "/app",
-		User:    "nginx",
+		User:       "nginx",
 		Labels: map[string]string{
 			"app": "web",
 		},
