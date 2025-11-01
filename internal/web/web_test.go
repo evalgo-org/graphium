@@ -85,7 +85,7 @@ func TestContainersListTemplate(t *testing.T) {
 		HasPrev:    false,
 		HasNext:    false,
 	}
-	component := ContainersListWithUser(containers, pagination, nil)
+	component := ContainersListWithUser(containers, make(map[string]*models.Stack), pagination, "", nil)
 	assert.NotNil(t, component)
 }
 
