@@ -86,6 +86,7 @@ type Agent struct {
 	syncInterval  time.Duration
 	hostInfo      *models.Host
 	authToken     string
+	httpPort      int  // HTTP server port (0 = disabled)
 	startTime     time.Time
 	syncCount     int64
 	failedSyncs   int64
@@ -95,7 +96,7 @@ type Agent struct {
 }
 
 // NewAgent creates a new agent instance.
-func NewAgent(apiURL, hostID, datacenter, dockerSocket, agentToken string) (*Agent, error) {
+func NewAgent(apiURL, hostID, datacenter, dockerSocket, agentToken string, httpPort int) (*Agent, error) {
 	if apiURL == "" {
 		return nil, fmt.Errorf("api URL is required")
 	}
@@ -213,6 +214,7 @@ func NewAgent(apiURL, hostID, datacenter, dockerSocket, agentToken string) (*Age
 		sshTunnel:    tunnel,
 		syncInterval: 30 * time.Second,
 		authToken:    agentToken,
+		httpPort:     httpPort,
 	}, nil
 }
 
@@ -229,6 +231,13 @@ func (a *Agent) Start(ctx context.Context) error {
 	log.Printf("Agent started for host %s in datacenter %s", a.hostID, a.datacenter)
 	log.Printf("Docker socket: %s", a.dockerSocket)
 	log.Printf("API server: %s", a.apiURL)
+
+	// Start HTTP server if configured
+	if a.httpPort > 0 {
+		if err := a.startHTTPServer(ctx, a.httpPort); err != nil {
+			return fmt.Errorf("failed to start HTTP server: %w", err)
+		}
+	}
 
 	// Verify authentication before proceeding
 	if err := a.verifyAuthentication(ctx); err != nil {

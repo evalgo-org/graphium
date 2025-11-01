@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	dockerclient "github.com/docker/docker/client"
+	"evalgo.org/eve/network"
 	"evalgo.org/graphium/internal/auth"
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/internal/storage"
@@ -31,12 +33,14 @@ type Manager struct {
 
 // AgentProcess represents a running agent process.
 type AgentProcess struct {
-	Config    *models.AgentConfig
-	State     *models.AgentState
-	Cmd       *exec.Cmd
-	StartedAt time.Time
-	LogFile   *os.File // Log file for this agent's output
-	mu        sync.Mutex
+	Config       *models.AgentConfig
+	State        *models.AgentState
+	Cmd          *exec.Cmd
+	StartedAt    time.Time
+	LogFile      *os.File // Log file for this agent's output
+	DockerClient *dockerclient.Client // Cached Docker client for this agent
+	SSHTunnel    *network.SSHTunnel // SSH tunnel for remote Docker connections
+	mu           sync.Mutex
 }
 
 // NewManager creates a new agent manager.
@@ -140,12 +144,21 @@ func (m *Manager) StartAgent(configID string) error {
 	}
 
 	// Build command
-	cmd := exec.CommandContext(m.ctx, m.executable, "agent",
+	args := []string{
+		"agent",
 		"--api-url", fmt.Sprintf("http://localhost:%d", m.config.Server.Port),
 		"--host-id", cfg.HostID,
 		"--datacenter", cfg.Datacenter,
 		"--docker-socket", cfg.DockerSocket,
-	)
+	}
+
+	// Add HTTP port if configured
+	if cfg.HTTPPort > 0 {
+		args = append(args, "--http-port", fmt.Sprintf("%d", cfg.HTTPPort))
+		log.Printf("Agent %s: HTTP server will listen on port %d", cfg.Name, cfg.HTTPPort)
+	}
+
+	cmd := exec.CommandContext(m.ctx, m.executable, args...)
 
 	// Set environment
 	cmd.Env = append(os.Environ(), "TOKEN="+agentToken)
@@ -263,6 +276,9 @@ func (m *Manager) stopAgentProcess(agent *AgentProcess) error {
 		}
 		agent.LogFile = nil
 	}
+
+	// Clean up Docker client and SSH tunnel
+	m.closeDockerClient(agent)
 
 	now := time.Now()
 	agent.State.Status = "stopped"
@@ -391,4 +407,20 @@ func (m *Manager) checkAgentHealth() {
 		}
 		agent.mu.Unlock()
 	}
+}
+
+// GetAgentHTTPURL returns the HTTP URL for an agent by host ID.
+// Returns empty string if agent is not running or HTTP server is not enabled.
+func (m *Manager) GetAgentHTTPURL(hostID string) string {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	// Find running agent by hostID
+	for _, agent := range m.agents {
+		if agent.Config.HostID == hostID && agent.State.Status == "running" && agent.Config.HTTPPort > 0 {
+			return fmt.Sprintf("http://localhost:%d", agent.Config.HTTPPort)
+		}
+	}
+
+	return ""
 }

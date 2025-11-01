@@ -30,6 +30,10 @@ type AgentConfig struct {
 	// Used when DockerSocket is ssh://user@host format
 	SSHKeyPath string `json:"sshKeyPath,omitempty"`
 
+	// HTTPPort is the port the agent HTTP server listens on (default: 0 = disabled)
+	// When non-zero, the agent starts an HTTP server for direct communication
+	HTTPPort int `json:"httpPort,omitempty"`
+
 	// Datacenter is the datacenter location
 	Datacenter string `json:"datacenter,omitempty"`
 

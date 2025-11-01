@@ -27,12 +27,14 @@ func init() {
 	agentCmd.Flags().String("host-id", "", "Unique host identifier")
 	agentCmd.Flags().String("datacenter", "", "Datacenter name")
 	agentCmd.Flags().String("docker-socket", "", "Docker socket path")
+	agentCmd.Flags().Int("http-port", 0, "HTTP server port (0 = disabled)")
 
 	// These should never fail as flags are defined above
 	_ = viper.BindPFlag("agent.api_url", agentCmd.Flags().Lookup("api-url"))             //nolint:errcheck
 	_ = viper.BindPFlag("agent.host_id", agentCmd.Flags().Lookup("host-id"))             //nolint:errcheck
 	_ = viper.BindPFlag("agent.datacenter", agentCmd.Flags().Lookup("datacenter"))       //nolint:errcheck
 	_ = viper.BindPFlag("agent.docker_socket", agentCmd.Flags().Lookup("docker-socket")) //nolint:errcheck
+	_ = viper.BindPFlag("agent.http_port", agentCmd.Flags().Lookup("http-port"))         //nolint:errcheck
 }
 
 func runAgent(cmd *cobra.Command, args []string) error {
@@ -41,12 +43,16 @@ func runAgent(cmd *cobra.Command, args []string) error {
 	hostID := viper.GetString("agent.host_id")
 	datacenter := viper.GetString("agent.datacenter")
 	dockerSocket := viper.GetString("agent.docker_socket")
+	httpPort := viper.GetInt("agent.http_port")
 
 	fmt.Println("🤖 Starting Graphium Agent")
 	fmt.Printf("   Version: %s\n", rootCmd.Version)
 	fmt.Printf("   Host ID: %s\n", hostID)
 	fmt.Printf("   Datacenter: %s\n", datacenter)
 	fmt.Printf("   API URL: %s\n", apiURL)
+	if httpPort > 0 {
+		fmt.Printf("   HTTP Port: %d\n", httpPort)
+	}
 	fmt.Println()
 
 	// Get agent authentication token
@@ -86,6 +92,7 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		datacenter,
 		dockerSocket,
 		agentToken,
+		httpPort,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create agent: %w", err)

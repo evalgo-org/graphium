@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -42,6 +43,7 @@ type EventBroadcaster interface {
 type AgentManager interface {
 	GetAgentState(configID string) (*models.AgentState, error)
 	ListAgentStates() ([]*models.AgentState, error)
+	GetAgentHTTPURL(hostID string) string
 }
 
 // Handler handles web UI requests.
@@ -951,6 +953,72 @@ func (h *Handler) ContainerLogs(c echo.Context) error {
 	}
 
 	return Render(c, ContainerLogsView(container, host, user))
+}
+
+// StreamContainerLogs streams container logs from the agent HTTP server.
+// This proxies log requests to the agent's HTTP API for remote containers.
+func (h *Handler) StreamContainerLogs(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.String(http.StatusBadRequest, "Container ID is required")
+	}
+
+	// Get container to find its host
+	container, err := h.storage.GetContainer(id)
+	if err != nil {
+		return c.String(http.StatusNotFound, "Container not found")
+	}
+
+	// Check if we have an agent manager
+	if h.agentManager == nil {
+		return c.String(http.StatusServiceUnavailable, "Agent manager not available")
+	}
+
+	// Get agent HTTP URL for this container's host
+	agentURL := h.agentManager.GetAgentHTTPURL(container.HostedOn)
+	if agentURL == "" {
+		return c.String(http.StatusServiceUnavailable, "Agent HTTP server not available for this host")
+	}
+
+	// Build query parameters for the agent
+	query := c.QueryParams()
+	queryString := query.Encode()
+
+	// Create HTTP request to agent
+	url := fmt.Sprintf("%s/containers/%s/logs", agentURL, id)
+	if queryString != "" {
+		url += "?" + queryString
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to create request")
+	}
+
+	// Forward request to agent
+	client := &http.Client{
+		Timeout: 0, // No timeout for streaming
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return c.String(http.StatusBadGateway, fmt.Sprintf("Failed to connect to agent: %v", err))
+	}
+	defer resp.Body.Close()
+
+	// Copy headers from agent response
+	for key, values := range resp.Header {
+		for _, value := range values {
+			c.Response().Header().Add(key, value)
+		}
+	}
+
+	// Set status code
+	c.Response().WriteHeader(resp.StatusCode)
+
+	// Stream response body
+	_, err = io.Copy(c.Response().Writer, resp.Body)
+	return err
 }
 
 // AssignContainersToStack assigns multiple containers to a stack.

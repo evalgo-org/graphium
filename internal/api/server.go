@@ -339,6 +339,7 @@ func (s *Server) setupRoutes() {
 	webGroup.GET("/containers/table", webHandler.ContainersTable)
 	webGroup.GET("/containers/:id", webHandler.ContainerDetail)
 	webGroup.GET("/containers/:id/logs", webHandler.ContainerLogs)
+	webGroup.GET("/containers/:id/logs/stream", webHandler.StreamContainerLogs)
 	webGroup.POST("/containers/:id/delete", webHandler.DeleteContainer)
 	webGroup.POST("/containers/bulk/delete", webHandler.BulkDeleteContainers)
 	webGroup.POST("/containers/bulk/stop", webHandler.BulkStopContainers)
