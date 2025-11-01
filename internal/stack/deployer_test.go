@@ -487,8 +487,8 @@ func TestDeployer_BuildContainerConfig(t *testing.T) {
 	spec := &models.ContainerSpec{
 		Name:  "web",
 		Image: "nginx:latest",
-		Environment: map[string]string{
-			"ENV": "production",
+		Environment: []models.EnvironmentVariable{
+			{Name: "ENV", Value: "production"},
 		},
 		Command: []string{"/bin/sh"},
 		Args:    []string{"-c", "nginx -g 'daemon off;'"},
