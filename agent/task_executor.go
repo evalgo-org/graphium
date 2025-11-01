@@ -100,7 +100,9 @@ func (e *TaskExecutor) pollAndExecuteTasks(ctx context.Context) error {
 		if err := e.executeTask(ctx, task); err != nil {
 			log.Printf("Failed to execute task %s: %v", task.ID, err)
 			// Report failure
-			e.reportTaskStatus(task.ID, "failed", err.Error(), nil)
+			if reportErr := e.reportTaskStatus(task.ID, "failed", err.Error(), nil); reportErr != nil {
+				log.Printf("Failed to report task failure status: %v", reportErr)
+			}
 		}
 	}
 

@@ -469,7 +469,7 @@ func runIntegrityRepair(cmd *cobra.Command, args []string) error {
 		fmt.Printf("⚠️  WARNING: This will modify %d documents in the database!\n", len(plan.Operations))
 		fmt.Print("Are you sure you want to continue? (yes/no): ")
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if response != "yes" {
 			fmt.Println("Aborted.")
 			return nil

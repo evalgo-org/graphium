@@ -168,7 +168,7 @@ func NewAgent(apiURL, hostID, datacenter, dockerSocket, agentToken string, httpP
 			dockerclient.WithAPIVersionNegotiation(),
 		)
 		if err != nil {
-			tunnel.Close()
+			_ = tunnel.Close()
 			return nil, fmt.Errorf("failed to create Docker client: %w", err)
 		}
 	} else {
@@ -179,7 +179,9 @@ func NewAgent(apiURL, hostID, datacenter, dockerSocket, agentToken string, httpP
 		}
 
 		// Set DOCKER_HOST for non-SSH connections
-		os.Setenv("DOCKER_HOST", dockerHost)
+		if err := os.Setenv("DOCKER_HOST", dockerHost); err != nil {
+			return nil, fmt.Errorf("failed to set DOCKER_HOST: %w", err)
+		}
 
 		// Create standard Docker client
 		var err error
@@ -198,7 +200,7 @@ func NewAgent(apiURL, hostID, datacenter, dockerSocket, agentToken string, httpP
 	_, err := dockerClient.Ping(ctx)
 	if err != nil {
 		if tunnel != nil {
-			tunnel.Close()
+			_ = tunnel.Close()
 		}
 		return nil, fmt.Errorf("failed to connect to Docker: %w", err)
 	}
@@ -456,7 +458,7 @@ func (a *Agent) syncContainer(ctx context.Context, containerID string) error {
 			log.Printf("Warning: Failed to check ignore list for %s: %v", containerID[:12], err)
 			// Continue with sync despite error (fail-open)
 		} else {
-			ignoreResp.Body.Close()
+			_ = ignoreResp.Body.Close()
 
 			// If container is ignored (200 OK), skip syncing
 			if ignoreResp.StatusCode == http.StatusOK {
@@ -481,7 +483,7 @@ func (a *Agent) syncContainer(ctx context.Context, containerID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to check container: %w", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	var method string
 	var endpoint string
@@ -602,7 +604,7 @@ func (a *Agent) handleContainerEvent(ctx context.Context, event events.Message) 
 			log.Printf("Failed to delete container: %v", err)
 			return
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNotFound {
 			log.Printf("✓ Container removed: %s", containerID[:12])

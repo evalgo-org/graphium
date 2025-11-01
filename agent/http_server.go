@@ -82,7 +82,9 @@ func (a *Agent) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Failed to encode health response: %v", err)
+	}
 }
 
 // handleContainerLogs streams container logs
@@ -193,7 +195,9 @@ func (a *Agent) handleContainerInspect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(containerJSON)
+	if err := json.NewEncoder(w).Encode(containerJSON); err != nil {
+		log.Printf("Failed to encode container inspect response: %v", err)
+	}
 }
 
 // handleListContainers returns a list of containers
@@ -208,10 +212,12 @@ func (a *Agent) handleListContainers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"hostId":     a.hostID,
 		"datacenter": a.datacenter,
 		"count":      len(containers),
 		"containers": containers,
-	})
+	}); err != nil {
+		log.Printf("Failed to encode container list response: %v", err)
+	}
 }

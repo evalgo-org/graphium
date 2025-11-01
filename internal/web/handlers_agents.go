@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -202,7 +203,9 @@ func (h *Handler) CreateAgentHandler(c echo.Context) error {
 	datacenter := c.FormValue("datacenter")
 	syncInterval := 30
 	if c.FormValue("sync_interval") != "" {
-		fmt.Sscanf(c.FormValue("sync_interval"), "%d", &syncInterval)
+		if _, err := fmt.Sscanf(c.FormValue("sync_interval"), "%d", &syncInterval); err != nil {
+			syncInterval = 30 // Keep default on error
+		}
 	}
 	enabled := c.FormValue("enabled") == "true"
 	autoStart := c.FormValue("auto_start") == "true"
@@ -240,7 +243,10 @@ func (h *Handler) CreateAgentHandler(c echo.Context) error {
 		apiURL := fmt.Sprintf("http://localhost:%d/api/v1/agents/%s/start", h.config.Server.Port, config.ID)
 		req, err := http.NewRequest("POST", apiURL, nil)
 		if err == nil {
-			http.DefaultClient.Do(req)
+			if _, doErr := http.DefaultClient.Do(req); doErr != nil {
+				// Log error but don't fail the create operation
+				log.Printf("Failed to start agent via API: %v", doErr)
+			}
 		}
 	}
 

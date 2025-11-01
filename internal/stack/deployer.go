@@ -417,8 +417,9 @@ func (d *Deployer) deployContainer(ctx context.Context, plan *models.DeploymentP
 			if len(bindings) > 0 {
 				containerPort := port.Int()
 				var hostPort int
-				fmt.Sscanf(bindings[0].HostPort, "%d", &hostPort)
-				ports[containerPort] = hostPort
+				if _, err := fmt.Sscanf(bindings[0].HostPort, "%d", &hostPort); err == nil {
+					ports[containerPort] = hostPort
+				}
 			}
 		}
 	}
@@ -649,8 +650,8 @@ func (d *Deployer) failDeployment(ctx context.Context, state *models.DeploymentS
 	state.CompletedAt = &now
 	state.ErrorMessage = err.Error()
 
-	d.addEvent(state, "error", phase, "", err.Error())
-	d.DB.Update(ctx, state)
+	_ = d.addEvent(state, "error", phase, "", err.Error())
+	_ = d.DB.Update(ctx, state)
 
 	return state, err
 }
@@ -688,8 +689,8 @@ func (d *Deployer) rollback(ctx context.Context, state *models.DeploymentState) 
 	state.RollbackState.Status = "rolled-back"
 	state.RollbackState.CompletedAt = &completedAt
 
-	d.addEvent(state, "info", "rollback", "", "Rollback completed")
-	d.DB.Update(ctx, state)
+	_ = d.addEvent(state, "info", "rollback", "", "Rollback completed")
+	_ = d.DB.Update(ctx, state)
 }
 
 // Stop stops all containers in a deployment.
@@ -723,8 +724,8 @@ func (d *Deployer) Stop(ctx context.Context, state *models.DeploymentState) erro
 	}
 
 	state.Status = "stopped"
-	d.addEvent(state, "info", "stopping", "", "All containers stopped")
-	d.DB.Update(ctx, state)
+	_ = d.addEvent(state, "info", "stopping", "", "All containers stopped")
+	_ = d.DB.Update(ctx, state)
 
 	return nil
 }
@@ -788,8 +789,8 @@ func (d *Deployer) Remove(ctx context.Context, state *models.DeploymentState, re
 	}
 
 	state.Status = "removed"
-	d.addEvent(state, "info", "removing", "", "All resources removed")
-	d.DB.Update(ctx, state)
+	_ = d.addEvent(state, "info", "removing", "", "All resources removed")
+	_ = d.DB.Update(ctx, state)
 
 	return nil
 }
@@ -824,8 +825,8 @@ func (d *Deployer) Start(ctx context.Context, state *models.DeploymentState) err
 	}
 
 	state.Status = "running"
-	d.addEvent(state, "info", "starting", "", "All containers started")
-	d.DB.Update(ctx, state)
+	_ = d.addEvent(state, "info", "starting", "", "All containers started")
+	_ = d.DB.Update(ctx, state)
 
 	return nil
 }

@@ -262,15 +262,21 @@ func (h *Handler) CreateActionHandler(c echo.Context) error {
 			}
 			if expectedStatus != "" {
 				var status int
-				fmt.Sscanf(expectedStatus, "%d", &status)
-				instrument["expectedStatusCode"] = status
+				if _, err := fmt.Sscanf(expectedStatus, "%d", &status); err == nil {
+					instrument["expectedStatusCode"] = status
+				} else {
+					instrument["expectedStatusCode"] = 200
+				}
 			} else {
 				instrument["expectedStatusCode"] = 200
 			}
 			if timeout != "" {
 				var timeoutSec int
-				fmt.Sscanf(timeout, "%d", &timeoutSec)
-				instrument["timeout"] = timeoutSec
+				if _, err := fmt.Sscanf(timeout, "%d", &timeoutSec); err == nil {
+					instrument["timeout"] = timeoutSec
+				} else {
+					instrument["timeout"] = 5
+				}
 			} else {
 				instrument["timeout"] = 5
 			}

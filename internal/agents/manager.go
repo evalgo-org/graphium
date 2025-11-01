@@ -194,7 +194,7 @@ func (m *Manager) StartAgent(configID string) error {
 
 	// Start the process
 	if err := cmd.Start(); err != nil {
-		logFile.Close() // Clean up log file if process fails to start
+		_ = logFile.Close() // Clean up log file if process fails to start
 		return fmt.Errorf("failed to start agent process: %w", err)
 	}
 

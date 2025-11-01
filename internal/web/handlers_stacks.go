@@ -468,7 +468,7 @@ func (h *Handler) DeployStack(c echo.Context) error {
 	if len(targetHosts) == 0 {
 		stack.Status = "error"
 		stack.ErrorMessage = "No active hosts available for deployment"
-		h.storage.UpdateStack(stack)
+		_ = h.storage.UpdateStack(stack)
 		return renderError("No active hosts available for deployment. Please ensure hosts are registered and active.")
 	}
 
@@ -492,7 +492,7 @@ func (h *Handler) DeployStack(c echo.Context) error {
 	if err := h.storage.SaveDeploymentState(deploymentState); err != nil {
 		stack.Status = "error"
 		stack.ErrorMessage = "Failed to create deployment state: " + err.Error()
-		h.storage.UpdateStack(stack)
+		_ = h.storage.UpdateStack(stack)
 		return renderError(stack.ErrorMessage)
 	}
 
@@ -501,14 +501,14 @@ func (h *Handler) DeployStack(c echo.Context) error {
 	if err != nil {
 		stack.Status = "error"
 		stack.ErrorMessage = fmt.Sprintf("Failed to create deployment tasks: %v", err)
-		h.storage.UpdateStack(stack)
+		_ = h.storage.UpdateStack(stack)
 		return renderError(stack.ErrorMessage)
 	}
 
 	// Update deployment state
 	deploymentState.Phase = "waiting-for-agents"
 	deploymentState.Progress = 10
-	h.storage.UpdateDeploymentState(deploymentState)
+	_ = h.storage.UpdateDeploymentState(deploymentState)
 
 	// Broadcast WebSocket event for real-time UI updates
 	h.broadcaster.BroadcastGraphEvent("stack_deploying", map[string]interface{}{
@@ -572,7 +572,7 @@ func (h *Handler) StopStack(c echo.Context) error {
 
 	// Update stack status
 	stack.Status = "stopped"
-	h.storage.UpdateStack(stack)
+	_ = h.storage.UpdateStack(stack)
 
 	// Redirect back to stack detail
 	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/web/stacks/%s", id))
@@ -833,7 +833,7 @@ func (h *Handler) StartStack(c echo.Context) error {
 
 	// Update stack status
 	stack.Status = "running"
-	h.storage.UpdateStack(stack)
+	_ = h.storage.UpdateStack(stack)
 
 	// Redirect back to stack detail
 	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/web/stacks/%s", id))

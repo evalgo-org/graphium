@@ -147,7 +147,7 @@ func (m *Manager) createSSHDockerClient(dockerSocket, sshKeyPath string) (*docke
 		dockerclient.WithAPIVersionNegotiation(),
 	)
 	if err != nil {
-		tunnel.Close()
+		_ = tunnel.Close()
 		return nil, nil, fmt.Errorf("failed to create Docker client: %w", err)
 	}
 
@@ -155,8 +155,8 @@ func (m *Manager) createSSHDockerClient(dockerSocket, sshKeyPath string) (*docke
 	ctx, cancel := context.WithTimeout(context.Background(), 10)
 	defer cancel()
 	if _, err := client.Ping(ctx); err != nil {
-		client.Close()
-		tunnel.Close()
+		_ = client.Close()
+		_ = tunnel.Close()
 		return nil, nil, fmt.Errorf("failed to connect to Docker via SSH: %w", err)
 	}
 
@@ -167,11 +167,11 @@ func (m *Manager) createSSHDockerClient(dockerSocket, sshKeyPath string) (*docke
 // This is called when an agent is stopped.
 func (m *Manager) closeDockerClient(agent *AgentProcess) {
 	if agent.DockerClient != nil {
-		agent.DockerClient.Close()
+		_ = agent.DockerClient.Close()
 		agent.DockerClient = nil
 	}
 	if agent.SSHTunnel != nil {
-		agent.SSHTunnel.Close()
+		_ = agent.SSHTunnel.Close()
 		agent.SSHTunnel = nil
 	}
 }

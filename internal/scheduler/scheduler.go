@@ -238,18 +238,21 @@ func parseISO8601Duration(duration string) (time.Duration, error) {
 		if strings.HasSuffix(timepart, "S") {
 			// Seconds
 			var seconds int
-			fmt.Sscanf(timepart, "%dS", &seconds)
-			return time.Duration(seconds) * time.Second, nil
+			if _, err := fmt.Sscanf(timepart, "%dS", &seconds); err == nil {
+				return time.Duration(seconds) * time.Second, nil
+			}
 		} else if strings.HasSuffix(timepart, "M") {
 			// Minutes
 			var minutes int
-			fmt.Sscanf(timepart, "%dM", &minutes)
-			return time.Duration(minutes) * time.Minute, nil
+			if _, err := fmt.Sscanf(timepart, "%dM", &minutes); err == nil {
+				return time.Duration(minutes) * time.Minute, nil
+			}
 		} else if strings.HasSuffix(timepart, "H") {
 			// Hours
 			var hours int
-			fmt.Sscanf(timepart, "%dH", &hours)
-			return time.Duration(hours) * time.Hour, nil
+			if _, err := fmt.Sscanf(timepart, "%dH", &hours); err == nil {
+				return time.Duration(hours) * time.Hour, nil
+			}
 		}
 	case strings.HasPrefix(duration, "P"):
 		// Date duration
@@ -257,18 +260,21 @@ func parseISO8601Duration(duration string) (time.Duration, error) {
 		if strings.HasSuffix(datepart, "D") {
 			// Days
 			var days int
-			fmt.Sscanf(datepart, "%dD", &days)
-			return time.Duration(days) * 24 * time.Hour, nil
+			if _, err := fmt.Sscanf(datepart, "%dD", &days); err == nil {
+				return time.Duration(days) * 24 * time.Hour, nil
+			}
 		} else if strings.HasSuffix(datepart, "W") {
 			// Weeks
 			var weeks int
-			fmt.Sscanf(datepart, "%dW", &weeks)
-			return time.Duration(weeks) * 7 * 24 * time.Hour, nil
+			if _, err := fmt.Sscanf(datepart, "%dW", &weeks); err == nil {
+				return time.Duration(weeks) * 7 * 24 * time.Hour, nil
+			}
 		} else if strings.HasSuffix(datepart, "M") {
 			// Months (approximate - 30 days)
 			var months int
-			fmt.Sscanf(datepart, "%dM", &months)
-			return time.Duration(months) * 30 * 24 * time.Hour, nil
+			if _, err := fmt.Sscanf(datepart, "%dM", &months); err == nil {
+				return time.Duration(months) * 30 * 24 * time.Hour, nil
+			}
 		}
 	}
 

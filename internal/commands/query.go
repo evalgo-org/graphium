@@ -155,7 +155,7 @@ func runList(cmd *cobra.Command, args []string) error {
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 				c.ID, c.Name, c.Image, c.Status, c.HostedOn)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Printf("\nTotal: %d containers\n", len(containers))
 
 	case "hosts", "host":
@@ -175,7 +175,7 @@ func runList(cmd *cobra.Command, args []string) error {
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 				h.ID, h.Name, h.IPAddress, h.Status, h.Datacenter)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Printf("\nTotal: %d hosts\n", len(hosts))
 
 	default:
@@ -245,7 +245,7 @@ func runDependents(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 			c.ID, c.Name, c.Status, c.HostedOn)
 	}
-	w.Flush()
+	_ = w.Flush()
 	fmt.Printf("\nTotal: %d dependents\n", len(dependents))
 
 	return nil

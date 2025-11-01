@@ -328,7 +328,7 @@ func (s *Service) Scan(ctx context.Context, options ScanOptions) (*ScanReport, e
 	report.Duration = time.Since(startTime)
 
 	// Log to audit
-	s.audit.LogScan(report)
+	_ = s.audit.LogScan(report)
 
 	// Store scan report
 	s.scanMutex.Lock()
