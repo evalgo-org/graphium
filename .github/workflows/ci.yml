@@ -41,7 +41,7 @@ jobs:
         run: task generate
 
       - name: Cache generated code
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: generated-code
           path: |
@@ -112,7 +112,7 @@ jobs:
           go test -v -race -coverprofile=coverage.unit.out -short ./...
 
       - name: Upload unit test coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-unit
           path: coverage.unit.out
@@ -175,7 +175,7 @@ jobs:
           go test -v -race -coverprofile=coverage.integration.out -run Integration ./...
 
       - name: Upload integration test coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-integration
           path: coverage.integration.out
@@ -223,7 +223,7 @@ jobs:
           $(go env GOPATH)/bin/gocov convert coverage.out | $(go env GOPATH)/bin/gocov-xml > coverage.xml
 
       - name: Upload coverage HTML
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-report
           path: coverage.xml
@@ -287,7 +287,7 @@ jobs:
           sha256sum $BINARY_NAME > $BINARY_NAME.sha256
 
       - name: Upload binary artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: binary-${{ matrix.goos }}-${{ matrix.goarch }}
           path: |
