@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"evalgo.org/eve/common"
+	"eve.evalgo.org/common"
 	"evalgo.org/graphium/models"
 )
 

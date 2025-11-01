@@ -1,19 +1,18 @@
 module evalgo.org/graphium
 
-go 1.24.7
+go 1.25
 
 require (
-	evalgo.org/eve v0.0.0-00010101000000-000000000000
-	eve.evalgo.org v0.0.12
+	eve.evalgo.org v0.0.13
 	github.com/a-h/templ v0.3.960
 	github.com/docker/docker v28.5.1+incompatible
 	github.com/docker/go-connections v0.6.0
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
+	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/labstack/echo/v4 v4.13.4
-	github.com/opencontainers/image-spec v1.1.1
 	github.com/piprate/json-gold v0.7.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.18.2
@@ -80,7 +79,6 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-resty/resty/v2 v2.16.5 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -115,6 +113,7 @@ require (
 	github.com/muhlemmer/gu v0.3.1 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/openziti/channel/v4 v4.2.41 // indirect
 	github.com/openziti/edge-api v0.26.51 // indirect
 	github.com/openziti/foundation/v2 v2.0.79 // indirect
@@ -184,10 +183,6 @@ require (
 	nhooyr.io/websocket v1.8.17 // indirect
 )
 
-replace eve.evalgo.org => ../eve
-
 // Exclude conflicting older versions of google.golang.org/genproto
 // to resolve ambiguous import errors in CI
 exclude google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
-
-replace evalgo.org/eve => /home/opunix/eve

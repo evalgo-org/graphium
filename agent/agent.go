@@ -67,7 +67,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	dockerclient "github.com/docker/docker/client"
 
-	"evalgo.org/eve/network"
+	"eve.evalgo.org/network"
 	"evalgo.org/graphium/models"
 )
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"evalgo.org/eve/common"
+	"eve.evalgo.org/common"
 	"evalgo.org/graphium/internal/stack"
 	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/models"

@@ -13,7 +13,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/labstack/echo/v4"
 
-	"evalgo.org/eve/common"
+	"eve.evalgo.org/common"
 	"evalgo.org/graphium/internal/auth"
 	stackpkg "evalgo.org/graphium/internal/stack"
 	"evalgo.org/graphium/internal/storage"

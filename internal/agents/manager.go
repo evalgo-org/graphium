@@ -12,7 +12,7 @@ import (
 	"time"
 
 	dockerclient "github.com/docker/docker/client"
-	"evalgo.org/eve/network"
+	"eve.evalgo.org/network"
 	"evalgo.org/graphium/internal/auth"
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/internal/storage"
