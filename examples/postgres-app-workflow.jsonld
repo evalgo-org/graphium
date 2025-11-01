@@ -1,0 +1,101 @@
+{
+  "@context": "https://schema.org",
+  "@type": "CreateAction",
+  "name": "Deploy PostgreSQL Database with Migrations and App Setup",
+  "description": "Complete workflow: deploy PostgreSQL, wait for ready, run migrations, create users, deploy application",
+  "agent": "localhost-docker",
+  "actionStatus": "PotentialActionStatus",
+  "enabled": false,
+  "schedule": {
+    "@type": "Schedule",
+    "repeatFrequency": "PT24H"
+  },
+  "startTime": null,
+  "endTime": null,
+  "instrument": {
+    "compositeAction": true,
+    "executionMode": "sequential",
+    "actions": [
+      {
+        "type": "deploy-stack",
+        "stackId": "postgres-stack",
+        "outputAs": "database",
+        "description": "Deploy PostgreSQL database container"
+      },
+      {
+        "type": "wait",
+        "containerId": "${{database.containers.postgres}}",
+        "healthCheck": {
+          "command": ["pg_isready", "-U", "admin"],
+          "interval": "2s",
+          "timeout": "30s"
+        },
+        "outputAs": "dbReady",
+        "description": "Wait for database to be ready"
+      },
+      {
+        "type": "container-exec",
+        "containerId": "${{database.containers.postgres}}",
+        "command": ["psql", "-U", "admin", "-c", "CREATE DATABASE myapp;"],
+        "outputAs": "dbCreated",
+        "description": "Create application database"
+      },
+      {
+        "type": "container-exec",
+        "containerId": "${{database.containers.postgres}}",
+        "command": ["psql", "-U", "admin", "-d", "myapp", "-f", "/migrations/001_initial_schema.sql"],
+        "outputAs": "migration1",
+        "description": "Run migration 001: initial schema"
+      },
+      {
+        "type": "container-exec",
+        "containerId": "${{database.containers.postgres}}",
+        "command": ["psql", "-U", "admin", "-d", "myapp", "-f", "/migrations/002_add_users.sql"],
+        "outputAs": "migration2",
+        "description": "Run migration 002: add users table"
+      },
+      {
+        "type": "container-exec",
+        "containerId": "${{database.containers.postgres}}",
+        "command": "psql -U admin -d myapp -c \"CREATE USER appuser WITH PASSWORD 'secure_password_here';\"",
+        "outputAs": "userCreated",
+        "description": "Create application user with password"
+      },
+      {
+        "type": "container-exec",
+        "containerId": "${{database.containers.postgres}}",
+        "command": "psql -U admin -d myapp -c \"GRANT ALL PRIVILEGES ON DATABASE myapp TO appuser;\"",
+        "outputAs": "permissions",
+        "description": "Grant permissions to application user"
+      },
+      {
+        "type": "deploy-stack",
+        "stackId": "myapp-stack",
+        "env": {
+          "DATABASE_URL": "postgres://appuser:secure_password_here@${{database.containers.postgres}}:5432/myapp"
+        },
+        "outputAs": "application",
+        "description": "Deploy application with database connection"
+      },
+      {
+        "type": "container-exec",
+        "containerId": "${{application.containers.webapp}}",
+        "command": ["/app/bin/seed-data"],
+        "env": {
+          "DATABASE_URL": "postgres://appuser:secure_password_here@${{database.containers.postgres}}:5432/myapp"
+        },
+        "outputAs": "seeded",
+        "description": "Seed initial application data"
+      }
+    ]
+  },
+  "object": {
+    "@type": "SoftwareApplication",
+    "name": "MyApp with PostgreSQL",
+    "description": "Complete application stack with database"
+  },
+  "result": {
+    "@type": "CreateAction",
+    "actionStatus": "CompletedActionStatus"
+  }
+}

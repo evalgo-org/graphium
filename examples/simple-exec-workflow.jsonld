@@ -1,0 +1,55 @@
+{
+  "@context": "https://schema.org",
+  "@type": "UpdateAction",
+  "name": "Simple Container Exec Workflow Test",
+  "description": "Test workflow with multiple exec commands and variable substitution",
+  "agent": "localhost-docker",
+  "actionStatus": "PotentialActionStatus",
+  "enabled": false,
+  "schedule": {
+    "@type": "Schedule",
+    "repeatFrequency": "PT24H"
+  },
+  "startTime": null,
+  "endTime": null,
+  "instrument": {
+    "compositeAction": true,
+    "executionMode": "sequential",
+    "actions": [
+      {
+        "type": "container-exec",
+        "containerId": "nginx-multihost-nginx-1",
+        "command": "echo 'Step 1: Getting container hostname'",
+        "outputAs": "step1",
+        "description": "Execute first command"
+      },
+      {
+        "type": "container-exec",
+        "containerId": "nginx-multihost-nginx-1",
+        "command": ["sh", "-c", "hostname && date"],
+        "outputAs": "step2",
+        "description": "Get hostname and date"
+      },
+      {
+        "type": "container-exec",
+        "containerId": "nginx-multihost-nginx-1",
+        "command": ["ls", "-la", "/etc/nginx"],
+        "workDir": "/etc",
+        "outputAs": "step3",
+        "description": "List nginx config directory"
+      },
+      {
+        "type": "container-exec",
+        "containerId": "nginx-multihost-nginx-1",
+        "command": "echo 'Workflow completed successfully!'",
+        "outputAs": "final",
+        "description": "Final confirmation message"
+      }
+    ]
+  },
+  "object": {
+    "@type": "SoftwareApplication",
+    "name": "nginx-multihost",
+    "identifier": "nginx-multihost-nginx-1"
+  }
+}

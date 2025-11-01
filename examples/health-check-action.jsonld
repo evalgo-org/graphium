@@ -1,0 +1,22 @@
+{
+  "@context": "https://schema.org",
+  "@type": "CheckAction",
+  "name": "Web Service Health Check",
+  "description": "Periodic health check for the web service on port 8080 to ensure it's responding correctly",
+  "agent": "localhost-docker",
+  "actionStatus": "PotentialActionStatus",
+  "enabled": true,
+  "startTime": null,
+  "endTime": null,
+  "schedule": {
+    "@type": "Schedule",
+    "repeatFrequency": "PT5M",
+    "scheduleTimezone": "UTC"
+  },
+  "instrument": {
+    "url": "http://localhost:8080/health",
+    "method": "GET",
+    "expectedStatusCode": 200,
+    "timeout": 5
+  }
+}

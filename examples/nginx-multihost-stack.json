@@ -1,0 +1,122 @@
+{
+  "@context": [
+    "https://schema.org",
+    {
+      "datacenter": "https://graphium.io/vocab/datacenter#",
+      "docker": "https://graphium.io/vocab/docker#"
+    }
+  ],
+  "@graph": [
+    {
+      "@id": "stack:nginx-multihost",
+      "@type": ["datacenter:Stack", "SoftwareApplication"],
+      "name": "nginx-multihost",
+      "description": "Multi-host nginx deployment with 3 instances across all available hosts",
+      "deployment": {
+        "@type": "DeploymentConfiguration",
+        "mode": "multi-host",
+        "placementStrategy": "manual",
+        "networkMode": "host-port",
+        "comment": "Deploys one nginx instance per host for load balancing and redundancy"
+      },
+      "hasPart": [
+        {
+          "@id": "container:nginx-1",
+          "@type": "SoftwareApplication",
+          "name": "nginx-1",
+          "description": "Nginx web server instance 1",
+          "image": "nginx:alpine",
+          "locatedInHost": {
+            "@id": "localhost-docker"
+          },
+          "containerPort": [
+            {
+              "@type": "Port",
+              "portNumber": 80,
+              "hostPort": 8081,
+              "protocol": "TCP"
+            }
+          ],
+          "environmentVariable": [
+            {
+              "@type": "PropertyValue",
+              "name": "NGINX_HOST",
+              "value": "localhost"
+            },
+            {
+              "@type": "PropertyValue",
+              "name": "NGINX_PORT",
+              "value": "80"
+            }
+          ],
+          "volumeMount": [],
+          "restartPolicy": "unless-stopped"
+        },
+        {
+          "@id": "container:nginx-2",
+          "@type": "SoftwareApplication",
+          "name": "nginx-2",
+          "description": "Nginx web server instance 2",
+          "image": "nginx:alpine",
+          "locatedInHost": {
+            "@id": "vm1"
+          },
+          "containerPort": [
+            {
+              "@type": "Port",
+              "portNumber": 80,
+              "hostPort": 8082,
+              "protocol": "TCP"
+            }
+          ],
+          "environmentVariable": [
+            {
+              "@type": "PropertyValue",
+              "name": "NGINX_HOST",
+              "value": "vm1"
+            },
+            {
+              "@type": "PropertyValue",
+              "name": "NGINX_PORT",
+              "value": "80"
+            }
+          ],
+          "volumeMount": [],
+          "restartPolicy": "unless-stopped"
+        },
+        {
+          "@id": "container:nginx-3",
+          "@type": "SoftwareApplication",
+          "name": "nginx-3",
+          "description": "Nginx web server instance 3",
+          "image": "nginx:alpine",
+          "locatedInHost": {
+            "@id": "vm2"
+          },
+          "containerPort": [
+            {
+              "@type": "Port",
+              "portNumber": 80,
+              "hostPort": 8083,
+              "protocol": "TCP"
+            }
+          ],
+          "environmentVariable": [
+            {
+              "@type": "PropertyValue",
+              "name": "NGINX_HOST",
+              "value": "vm2"
+            },
+            {
+              "@type": "PropertyValue",
+              "name": "NGINX_PORT",
+              "value": "80"
+            }
+          ],
+          "volumeMount": [],
+          "restartPolicy": "unless-stopped"
+        }
+      ]
+    }
+  ]
+}

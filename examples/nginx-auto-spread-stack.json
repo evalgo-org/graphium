@@ -1,0 +1,95 @@
+{
+  "@context": [
+    "https://schema.org",
+    {
+      "datacenter": "https://graphium.io/vocab/datacenter#",
+      "docker": "https://graphium.io/vocab/docker#"
+    }
+  ],
+  "@graph": [
+    {
+      "@id": "stack:nginx-auto-spread",
+      "@type": ["datacenter:Stack", "SoftwareApplication"],
+      "name": "nginx-auto-spread",
+      "description": "Multi-host nginx deployment with automatic spreading across hosts",
+      "deployment": {
+        "@type": "DeploymentConfiguration",
+        "mode": "multi-host",
+        "placementStrategy": "spread",
+        "networkMode": "host-port",
+        "comment": "Automatically spreads nginx instances across available hosts"
+      },
+      "hasPart": [
+        {
+          "@id": "container:nginx-auto-1",
+          "@type": "SoftwareApplication",
+          "name": "nginx-auto-1",
+          "description": "Nginx web server instance 1 (auto-placed)",
+          "image": "nginx:alpine",
+          "containerPort": [
+            {
+              "@type": "Port",
+              "portNumber": 80,
+              "hostPort": 8091,
+              "protocol": "TCP"
+            }
+          ],
+          "environmentVariable": [
+            {
+              "@type": "PropertyValue",
+              "name": "NGINX_INSTANCE",
+              "value": "1"
+            }
+          ],
+          "restartPolicy": "unless-stopped"
+        },
+        {
+          "@id": "container:nginx-auto-2",
+          "@type": "SoftwareApplication",
+          "name": "nginx-auto-2",
+          "description": "Nginx web server instance 2 (auto-placed)",
+          "image": "nginx:alpine",
+          "containerPort": [
+            {
+              "@type": "Port",
+              "portNumber": 80,
+              "hostPort": 8092,
+              "protocol": "TCP"
+            }
+          ],
+          "environmentVariable": [
+            {
+              "@type": "PropertyValue",
+              "name": "NGINX_INSTANCE",
+              "value": "2"
+            }
+          ],
+          "restartPolicy": "unless-stopped"
+        },
+        {
+          "@id": "container:nginx-auto-3",
+          "@type": "SoftwareApplication",
+          "name": "nginx-auto-3",
+          "description": "Nginx web server instance 3 (auto-placed)",
+          "image": "nginx:alpine",
+          "containerPort": [
+            {
+              "@type": "Port",
+              "portNumber": 80,
+              "hostPort": 8093,
+              "protocol": "TCP"
+            }
+          ],
+          "environmentVariable": [
+            {
+              "@type": "PropertyValue",
+              "name": "NGINX_INSTANCE",
+              "value": "3"
+            }
+          ],
+          "restartPolicy": "unless-stopped"
+        }
+      ]
+    }
+  ]
+}
