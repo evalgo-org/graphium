@@ -457,7 +457,7 @@ func (e *TaskExecutor) executeLogCollection(ctx context.Context, payload map[str
 	}
 
 	// Ensure destination directory exists
-	if err := os.MkdirAll(destinationPath, 0755); err != nil {
+	if err := os.MkdirAll(destinationPath, 0750); err != nil {
 		return &models.TaskResult{
 			Success: false,
 			Message: fmt.Sprintf("Failed to create destination directory: %v", err),
@@ -520,7 +520,7 @@ func (e *TaskExecutor) executeLogCollection(ctx context.Context, payload map[str
 	logFilePath := fmt.Sprintf("%s/%s", destinationPath, logFileName)
 
 	// Write logs to file
-	if err := os.WriteFile(logFilePath, logBytes, 0644); err != nil {
+	if err := os.WriteFile(logFilePath, logBytes, 0600); err != nil {
 		return &models.TaskResult{
 			Success: false,
 			Message: fmt.Sprintf("Failed to write logs to file: %v", err),
@@ -573,10 +573,11 @@ func (e *TaskExecutor) executeTLSCertificateCheck(ctx context.Context, payload m
 		host = host + ":443"
 	}
 
-	// Create TLS dialer with default config
+	// Create TLS dialer with secure config
 	dialer := &tls.Dialer{
 		Config: &tls.Config{
-			InsecureSkipVerify: false, // Verify certificate chain
+			InsecureSkipVerify: false,            // Verify certificate chain
+			MinVersion:         tls.VersionTLS12, // Minimum TLS 1.2
 		},
 	}
 

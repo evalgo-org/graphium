@@ -923,7 +923,7 @@ func (h *Handler) listStackTemplates() ([]StackTemplate, error) {
 	}
 
 	for _, path := range templateFiles {
-		data, err := os.ReadFile(path)
+		data, err := os.ReadFile(path) // #nosec G304 - reading from hardcoded template paths
 		if err != nil {
 			continue // Skip missing files
 		}

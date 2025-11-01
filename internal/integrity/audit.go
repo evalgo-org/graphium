@@ -30,7 +30,7 @@ func NewAuditLogger(config AuditConfig) (*AuditLogger, error) {
 	}
 
 	// Ensure log directory exists
-	if err := os.MkdirAll(config.LogPath, 0755); err != nil {
+	if err := os.MkdirAll(config.LogPath, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create audit log directory: %w", err)
 	}
 
@@ -38,7 +38,7 @@ func NewAuditLogger(config AuditConfig) (*AuditLogger, error) {
 	filename := filepath.Join(config.LogPath, fmt.Sprintf("integrity-audit-%s.jsonl",
 		time.Now().Format("2006-01-02")))
 
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600) // #nosec G304 - filename from config and date
 	if err != nil {
 		return nil, fmt.Errorf("failed to open audit log file: %w", err)
 	}
@@ -300,7 +300,7 @@ func (a *AuditLogger) Rotate() error {
 	filename := filepath.Join(a.config.LogPath, fmt.Sprintf("integrity-audit-%s.jsonl",
 		time.Now().Format("2006-01-02")))
 
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600) // #nosec G304 - filename from config and date
 	if err != nil {
 		return fmt.Errorf("failed to create new audit log file: %w", err)
 	}
@@ -386,7 +386,7 @@ func (a *AuditLogger) getLogFilesInRange(start, end time.Time) ([]string, error)
 
 // readLogFile reads entries from a log file and applies filters.
 func (a *AuditLogger) readLogFile(filename string, criteria AuditQuery, maxEntries int) ([]AuditEntry, error) {
-	file, err := os.Open(filename)
+	file, err := os.Open(filename) // #nosec G304 - filename from validated audit log directory
 	if err != nil {
 		return nil, err
 	}

@@ -39,7 +39,7 @@ func runValidate(cmd *cobra.Command, args []string) error {
 	filename := args[1]
 
 	// Read file
-	data, err := os.ReadFile(filename)
+	data, err := os.ReadFile(filename) // #nosec G304 - CLI command with user-provided filename
 	if err != nil {
 		return fmt.Errorf("failed to read file: %w", err)
 	}
@@ -99,7 +99,7 @@ func runAPIValidation(entityType string, data []byte) error {
 	}
 
 	url := fmt.Sprintf("%s/api/v1/validate/%s", apiURL, entityType)
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data)) // #nosec G107 - URL from config file, not user input
 	if err != nil {
 		return fmt.Errorf("failed to connect to API: %w", err)
 	}

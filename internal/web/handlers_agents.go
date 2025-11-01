@@ -415,8 +415,22 @@ func (h *Handler) AgentLogsHandler(c echo.Context) error {
 		logsPath = "./logs"
 	}
 
-	// Construct log file path
-	logFilePath := filepath.Join(logsPath, fmt.Sprintf("%s.log", config.HostID))
+	// Construct log file path (clean to prevent path traversal)
+	logFileName := filepath.Clean(fmt.Sprintf("%s.log", config.HostID))
+	logFilePath := filepath.Join(logsPath, logFileName)
+
+	// Verify the path is within the logs directory (prevent path traversal)
+	absLogsPath, err := filepath.Abs(logsPath)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to resolve logs path")
+	}
+	absLogFilePath, err := filepath.Abs(logFilePath)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to resolve log file path")
+	}
+	if !strings.HasPrefix(absLogFilePath, absLogsPath+string(filepath.Separator)) && absLogFilePath != absLogsPath {
+		return c.String(http.StatusBadRequest, "Invalid log file path")
+	}
 
 	// Check if log file exists
 	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
@@ -505,7 +519,7 @@ func (h *Handler) AgentLogsDownloadHandler(c echo.Context) error {
 
 // tailFile reads the last n lines from a file
 func tailFile(filePath string, n int) ([]string, error) {
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // #nosec G304 - filePath validated by caller for path traversal
 	if err != nil {
 		return nil, err
 	}

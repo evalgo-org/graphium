@@ -29,7 +29,7 @@ func main() {
 	models := parseModels(".")
 	fmt.Printf("Found %d models\n", len(models))
 
-	_ = os.MkdirAll("../generated", 0755)
+	_ = os.MkdirAll("../generated", 0750)
 
 	generatePlaceholder(models)
 
@@ -118,5 +118,5 @@ func Hello() string {
 `
 
 	filename := filepath.Join("../generated", "api.go")
-	_ = os.WriteFile(filename, []byte(content), 0644)
+	_ = os.WriteFile(filename, []byte(content), 0600)
 }

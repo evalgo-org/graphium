@@ -159,7 +159,7 @@ func (m *Manager) StartAgent(configID string) error {
 		log.Printf("Agent %s: HTTP server will listen on port %d", cfg.Name, cfg.HTTPPort)
 	}
 
-	cmd := exec.CommandContext(m.ctx, m.executable, args...)
+	cmd := exec.CommandContext(m.ctx, m.executable, args...) // #nosec G204 - args from validated config, not user input
 
 	// Set environment
 	cmd.Env = append(os.Environ(), "TOKEN="+agentToken)
@@ -175,13 +175,13 @@ func (m *Manager) StartAgent(configID string) error {
 	if logsPath == "" {
 		logsPath = "./logs"
 	}
-	if err := os.MkdirAll(logsPath, 0755); err != nil {
+	if err := os.MkdirAll(logsPath, 0750); err != nil {
 		return fmt.Errorf("failed to create logs directory: %w", err)
 	}
 
 	// Open log file for this agent
 	logFilePath := filepath.Join(logsPath, fmt.Sprintf("%s.log", cfg.HostID))
-	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600) // #nosec G304 - path from config and validated hostID
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
