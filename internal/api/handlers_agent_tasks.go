@@ -106,7 +106,7 @@ func (s *Server) updateTaskStatus(c echo.Context) error {
 	if !validStatuses[update.Status] {
 		return c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error:   "invalid status",
-			Details: fmt.Sprintf("status must be one of: pending, assigned, running, completed, failed, cancelled"),
+			Details: "status must be one of: pending, assigned, running, completed, failed, cancelled",
 		})
 	}
 
