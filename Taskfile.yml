@@ -9,7 +9,7 @@ vars:
     sh: date -u +"%Y-%m-%dT%H:%M:%SZ"
   GIT_COMMIT:
     sh: git rev-parse --short HEAD 2>/dev/null || echo "unknown"
-  REGISTRY: ghcr.io/evalgo
+  REGISTRY: ghcr.io/evalgo-org
   LDFLAGS: >-
     -X main.Version={{.VERSION}}
     -X main.BuildTime={{.BUILD_TIME}}
@@ -272,3 +272,28 @@ tasks:
     desc: Show CouchDB logs
     cmds:
       - docker logs -f graphium-couchdb
+
+  build:image:
+    desc: Build OCI image with nixpacks
+    cmds:
+      - |
+        echo "🐳 Building OCI image with nixpacks..."
+        IMAGE_TAG="{{.REGISTRY}}/{{.APP_NAME}}:{{.VERSION}}"
+        nixpacks build . \
+          --name "{{.APP_NAME}}" \
+          --tag "$IMAGE_TAG" \
+          --tag "{{.REGISTRY}}/{{.APP_NAME}}:latest"
+        echo "✓ Image built: $IMAGE_TAG"
+        echo "✓ Image tagged: {{.REGISTRY}}/{{.APP_NAME}}:latest"
+
+  push:image:
+    desc: Push OCI image to registry
+    deps:
+      - build:image
+    cmds:
+      - |
+        echo "📤 Pushing image to registry..."
+        IMAGE_TAG="{{.REGISTRY}}/{{.APP_NAME}}:{{.VERSION}}"
+        docker push "$IMAGE_TAG"
+        docker push "{{.REGISTRY}}/{{.APP_NAME}}:latest"
+        echo "✓ Images pushed to {{.REGISTRY}}"

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  GO_VERSION: '1.21'
+  GO_VERSION: '1.25'
   REGISTRY: ghcr.io/evalgo-org
   IMAGE_NAME: graphium
 
@@ -177,16 +177,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Build and push release images
         run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          # Build with nixpacks
           nixpacks build . \
-            --name ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }} \
-            --config nixpacks.toml \
-            --env VERSION=${{ steps.version.outputs.version }} \
-            --env GIT_COMMIT=$(git rev-parse --short HEAD)
-          
-          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }} \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+            --name graphium \
+            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION} \
+            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+          # Push images
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+          echo "✓ Pushed ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          echo "✓ Pushed ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
