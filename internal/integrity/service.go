@@ -77,8 +77,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"evalgo.org/graphium/internal/config"
 	"eve.evalgo.org/db"
+
+	"evalgo.org/graphium/internal/config"
 )
 
 // Service provides database integrity checking and repair capabilities.

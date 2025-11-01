@@ -6,8 +6,9 @@ import (
 	"io"
 	"time"
 
-	"evalgo.org/graphium/models"
 	"github.com/docker/docker/api/types/container"
+
+	"evalgo.org/graphium/models"
 )
 
 // executeContainerExec executes a command inside a running container

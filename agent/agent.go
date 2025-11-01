@@ -67,8 +67,9 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	dockerclient "github.com/docker/docker/client"
 
-	"evalgo.org/graphium/models"
 	"eve.evalgo.org/network"
+
+	"evalgo.org/graphium/models"
 )
 
 // Agent manages Docker container discovery and synchronization with the API server.

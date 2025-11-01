@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"evalgo.org/graphium/models"
 	"eve.evalgo.org/common"
+
+	"evalgo.org/graphium/models"
 )
 
 // MockDatabase is a test implementation of the Database interface

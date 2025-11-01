@@ -11,8 +11,9 @@ import (
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/go-connections/nat"
 
-	"evalgo.org/graphium/models"
 	"eve.evalgo.org/common"
+
+	"evalgo.org/graphium/models"
 )
 
 // Database is an interface for storing deployment state.

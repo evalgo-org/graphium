@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"evalgo.org/graphium/models"
 	"eve.evalgo.org/db"
+
+	"evalgo.org/graphium/models"
 )
 
 // CreateTask creates a new agent task in the database.

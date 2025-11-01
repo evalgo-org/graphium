@@ -14,8 +14,9 @@ import (
 	dockerclient "github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 
-	"evalgo.org/graphium/models"
 	evecommon "eve.evalgo.org/common"
+
+	"evalgo.org/graphium/models"
 )
 
 // AgentDeployer handles container lifecycle operations for tasks.

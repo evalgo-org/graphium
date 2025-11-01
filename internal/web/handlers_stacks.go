@@ -13,11 +13,12 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/labstack/echo/v4"
 
+	"eve.evalgo.org/common"
+
 	"evalgo.org/graphium/internal/auth"
 	stackpkg "evalgo.org/graphium/internal/stack"
 	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/models"
-	"eve.evalgo.org/common"
 )
 
 // WebHostResolver implements the stack.HostResolver interface using the storage layer.

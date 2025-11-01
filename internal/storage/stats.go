@@ -3,8 +3,9 @@ package storage
 import (
 	"encoding/json"
 
-	"evalgo.org/graphium/models"
 	"eve.evalgo.org/db"
+
+	"evalgo.org/graphium/models"
 )
 
 // Statistics contains overview statistics for the dashboard

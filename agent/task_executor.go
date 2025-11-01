@@ -14,8 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"evalgo.org/graphium/models"
 	"github.com/docker/docker/api/types/container"
+
+	"evalgo.org/graphium/models"
 )
 
 // TaskExecutor polls the server for tasks and executes them.

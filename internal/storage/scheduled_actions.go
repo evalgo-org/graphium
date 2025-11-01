@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"evalgo.org/graphium/models"
 	"eve.evalgo.org/db"
+
+	"evalgo.org/graphium/models"
 )
 
 // CreateScheduledAction creates a new scheduled action

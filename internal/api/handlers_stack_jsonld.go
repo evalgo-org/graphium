@@ -8,10 +8,11 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"eve.evalgo.org/common"
+
 	"evalgo.org/graphium/internal/stack"
 	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/models"
-	"eve.evalgo.org/common"
 )
 
 // DeployJSONLDStackRequest represents a JSON-LD @graph stack deployment request.

@@ -11,12 +11,13 @@ import (
 	"syscall"
 	"time"
 
+	"eve.evalgo.org/network"
+	dockerclient "github.com/docker/docker/client"
+
 	"evalgo.org/graphium/internal/auth"
 	"evalgo.org/graphium/internal/config"
 	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/models"
-	"eve.evalgo.org/network"
-	dockerclient "github.com/docker/docker/client"
 )
 
 // Manager manages agent processes for the Graphium server.
