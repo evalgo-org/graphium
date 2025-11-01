@@ -183,29 +183,56 @@ func (s *Server) ExecuteScheduledAction(c echo.Context) error {
 		AgentID:     action.Agent,
 		Status:      models.TaskStatusPending,
 		ScheduledBy: action.ID,
-		TaskType:    "check", // Map action type to task type
 		CreatedAt:   time.Now(),
 	}
 
-	// Map action type to task type
-	switch action.Type {
-	case models.ActionTypeCheck:
-		task.TaskType = "check"
-	case models.ActionTypeControl:
-		task.TaskType = "control"
-	case models.ActionTypeCreate:
-		task.TaskType = "create"
-	case models.ActionTypeUpdate:
-		task.TaskType = "update"
-	case models.ActionTypeTransfer:
-		task.TaskType = "transfer"
-	default:
-		task.TaskType = "action"
+	// Check if this is a composite action (workflow)
+	isCompositeAction := false
+	if action.Instrument != nil {
+		if compositeVal, ok := action.Instrument["compositeAction"]; ok {
+			isCompositeAction, _ = compositeVal.(bool)
+		}
 	}
 
-	// Set parameters from action
+	// Set task type based on whether it's a composite action (workflow)
+	if isCompositeAction {
+		task.TaskType = "workflow"
+	} else {
+		// Map action type to task type
+		switch action.Type {
+		case models.ActionTypeCheck:
+			task.TaskType = "check"
+		case models.ActionTypeControl:
+			task.TaskType = "control"
+		case models.ActionTypeCreate:
+			task.TaskType = "create"
+		case models.ActionTypeUpdate:
+			task.TaskType = "update"
+		case models.ActionTypeTransfer:
+			task.TaskType = "transfer"
+		default:
+			task.TaskType = "action"
+		}
+	}
+
+	// Build payload from action instrument and object
+	payload := make(map[string]interface{})
+
+	// Copy parameters from action instrument
 	if action.Instrument != nil {
-		if err := task.SetPayload(action.Instrument); err != nil {
+		for k, v := range action.Instrument {
+			payload[k] = v
+		}
+	}
+
+	// Add object information to payload
+	if action.Object != nil {
+		payload["object"] = action.Object
+	}
+
+	// Set the payload
+	if len(payload) > 0 {
+		if err := task.SetPayload(payload); err != nil {
 			return InternalError("Failed to set task payload", err.Error())
 		}
 	}
