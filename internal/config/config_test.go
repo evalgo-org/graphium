@@ -344,6 +344,7 @@ func TestGet(t *testing.T) {
 	retrieved := Get()
 	if retrieved == nil {
 		t.Error("Get() returned nil")
+		return
 	}
 
 	// Verify it's the same instance

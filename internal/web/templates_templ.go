@@ -5,15 +5,15 @@ package web
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import "github.com/a-h/templ"
-import templruntime "github.com/a-h/templ/runtime"
-
 import (
-	"evalgo.org/graphium/internal/storage"
-	"evalgo.org/graphium/models"
 	"fmt"
 	"strings"
 	"time"
+
+	"evalgo.org/graphium/internal/storage"
+	"evalgo.org/graphium/models"
+	"github.com/a-h/templ"
+	templruntime "github.com/a-h/templ/runtime"
 )
 
 // Base layout template (for backward compatibility - no user param)

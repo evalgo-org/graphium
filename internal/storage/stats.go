@@ -120,9 +120,10 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 
 			// Count success or failure based on most recent task
 			if mostRecentTask != nil {
-				if mostRecentTask.Status == "completed" {
+				switch mostRecentTask.Status {
+				case "completed":
 					stats.SuccessfulActions++
-				} else if mostRecentTask.Status == "failed" {
+				case "failed":
 					stats.FailedActions++
 				}
 			}

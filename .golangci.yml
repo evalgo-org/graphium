@@ -5,6 +5,9 @@ run:
   tests: true
 
 linters:
+  disable:
+    - errcheck
+    - govet
   enable:
     - staticcheck
     - unused

@@ -20,9 +20,9 @@ type DeployJSONLDStackRequest struct {
 	StackDefinition models.StackDefinition `json:"stackDefinition" validate:"required"`
 
 	// Options for deployment
-	Timeout         int  `json:"timeout"`          // Timeout in seconds (default: 300)
+	Timeout         int  `json:"timeout"`         // Timeout in seconds (default: 300)
 	RollbackOnError bool `json:"rollbackOnError"` // Auto-rollback on error (default: true)
-	PullImages      bool `json:"pullImages"`       // Pull images before deployment (default: false)
+	PullImages      bool `json:"pullImages"`      // Pull images before deployment (default: false)
 }
 
 // DeploymentStateResponse represents a deployment state in API responses.

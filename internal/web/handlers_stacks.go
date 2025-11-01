@@ -341,7 +341,7 @@ func (h *Handler) DeployStackForm(c echo.Context) error {
 func (h *Handler) DeployStack(c echo.Context) error {
 	// Get current user from context
 	var user *models.User
-	var username string = "web-user"
+	username := "web-user"
 	if claims, ok := c.Get("claims").(*auth.Claims); ok {
 		user, _ = h.storage.GetUser(claims.UserID)
 		if user != nil {
@@ -585,7 +585,7 @@ func (h *Handler) DeleteStack(c echo.Context) error {
 	}
 
 	// Get user
-	var username string = "web-user"
+	username := "web-user"
 	if claims, ok := c.Get("claims").(*auth.Claims); ok {
 		username = claims.Username
 	}

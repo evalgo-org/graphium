@@ -16,12 +16,3 @@ func (e *TaskExecutor) executeWorkflow(ctx context.Context, task *models.AgentTa
 }
 
 // isCompositeAction checks if a task is a composite action
-func (e *TaskExecutor) isCompositeAction(task *models.AgentTask) bool {
-	var payload map[string]interface{}
-	if err := task.GetPayloadAs(&payload); err != nil {
-		return false
-	}
-
-	compositeAction, ok := payload["compositeAction"].(bool)
-	return ok && compositeAction
-}
