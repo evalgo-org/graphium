@@ -1,46 +1,49 @@
+version: "2"
+
 run:
   timeout: 5m
   tests: true
 
-issues:
-  exclude-dirs:
-    - generated
-    - vendor
-    - tools
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-    - path: tools/
-      linters:
-        - errcheck
-    - linters:
-        - staticcheck
-      text: "SA1019.*deprecated"
-    - linters:
-        - staticcheck
-      text: "SA5008: duplicate struct tag"
-    - linters:
-        - staticcheck
-      text: "SA9003: empty branch"
-
 linters:
   enable:
-    - gofmt
-    - goimports
     - govet
     - errcheck
     - staticcheck
     - unused
-    - gosimple
     - ineffassign
-    - typecheck
+  exclusions:
+    paths:
+      - generated
+      - vendor
+      - tools
+    rules:
+      - path: _test\.go
+        linters:
+          - errcheck
+      - path: tools/
+        linters:
+          - errcheck
+      - linters:
+          - staticcheck
+        text: "SA1019.*deprecated"
+      - linters:
+          - staticcheck
+        text: "SA5008: duplicate struct tag"
+      - linters:
+          - staticcheck
+        text: "SA9003: empty branch"
+  settings:
+    errcheck:
+      exclude-functions:
+        - (*github.com/spf13/viper.Viper).BindPFlag
 
-linters-settings:
-  gofmt:
-    simplify: true
-  goimports:
-    local-prefixes: evalgo.org/graphium
-  errcheck:
-    exclude-functions:
-      - (*github.com/spf13/viper.Viper).BindPFlag
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+    goimports:
+      local-prefixes:
+        - evalgo.org/graphium
