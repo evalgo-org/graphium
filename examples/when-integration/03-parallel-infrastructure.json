@@ -1,0 +1,274 @@
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "identifier": "parallel-infrastructure-deployment",
+  "name": "Parallel Infrastructure Deployment",
+  "description": "Deploy multiple infrastructure components in parallel: databases, caches, applications",
+  "parallel": true,
+  "concurrency": 3,
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "item": {
+        "@type": "ScheduledAction",
+        "identifier": "deploy-graphdb-cluster",
+        "name": "Deploy GraphDB Cluster",
+        "additionalProperty": {
+          "url": "http://localhost:8095/api/v1/stacks/jsonld",
+          "httpMethod": "POST",
+          "headers": {
+            "x-api-key": "${GRAPHIUM_API_KEY}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "@context": [
+              "https://schema.org",
+              {
+                "datacenter": "https://graphium.io/vocab/datacenter#"
+              }
+            ],
+            "@graph": [
+              {
+                "@id": "stack:graphdb-cluster",
+                "@type": [
+                  "datacenter:Stack",
+                  "SoftwareApplication"
+                ],
+                "name": "GraphDB Cluster",
+                "deployment": {
+                  "mode": "multi-host",
+                  "placementStrategy": "spread"
+                },
+                "hasPart": [
+                  {
+                    "@id": "container:graphdb-node-1",
+                    "@type": "SoftwareApplication",
+                    "name": "graphdb-node-1",
+                    "image": "ontotext/graphdb:10.5.0",
+                    "environment": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "GDB_HEAP_SIZE",
+                        "value": "4g"
+                      }
+                    ],
+                    "containerPort": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "http",
+                        "value": "7200",
+                        "description": "7200:7200"
+                      }
+                    ],
+                    "storageRequirement": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "data-volume",
+                        "value": "/opt/graphdb/home",
+                        "description": "graphdb-data-1:/opt/graphdb/home"
+                      }
+                    ]
+                  },
+                  {
+                    "@id": "container:graphdb-node-2",
+                    "@type": "SoftwareApplication",
+                    "name": "graphdb-node-2",
+                    "image": "ontotext/graphdb:10.5.0",
+                    "environment": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "GDB_HEAP_SIZE",
+                        "value": "4g"
+                      }
+                    ],
+                    "containerPort": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "http",
+                        "value": "7200",
+                        "description": "7201:7200"
+                      }
+                    ],
+                    "storageRequirement": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "data-volume",
+                        "value": "/opt/graphdb/home",
+                        "description": "graphdb-data-2:/opt/graphdb/home"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "item": {
+        "@type": "ScheduledAction",
+        "identifier": "deploy-redis-cache",
+        "name": "Deploy Redis Cache",
+        "additionalProperty": {
+          "url": "http://localhost:8095/api/v1/stacks/jsonld",
+          "httpMethod": "POST",
+          "headers": {
+            "x-api-key": "${GRAPHIUM_API_KEY}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "@context": [
+              "https://schema.org",
+              {
+                "datacenter": "https://graphium.io/vocab/datacenter#"
+              }
+            ],
+            "@graph": [
+              {
+                "@id": "stack:redis-cache",
+                "@type": [
+                  "datacenter:Stack",
+                  "SoftwareApplication"
+                ],
+                "name": "Redis Cache",
+                "deployment": {
+                  "mode": "single-host",
+                  "placementStrategy": "auto"
+                },
+                "hasPart": [
+                  {
+                    "@id": "container:redis",
+                    "@type": "SoftwareApplication",
+                    "name": "redis-cache",
+                    "image": "redis:alpine",
+                    "containerPort": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "redis",
+                        "value": "6379",
+                        "description": "6379:6379"
+                      }
+                    ],
+                    "storageRequirement": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "data-volume",
+                        "value": "/data",
+                        "description": "redis-data:/data"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "item": {
+        "@type": "ScheduledAction",
+        "identifier": "deploy-app-services",
+        "name": "Deploy Application Services",
+        "additionalProperty": {
+          "url": "http://localhost:8095/api/v1/stacks/jsonld",
+          "httpMethod": "POST",
+          "headers": {
+            "x-api-key": "${GRAPHIUM_API_KEY}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "@context": [
+              "https://schema.org",
+              {
+                "datacenter": "https://graphium.io/vocab/datacenter#"
+              }
+            ],
+            "@graph": [
+              {
+                "@id": "stack:app-services",
+                "@type": [
+                  "datacenter:Stack",
+                  "SoftwareApplication"
+                ],
+                "name": "Application Services",
+                "deployment": {
+                  "mode": "multi-host",
+                  "placementStrategy": "spread",
+                  "maxInstancesPerHost": 2
+                },
+                "hasPart": [
+                  {
+                    "@id": "container:api-service-1",
+                    "@type": "SoftwareApplication",
+                    "name": "api-service-1",
+                    "image": "myapp/api:latest",
+                    "environment": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "REDIS_URL",
+                        "value": "redis://redis-cache:6379"
+                      },
+                      {
+                        "@type": "PropertyValue",
+                        "name": "GRAPHDB_URL",
+                        "value": "http://graphdb-node-1:7200"
+                      }
+                    ],
+                    "containerPort": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "http",
+                        "value": "8000",
+                        "description": "8000:8000"
+                      }
+                    ]
+                  },
+                  {
+                    "@id": "container:api-service-2",
+                    "@type": "SoftwareApplication",
+                    "name": "api-service-2",
+                    "image": "myapp/api:latest",
+                    "environment": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "REDIS_URL",
+                        "value": "redis://redis-cache:6379"
+                      },
+                      {
+                        "@type": "PropertyValue",
+                        "name": "GRAPHDB_URL",
+                        "value": "http://graphdb-node-2:7200"
+                      }
+                    ],
+                    "containerPort": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "http",
+                        "value": "8000",
+                        "description": "8001:8000"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "schedule": {
+    "@type": "Schedule",
+    "repeatFrequency": "P1W",
+    "byDay": ["Sunday"],
+    "startTime": "01:00:00",
+    "description": "Weekly on Sunday at 1:00 AM"
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "@context": "https://schema.org",
+  "@type": "ScheduledAction",
+  "identifier": "deploy-nginx-stack-hourly",
+  "name": "Hourly Nginx Stack Deployment",
+  "description": "Deploy/update Nginx stack every hour using Graphium semantic API",
+  "additionalProperty": {
+    "url": "http://localhost:8095/api/v1/stacks/jsonld",
+    "httpMethod": "POST",
+    "headers": {
+      "Content-Type": "application/json",
+      "x-api-key": "${GRAPHIUM_API_KEY}"
+    },
+    "body": {
+      "@context": [
+        "https://schema.org",
+        {
+          "datacenter": "https://graphium.io/vocab/datacenter#"
+        }
+      ],
+      "@graph": [
+        {
+          "@id": "stack:nginx-loadbalancer",
+          "@type": [
+            "datacenter:Stack",
+            "SoftwareApplication"
+          ],
+          "name": "Nginx Load Balancer",
+          "description": "Multi-host Nginx deployment with auto-scaling",
+          "deployment": {
+            "mode": "multi-host",
+            "placementStrategy": "spread",
+            "maxInstancesPerHost": 2
+          },
+          "hasPart": [
+            {
+              "@id": "container:nginx-1",
+              "@type": "SoftwareApplication",
+              "name": "nginx-1",
+              "image": "nginx:alpine",
+              "applicationCategory": "WebServer",
+              "locatedInHost": {
+                "@id": "localhost-docker"
+              },
+              "containerPort": [
+                {
+                  "@type": "PropertyValue",
+                  "name": "http",
+                  "value": "80",
+                  "description": "8080:80"
+                }
+              ],
+              "environment": [
+                {
+                  "@type": "PropertyValue",
+                  "name": "NGINX_HOST",
+                  "value": "localhost"
+                }
+              ]
+            },
+            {
+              "@id": "container:nginx-2",
+              "@type": "SoftwareApplication",
+              "name": "nginx-2",
+              "image": "nginx:alpine",
+              "applicationCategory": "WebServer",
+              "locatedInHost": {
+                "@id": "localhost-docker"
+              },
+              "containerPort": [
+                {
+                  "@type": "PropertyValue",
+                  "name": "http",
+                  "value": "80",
+                  "description": "8081:80"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "schedule": {
+    "@type": "Schedule",
+    "repeatFrequency": "PT1H",
+    "description": "Every hour"
+  }
+}

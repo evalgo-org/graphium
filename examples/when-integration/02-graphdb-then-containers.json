@@ -1,0 +1,157 @@
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "identifier": "migrate-db-then-deploy-app",
+  "name": "Database Migration → Application Deployment",
+  "description": "Sequential workflow: Migrate GraphDB data, then deploy application containers",
+  "parallel": false,
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "item": {
+        "@type": "ScheduledAction",
+        "identifier": "migrate-production-data",
+        "name": "Migrate Production GraphDB Data",
+        "description": "Transfer production graph to staging environment",
+        "additionalProperty": {
+          "url": "http://localhost:8080/v1/api/semantic/action",
+          "httpMethod": "POST",
+          "headers": {
+            "x-api-key": "${GRAPHDB_API_KEY}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "@context": "https://schema.org",
+            "@type": "TransferAction",
+            "identifier": "transfer-prod-to-staging",
+            "name": "Transfer Production to Staging",
+            "fromLocation": {
+              "@type": "SoftwareSourceCode",
+              "identifier": "production",
+              "codeRepository": "http://prod-graphdb:7200/repositories/production",
+              "additionalProperty": {
+                "serverUrl": "http://prod-graphdb:7200",
+                "username": "admin",
+                "password": "${PROD_GRAPHDB_PASSWORD}"
+              }
+            },
+            "object": {
+              "@type": "Dataset",
+              "identifier": "http://example.org/graph/users",
+              "name": "Users Graph",
+              "encodingFormat": "application/rdf+xml"
+            },
+            "toLocation": {
+              "@type": "SoftwareSourceCode",
+              "identifier": "staging",
+              "codeRepository": "http://staging-graphdb:7200/repositories/staging",
+              "additionalProperty": {
+                "serverUrl": "http://staging-graphdb:7200",
+                "username": "admin",
+                "password": "${STAGING_GRAPHDB_PASSWORD}"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "item": {
+        "@type": "ScheduledAction",
+        "identifier": "deploy-app-stack",
+        "name": "Deploy Application Stack",
+        "description": "Deploy application containers after database migration completes",
+        "dependsOn": ["migrate-production-data"],
+        "additionalProperty": {
+          "url": "http://localhost:8095/api/v1/stacks/jsonld",
+          "httpMethod": "POST",
+          "headers": {
+            "x-api-key": "${GRAPHIUM_API_KEY}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "@context": [
+              "https://schema.org",
+              {
+                "datacenter": "https://graphium.io/vocab/datacenter#"
+              }
+            ],
+            "@graph": [
+              {
+                "@id": "stack:staging-app",
+                "@type": [
+                  "datacenter:Stack",
+                  "SoftwareApplication"
+                ],
+                "name": "Staging Application",
+                "deployment": {
+                  "mode": "single-host",
+                  "placementStrategy": "auto"
+                },
+                "hasPart": [
+                  {
+                    "@id": "container:graphdb-client",
+                    "@type": "SoftwareApplication",
+                    "name": "graphdb-client-app",
+                    "image": "myapp/graphdb-client:latest",
+                    "environment": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "GRAPHDB_URL",
+                        "value": "http://staging-graphdb:7200/repositories/staging"
+                      },
+                      {
+                        "@type": "PropertyValue",
+                        "name": "GRAPHDB_USER",
+                        "value": "admin"
+                      },
+                      {
+                        "@type": "PropertyValue",
+                        "name": "GRAPHDB_PASSWORD",
+                        "value": "${STAGING_GRAPHDB_PASSWORD}"
+                      }
+                    ],
+                    "containerPort": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "http",
+                        "value": "3000",
+                        "description": "9000:3000"
+                      }
+                    ],
+                    "dependsOn": [
+                      "container:nginx-proxy"
+                    ]
+                  },
+                  {
+                    "@id": "container:nginx-proxy",
+                    "@type": "SoftwareApplication",
+                    "name": "nginx-proxy",
+                    "image": "nginx:alpine",
+                    "containerPort": [
+                      {
+                        "@type": "PropertyValue",
+                        "name": "http",
+                        "value": "80",
+                        "description": "9080:80"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "schedule": {
+    "@type": "Schedule",
+    "repeatFrequency": "P1D",
+    "startTime": "03:00:00",
+    "description": "Daily at 3:00 AM"
+  }
+}
