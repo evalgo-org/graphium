@@ -3,7 +3,7 @@ module evalgo.org/graphium
 go 1.25
 
 require (
-	eve.evalgo.org v0.0.13
+	eve.evalgo.org v0.0.19
 	github.com/a-h/templ v0.3.960
 	github.com/docker/docker v28.5.1+incompatible
 	github.com/docker/go-connections v0.6.0
