@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"eve.evalgo.org/semantic"
 	"github.com/labstack/echo/v4"
 
 	"evalgo.org/graphium/models"
@@ -176,15 +177,19 @@ func (s *Server) ExecuteScheduledAction(c echo.Context) error {
 	}
 
 	// Create a task from this action
+	now := time.Now()
 	task := &models.AgentTask{
-		Context:     "https://schema.org",
-		Type:        "AgentTask",
-		ID:          models.GenerateID("task"),
-		HostID:      action.Agent,
-		AgentID:     action.Agent,
-		Status:      models.TaskStatusPending,
-		ScheduledBy: action.ID,
-		CreatedAt:   time.Now(),
+		Context:      "https://schema.org",
+		Type:         action.Type, // Use action's @type directly (CheckAction, ControlAction, etc.)
+		ID:           models.GenerateID("task"),
+		HostID:       action.Agent,
+		ActionStatus: models.TaskStatusPending,
+		ScheduledBy:  action.ID,
+		CreatedAt:    now,
+		Agent: &semantic.SemanticAgent{
+			Type: "SoftwareApplication",
+			Name: action.Agent,
+		},
 	}
 
 	// Check if this is a composite action (workflow)
@@ -195,25 +200,9 @@ func (s *Server) ExecuteScheduledAction(c echo.Context) error {
 		}
 	}
 
-	// Set task type based on whether it's a composite action (workflow)
+	// Override type for composite actions
 	if isCompositeAction {
-		task.TaskType = "workflow"
-	} else {
-		// Map action type to task type
-		switch action.Type {
-		case models.ActionTypeCheck:
-			task.TaskType = "check"
-		case models.ActionTypeControl:
-			task.TaskType = "control"
-		case models.ActionTypeCreate:
-			task.TaskType = "create"
-		case models.ActionTypeUpdate:
-			task.TaskType = "update"
-		case models.ActionTypeTransfer:
-			task.TaskType = "transfer"
-		default:
-			task.TaskType = "action"
-		}
+		task.Type = "WorkflowAction"
 	}
 
 	// Build payload from action instrument and object

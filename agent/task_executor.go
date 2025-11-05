@@ -111,8 +111,8 @@ func (e *TaskExecutor) pollAndExecuteTasks(ctx context.Context) error {
 
 // fetchPendingTasks fetches pending tasks for this agent from the server.
 func (e *TaskExecutor) fetchPendingTasks() ([]*models.AgentTask, error) {
-	// Build API URL
-	url := fmt.Sprintf("%s/api/v1/agents/%s/tasks?status=pending&limit=10", e.agent.apiURL, e.agent.hostID)
+	// Build API URL - use semantic status (PotentialActionStatus = pending)
+	url := fmt.Sprintf("%s/api/v1/agents/%s/tasks?status=%s&limit=10", e.agent.apiURL, e.agent.hostID, models.TaskStatusPending)
 
 	// Create request
 	req, err := http.NewRequest("GET", url, nil)
@@ -148,57 +148,51 @@ func (e *TaskExecutor) fetchPendingTasks() ([]*models.AgentTask, error) {
 
 // executeTask executes a single task.
 func (e *TaskExecutor) executeTask(ctx context.Context, task *models.AgentTask) error {
-	log.Printf("Executing task %s (type: %s)", task.ID, task.TaskType)
+	log.Printf("Executing task %s (type: %s)", task.ID, task.Type)
 
 	// Mark task as running
-	if err := e.reportTaskStatus(task.ID, "running", "", nil); err != nil {
+	if err := e.reportTaskStatus(task.ID, models.TaskStatusRunning, "", nil); err != nil {
 		log.Printf("Warning: Failed to mark task as running: %v", err)
 	}
 
-	// Execute based on task type
+	// Execute based on task @type (Schema.org Action type)
 	var result *models.TaskResult
 	var err error
 
-	switch task.TaskType {
-	case "deploy":
+	switch task.Type {
+	case "ActivateAction": // Deploy/start/restart containers
 		result, err = e.executeDeploy(ctx, task)
 
-	case "delete":
+	case "DeleteAction": // Delete containers
 		result, err = e.executeDelete(ctx, task)
 
-	case "stop":
+	case "DeactivateAction": // Stop containers
 		result, err = e.executeStop(ctx, task)
 
-	case "start":
-		result, err = e.executeStart(ctx, task)
-
-	case "restart":
-		result, err = e.executeRestart(ctx, task)
-
-	case "check":
+	case "CheckAction": // Health checks
 		result, err = e.executeCheck(ctx, task)
 
-	case "control":
+	case "ControlAction": // Container control operations
 		result, err = e.executeControl(ctx, task)
 
-	case "transfer":
+	case "TransferAction": // Log collection, file transfers
 		result, err = e.executeTransfer(ctx, task)
 
-	case "workflow":
+	case "WorkflowAction": // Composite workflows
 		result, err = e.executeWorkflow(ctx, task)
 
 	default:
-		err = fmt.Errorf("unsupported task type: %s", task.TaskType)
+		err = fmt.Errorf("unsupported task type: %s", task.Type)
 	}
 
 	// Report result
 	if err != nil {
 		log.Printf("Task %s failed: %v", task.ID, err)
-		return e.reportTaskStatus(task.ID, "failed", err.Error(), nil)
+		return e.reportTaskStatus(task.ID, models.TaskStatusFailed, err.Error(), nil)
 	}
 
 	log.Printf("Task %s completed successfully", task.ID)
-	return e.reportTaskStatus(task.ID, "completed", "", result)
+	return e.reportTaskStatus(task.ID, models.TaskStatusCompleted, "", result)
 }
 
 // executeDeploy executes a deploy task.

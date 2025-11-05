@@ -112,8 +112,8 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 			// Find the most recent completed task
 			var mostRecentTask *models.AgentTask
 			for _, task := range tasks {
-				if task.Status == "completed" || task.Status == "failed" {
-					if mostRecentTask == nil || (task.CompletedAt != nil && mostRecentTask.CompletedAt != nil && task.CompletedAt.After(*mostRecentTask.CompletedAt)) {
+				if task.ActionStatus == models.TaskStatusCompleted || task.ActionStatus == models.TaskStatusFailed {
+					if mostRecentTask == nil || (task.EndTime != nil && mostRecentTask.EndTime != nil && task.EndTime.After(*mostRecentTask.EndTime)) {
 						mostRecentTask = task
 					}
 				}
@@ -121,10 +121,10 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 
 			// Count success or failure based on most recent task
 			if mostRecentTask != nil {
-				switch mostRecentTask.Status {
-				case "completed":
+				switch mostRecentTask.ActionStatus {
+				case models.TaskStatusCompleted:
 					stats.SuccessfulActions++
-				case "failed":
+				case models.TaskStatusFailed:
 					stats.FailedActions++
 				}
 			}

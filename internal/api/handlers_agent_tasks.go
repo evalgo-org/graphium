@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"eve.evalgo.org/semantic"
 	"github.com/labstack/echo/v4"
 
 	"evalgo.org/graphium/models"
@@ -124,18 +125,17 @@ func (s *Server) updateTaskStatus(c echo.Context) error {
 
 	switch update.Status {
 	case "assigned":
-		if task.AssignedAt == nil {
-			task.AssignedAt = &now
-		}
+		// Assigned state doesn't have a separate timestamp
+		// It uses StartTime when execution begins
 
 	case "running":
-		if task.StartedAt == nil {
-			task.StartedAt = &now
+		if task.StartTime == nil {
+			task.StartTime = &now
 		}
 
 	case "completed":
-		if task.CompletedAt == nil {
-			task.CompletedAt = &now
+		if task.EndTime == nil {
+			task.EndTime = &now
 		}
 		// Store result if provided
 		if update.Result != nil {
@@ -148,20 +148,30 @@ func (s *Server) updateTaskStatus(c echo.Context) error {
 		}
 
 	case "failed":
-		if task.CompletedAt == nil {
-			task.CompletedAt = &now
+		if task.EndTime == nil {
+			task.EndTime = &now
 		}
-		task.ErrorMsg = update.Error
+		if task.Error == nil {
+			task.Error = &semantic.SemanticError{
+				Type: "Error",
+			}
+		}
+		task.Error.Message = update.Error
 		task.RetryCount++
 
 	case "cancelled":
-		if task.CompletedAt == nil {
-			task.CompletedAt = &now
+		if task.EndTime == nil {
+			task.EndTime = &now
 		}
-		task.ErrorMsg = update.Error
+		if task.Error == nil {
+			task.Error = &semantic.SemanticError{
+				Type: "Error",
+			}
+		}
+		task.Error.Message = update.Error
 	}
 
-	task.Status = update.Status
+	task.ActionStatus = update.Status
 
 	// Update task in database
 	if err := s.storage.UpdateTask(task); err != nil {
@@ -174,8 +184,8 @@ func (s *Server) updateTaskStatus(c echo.Context) error {
 	// Broadcast WebSocket event for real-time updates
 	s.BroadcastGraphEvent("task_updated", map[string]interface{}{
 		"taskId":  task.ID,
-		"status":  task.Status,
-		"agentId": task.AgentID,
+		"status":  task.ActionStatus,
+		"agentId": task.HostID,
 		"stackId": task.StackID,
 	})
 
@@ -358,16 +368,12 @@ func (s *Server) createTask(c echo.Context) error {
 		})
 	}
 
-	// Normalize: populate semantic fields from legacy fields (or vice versa)
-	// This ensures backward compatibility regardless of which format was used
-	task.Normalize()
-
 	// Set defaults
 	if task.Type == "" {
 		task.Type = "AgentTask"
 	}
-	if task.Status == "" {
-		task.Status = "pending"
+	if task.ActionStatus == "" {
+		task.ActionStatus = models.TaskStatusPending
 	}
 	if task.Priority == 0 {
 		task.Priority = 5
@@ -384,8 +390,8 @@ func (s *Server) createTask(c echo.Context) error {
 	// Broadcast WebSocket event
 	s.BroadcastGraphEvent("task_created", map[string]interface{}{
 		"taskId":   task.ID,
-		"taskType": task.TaskType,
-		"agentId":  task.AgentID,
+		"taskType": task.Type,
+		"agentId":  task.HostID,
 		"stackId":  task.StackID,
 	})
 

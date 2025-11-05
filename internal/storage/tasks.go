@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"eve.evalgo.org/db"
+	"eve.evalgo.org/semantic"
 
 	"evalgo.org/graphium/models"
 )
@@ -90,11 +91,11 @@ func (s *Storage) ListTasks(filters map[string]interface{}) ([]*models.AgentTask
 // If status is empty, returns all tasks for the agent.
 func (s *Storage) GetTasksByAgent(agentID string, status string) ([]*models.AgentTask, error) {
 	filters := map[string]interface{}{
-		"agentId": agentID,
+		"hostId": agentID,
 	}
 
 	if status != "" {
-		filters["status"] = status
+		filters["actionStatus"] = status
 	}
 
 	return s.ListTasks(filters)
@@ -107,9 +108,9 @@ func (s *Storage) GetPendingTasksForAgent(agentID string) ([]*models.AgentTask, 
 	qbPending := db.NewQueryBuilder().
 		Where("@type", "$eq", "AgentTask").
 		And().
-		Where("agentId", "$eq", agentID).
+		Where("hostId", "$eq", agentID).
 		And().
-		Where("status", "$eq", "pending")
+		Where("actionStatus", "$eq", models.TaskStatusPending)
 
 	queryPending := qbPending.Build()
 	pendingTasks, err := db.FindTyped[models.AgentTask](s.service, queryPending)
@@ -121,9 +122,9 @@ func (s *Storage) GetPendingTasksForAgent(agentID string) ([]*models.AgentTask, 
 	qbAssigned := db.NewQueryBuilder().
 		Where("@type", "$eq", "AgentTask").
 		And().
-		Where("agentId", "$eq", agentID).
+		Where("hostId", "$eq", agentID).
 		And().
-		Where("status", "$eq", "assigned")
+		Where("actionStatus", "$eq", models.TaskStatusAssigned)
 
 	queryAssigned := qbAssigned.Build()
 	assignedTasks, err := db.FindTyped[models.AgentTask](s.service, queryAssigned)
@@ -171,7 +172,7 @@ func (s *Storage) GetTasksByStack(stackID string) ([]*models.AgentTask, error) {
 // GetTasksByStatus retrieves all tasks with a specific status.
 func (s *Storage) GetTasksByStatus(status string) ([]*models.AgentTask, error) {
 	filters := map[string]interface{}{
-		"status": status,
+		"actionStatus": status,
 	}
 	return s.ListTasks(filters)
 }
@@ -192,27 +193,35 @@ func (s *Storage) UpdateTaskStatus(taskID string, status string, errorMsg string
 	}
 
 	now := time.Now()
-	task.Status = status
+	task.ActionStatus = status
 
 	switch status {
-	case "assigned":
-		if task.AssignedAt == nil {
-			task.AssignedAt = &now
+	case "PotentialActionStatus": // pending/assigned
+		// Pending/assigned - no timestamp needed yet
+
+	case "ActiveActionStatus": // running
+		if task.StartTime == nil {
+			task.StartTime = &now
 		}
 
-	case "running":
-		if task.StartedAt == nil {
-			task.StartedAt = &now
+	case "CompletedActionStatus": // completed
+		if task.EndTime == nil {
+			task.EndTime = &now
 		}
 
-	case "completed", "failed", "cancelled":
-		if task.CompletedAt == nil {
-			task.CompletedAt = &now
+	case "FailedActionStatus": // failed/cancelled
+		if task.EndTime == nil {
+			task.EndTime = &now
 		}
 	}
 
 	if errorMsg != "" {
-		task.ErrorMsg = errorMsg
+		if task.Error == nil {
+			task.Error = &semantic.SemanticError{
+				Type: "Error",
+			}
+		}
+		task.Error.Message = errorMsg
 	}
 
 	return s.UpdateTask(task)
@@ -226,8 +235,8 @@ func (s *Storage) MarkTaskAsRunning(taskID string) error {
 	}
 
 	now := time.Now()
-	task.Status = "running"
-	task.StartedAt = &now
+	task.ActionStatus = models.TaskStatusRunning
+	task.StartTime = &now
 
 	return s.UpdateTask(task)
 }
@@ -240,8 +249,8 @@ func (s *Storage) CompleteTask(taskID string, result *models.TaskResult) error {
 	}
 
 	now := time.Now()
-	task.Status = "completed"
-	task.CompletedAt = &now
+	task.ActionStatus = models.TaskStatusCompleted
+	task.EndTime = &now
 
 	if result != nil {
 		if err := task.SetResult(result); err != nil {
@@ -260,9 +269,15 @@ func (s *Storage) FailTask(taskID string, errorMsg string) error {
 	}
 
 	now := time.Now()
-	task.Status = "failed"
-	task.CompletedAt = &now
-	task.ErrorMsg = errorMsg
+	task.ActionStatus = models.TaskStatusFailed
+	task.EndTime = &now
+
+	if task.Error == nil {
+		task.Error = &semantic.SemanticError{
+			Type: "Error",
+		}
+	}
+	task.Error.Message = errorMsg
 
 	// Increment retry count
 	task.RetryCount++
@@ -285,21 +300,23 @@ func (s *Storage) RetryTask(taskID string) (*models.AgentTask, error) {
 	newTask := &models.AgentTask{
 		ID:             fmt.Sprintf("%s-retry-%d", originalTask.ID, originalTask.RetryCount+1),
 		Context:        "https://schema.org",
-		Type:           "AgentTask",
-		TaskType:       originalTask.TaskType,
-		Status:         "pending",
-		AgentID:        originalTask.AgentID,
+		Type:           originalTask.Type,
+		ActionStatus:   models.TaskStatusPending,
+		Agent:          originalTask.Agent,
+		Object:         originalTask.Object,
+		Instrument:     originalTask.Instrument,
 		HostID:         originalTask.HostID,
 		StackID:        originalTask.StackID,
 		ContainerID:    originalTask.ContainerID,
 		Priority:       originalTask.Priority,
-		Payload:        originalTask.Payload,
 		CreatedAt:      time.Now(),
 		CreatedBy:      originalTask.CreatedBy,
 		RetryCount:     originalTask.RetryCount + 1,
 		MaxRetries:     originalTask.MaxRetries,
 		TimeoutSeconds: originalTask.TimeoutSeconds,
 		DependsOn:      originalTask.DependsOn,
+		Schedule:       originalTask.Schedule,
+		Properties:     originalTask.Properties,
 	}
 
 	if err := s.CreateTask(newTask); err != nil {
@@ -322,9 +339,9 @@ func (s *Storage) CleanupOldTasks(olderThan time.Duration) (int, error) {
 	qbCompleted := db.NewQueryBuilder().
 		Where("@type", "$eq", "AgentTask").
 		And().
-		Where("status", "$eq", "completed").
+		Where("actionStatus", "$eq", models.TaskStatusCompleted).
 		And().
-		Where("completedAt", "$lt", cutoffTime)
+		Where("endTime", "$lt", cutoffTime)
 
 	queryCompleted := qbCompleted.Build()
 	completedTasks, err := db.FindTyped[models.AgentTask](s.service, queryCompleted)
@@ -336,9 +353,9 @@ func (s *Storage) CleanupOldTasks(olderThan time.Duration) (int, error) {
 	qbFailed := db.NewQueryBuilder().
 		Where("@type", "$eq", "AgentTask").
 		And().
-		Where("status", "$eq", "failed").
+		Where("actionStatus", "$eq", models.TaskStatusFailed).
 		And().
-		Where("completedAt", "$lt", cutoffTime)
+		Where("endTime", "$lt", cutoffTime)
 
 	queryFailed := qbFailed.Build()
 	failedTasks, err := db.FindTyped[models.AgentTask](s.service, queryFailed)
@@ -363,7 +380,7 @@ func (s *Storage) CleanupOldTasks(olderThan time.Duration) (int, error) {
 // GetExpiredTasks retrieves tasks that have exceeded their timeout.
 func (s *Storage) GetExpiredTasks() ([]*models.AgentTask, error) {
 	// Get all running tasks
-	runningTasks, err := s.GetTasksByStatus("running")
+	runningTasks, err := s.GetTasksByStatus(models.TaskStatusRunning)
 	if err != nil {
 		return nil, err
 	}
@@ -397,7 +414,19 @@ func (s *Storage) GetTaskStatistics() (map[string]int, error) {
 	}
 
 	for _, task := range allTasks {
-		stats[task.Status]++
+		// Map semantic status to simple keys
+		// Note: Since TaskStatusPending and TaskStatusAssigned both equal "PotentialActionStatus",
+		// we count them all as "pending" for now. Same for failed/cancelled.
+		switch task.ActionStatus {
+		case "PotentialActionStatus":
+			stats["pending"]++
+		case "ActiveActionStatus":
+			stats["running"]++
+		case "CompletedActionStatus":
+			stats["completed"]++
+		case "FailedActionStatus":
+			stats["failed"]++
+		}
 	}
 
 	return stats, nil
@@ -435,7 +464,7 @@ func (s *Storage) AreTaskDependenciesMet(taskID string) (bool, error) {
 	}
 
 	for _, dep := range dependencies {
-		if dep.Status != "completed" {
+		if dep.ActionStatus != models.TaskStatusCompleted {
 			return false, nil
 		}
 	}

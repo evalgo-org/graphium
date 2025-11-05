@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"eve.evalgo.org/semantic"
+
 	"evalgo.org/graphium/internal/storage"
 	"evalgo.org/graphium/models"
 )
@@ -344,13 +346,18 @@ func (s *Scheduler) isExceptDate(now time.Time, exceptDates []string) bool {
 
 // createTaskFromAction creates a Task from a ScheduledAction
 func (s *Scheduler) createTaskFromAction(action *models.ScheduledAction) (*models.Task, error) {
+	now := time.Now()
 	task := &models.Task{
-		Type:        "AgentTask",
-		ID:          models.GenerateID("task"),
-		HostID:      action.Agent,
-		AgentID:     action.Agent,
-		Status:      models.TaskStatusPending,
-		ScheduledBy: action.ID, // Link task to the action that created it
+		Context:      "https://schema.org",
+		ID:           models.GenerateID("task"),
+		HostID:       action.Agent,
+		ActionStatus: models.TaskStatusPending,
+		ScheduledBy:  action.ID, // Link task to the action that created it
+		CreatedAt:    now,
+		Agent: &semantic.SemanticAgent{
+			Type: "SoftwareApplication",
+			Name: action.Agent,
+		},
 	}
 
 	// Check if this is a composite action (workflow)
@@ -361,25 +368,12 @@ func (s *Scheduler) createTaskFromAction(action *models.ScheduledAction) (*model
 		}
 	}
 
-	// Set task type based on whether it's a composite action (workflow)
+	// Set task @type based on whether it's a composite action (workflow)
 	if isCompositeAction {
-		task.TaskType = "workflow"
+		task.Type = "WorkflowAction"
 	} else {
-		// Map action type to task type
-		switch action.Type {
-		case models.ActionTypeCheck:
-			task.TaskType = "check"
-		case models.ActionTypeControl:
-			task.TaskType = "control"
-		case models.ActionTypeCreate:
-			task.TaskType = "create"
-		case models.ActionTypeUpdate:
-			task.TaskType = "update"
-		case models.ActionTypeTransfer:
-			task.TaskType = "transfer"
-		default:
-			task.TaskType = "action"
-		}
+		// Use action's @type directly (CheckAction, ControlAction, etc.)
+		task.Type = action.Type
 	}
 
 	// Build payload from action instrument and object

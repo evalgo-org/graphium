@@ -22,6 +22,7 @@ import (
 	"evalgo.org/graphium/internal/integrity"
 	"evalgo.org/graphium/internal/scheduler"
 	"evalgo.org/graphium/internal/storage"
+	"evalgo.org/graphium/models"
 )
 
 // Server represents the Graphium API server.
@@ -342,13 +343,11 @@ func (s *Server) checkCompletedStackDeletions() {
 		cancelledCount := 0
 
 		for _, task := range tasks {
-			switch task.Status {
-			case "completed":
+			switch task.ActionStatus {
+			case models.TaskStatusCompleted:
 				completedCount++
-			case "failed":
+			case models.TaskStatusFailed:
 				failedCount++
-			case "cancelled":
-				cancelledCount++
 			default:
 				allComplete = false
 			}

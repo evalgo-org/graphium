@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"eve.evalgo.org/semantic"
@@ -62,41 +63,30 @@ type AgentTask struct {
 	Properties map[string]interface{}    `json:"additionalProperty,omitempty"` // Additional metadata
 
 	// Task-specific fields
-	HostID         string    `json:"hostId" couchdb:"index"`                    // Target host
-	StackID        string    `json:"stackId,omitempty" couchdb:"index"`         // Stack association
-	ContainerID    string    `json:"containerId,omitempty" couchdb:"index"`     // Container ID
-	Priority       int       `json:"priority,omitempty"`                        // Execution priority (0-10)
-	CreatedAt      time.Time `json:"dateCreated" couchdb:"index"`               // Creation time
-	CreatedBy      string    `json:"createdBy,omitempty"`                       // Creator user
-	RetryCount     int       `json:"retryCount,omitempty"`                      // Retry attempts
-	MaxRetries     int       `json:"maxRetries,omitempty"`                      // Max retry limit
-	TimeoutSeconds int       `json:"timeoutSeconds,omitempty"`                  // Execution timeout
-	ScheduledBy    string    `json:"scheduledBy,omitempty" couchdb:"index"`     // Source ScheduledAction ID
-
-	// Legacy fields (DEPRECATED - for backward compatibility)
-	TaskType    string          `json:"taskType,omitempty" couchdb:"index"`    // Deprecated: use @type
-	Status      string          `json:"status,omitempty" couchdb:"index"`      // Deprecated: use actionStatus
-	AgentID     string          `json:"agentId,omitempty" couchdb:"index"`     // Deprecated: use agent
-	Payload     json.RawMessage `json:"payload,omitempty"`                     // Deprecated: use object
-	Result      json.RawMessage `json:"result,omitempty"`                      // Deprecated: use semanticResult
-	AssignedAt  *time.Time      `json:"assignedAt,omitempty"`                  // Deprecated: use startTime
-	StartedAt   *time.Time      `json:"startedAt,omitempty"`                   // Deprecated: use startTime
-	CompletedAt *time.Time      `json:"completedAt,omitempty"`                 // Deprecated: use endTime
-	ErrorMsg    string          `json:"errorMsg,omitempty"`                    // Deprecated: use error
+	HostID         string    `json:"hostId" couchdb:"index"`                // Target host
+	StackID        string    `json:"stackId,omitempty" couchdb:"index"`     // Stack association
+	ContainerID    string    `json:"containerId,omitempty" couchdb:"index"` // Container ID
+	Priority       int       `json:"priority,omitempty"`                    // Execution priority (0-10)
+	CreatedAt      time.Time `json:"dateCreated" couchdb:"index"`           // Creation time
+	CreatedBy      string    `json:"createdBy,omitempty"`                   // Creator user
+	RetryCount     int       `json:"retryCount,omitempty"`                  // Retry attempts
+	MaxRetries     int       `json:"maxRetries,omitempty"`                  // Max retry limit
+	TimeoutSeconds int       `json:"timeoutSeconds,omitempty"`              // Execution timeout
+	ScheduledBy    string    `json:"scheduledBy,omitempty" couchdb:"index"` // Source ScheduledAction ID
 }
 
 // Aliases for convenience and consistency with scheduler
 type Task = AgentTask
 type Params = map[string]interface{}
 
-// Task status constants
+// Task status constants (Schema.org actionStatus values)
 const (
-	TaskStatusPending   = "pending"
-	TaskStatusAssigned  = "assigned"
-	TaskStatusRunning   = "running"
-	TaskStatusCompleted = "completed"
-	TaskStatusFailed    = "failed"
-	TaskStatusCancelled = "cancelled"
+	TaskStatusPending   = "PotentialActionStatus" // Task is pending/waiting
+	TaskStatusAssigned  = "PotentialActionStatus" // Task is assigned but not started
+	TaskStatusRunning   = "ActiveActionStatus"    // Task is actively running
+	TaskStatusCompleted = "CompletedActionStatus" // Task completed successfully
+	TaskStatusFailed    = "FailedActionStatus"    // Task failed
+	TaskStatusCancelled = "FailedActionStatus"    // Task was cancelled
 )
 
 // DeployContainerPayload contains data for deploying a container.
@@ -208,74 +198,9 @@ type TaskResult struct {
 	Data map[string]interface{} `json:"data,omitempty"`
 }
 
-// Normalize ensures semantic fields are populated from legacy fields for backward compatibility
-func (t *AgentTask) Normalize() {
-	// Normalize Context
-	if t.Context == "" {
-		t.Context = "https://schema.org"
-	}
-
-	// Normalize Type from TaskType
-	if t.Type == "" && t.TaskType != "" {
-		t.Type = TaskTypeToSemanticType(t.TaskType)
-	}
-
-	// Normalize ActionStatus from Status
-	if t.ActionStatus == "" && t.Status != "" {
-		t.ActionStatus = StatusToActionStatus(t.Status)
-	}
-
-	// Normalize Agent from AgentID
-	if t.Agent == nil && t.AgentID != "" {
-		t.Agent = &semantic.SemanticAgent{
-			Type: "SoftwareApplication",
-			Name: t.AgentID,
-		}
-	}
-
-	// Normalize StartTime from StartedAt
-	if t.StartTime == nil && t.StartedAt != nil {
-		t.StartTime = t.StartedAt
-	}
-
-	// Normalize EndTime from CompletedAt
-	if t.EndTime == nil && t.CompletedAt != nil {
-		t.EndTime = t.CompletedAt
-	}
-
-	// Normalize Error from ErrorMsg
-	if t.Error == nil && t.ErrorMsg != "" {
-		t.Error = &semantic.SemanticError{
-			Type:    "Error",
-			Message: t.ErrorMsg,
-		}
-	}
-
-	// Store hostId and other task-specific fields in Properties
-	if t.Properties == nil {
-		t.Properties = make(map[string]interface{})
-	}
-	if t.HostID != "" {
-		t.Properties["hostId"] = t.HostID
-	}
-	if t.StackID != "" {
-		t.Properties["stackId"] = t.StackID
-	}
-	if t.ContainerID != "" {
-		t.Properties["containerId"] = t.ContainerID
-	}
-	if t.Priority > 0 {
-		t.Properties["priority"] = t.Priority
-	}
-}
-
 // IsExpired checks if the task has exceeded its timeout.
 func (t *AgentTask) IsExpired() bool {
-	startTime := t.StartTime
-	if startTime == nil {
-		startTime = t.StartedAt // Fallback to legacy field
-	}
-	if startTime == nil {
+	if t.StartTime == nil {
 		return false
 	}
 
@@ -284,7 +209,7 @@ func (t *AgentTask) IsExpired() bool {
 		timeout = 300 // Default 5 minutes
 	}
 
-	return time.Since(*startTime) > time.Duration(timeout)*time.Second
+	return time.Since(*t.StartTime) > time.Duration(timeout)*time.Second
 }
 
 // CanRetry checks if the task can be retried.
@@ -299,23 +224,15 @@ func (t *AgentTask) CanRetry() bool {
 
 // ShouldExecute checks if the task is ready to be executed by an agent.
 func (t *AgentTask) ShouldExecute(agentID string) bool {
-	// Check semantic actionStatus first, fall back to legacy status
-	status := t.ActionStatus
-	if status == "" {
-		status = StatusToActionStatus(t.Status)
-	}
-
-	// Task must be pending or assigned
-	if status != "PotentialActionStatus" && status != "ActiveActionStatus" {
+	// Task must be pending or assigned (PotentialActionStatus) or active (ActiveActionStatus)
+	if t.ActionStatus != TaskStatusPending && t.ActionStatus != TaskStatusRunning {
 		return false
 	}
 
-	// Check agent assignment (semantic first, legacy fallback)
+	// Check agent assignment
 	taskAgentID := ""
 	if t.Agent != nil {
 		taskAgentID = t.Agent.Name
-	} else if t.AgentID != "" {
-		taskAgentID = t.AgentID
 	}
 
 	// Task must be assigned to this agent (or unassigned)
@@ -326,116 +243,84 @@ func (t *AgentTask) ShouldExecute(agentID string) bool {
 	return true
 }
 
-// GetPayloadAs unmarshals the payload into the given struct.
+// GetPayloadAs unmarshals the task object/payload into the given struct.
+// Looks for payload data in Object.Properties or Instrument map.
 func (t *AgentTask) GetPayloadAs(v interface{}) error {
-	return json.Unmarshal(t.Payload, v)
+	// Try to get payload from Object.Properties first
+	if t.Object != nil && t.Object.Properties != nil {
+		data, err := json.Marshal(t.Object.Properties)
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(data, v)
+	}
+
+	// Fallback to Instrument if Object is not available
+	if t.Instrument != nil {
+		data, err := json.Marshal(t.Instrument)
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(data, v)
+	}
+
+	return fmt.Errorf("no payload data found in task")
 }
 
-// SetPayload marshals the given struct into the payload.
+// SetPayload marshals the given struct into the task Object.
 func (t *AgentTask) SetPayload(v interface{}) error {
+	// Marshal the payload
 	data, err := json.Marshal(v)
 	if err != nil {
 		return err
 	}
-	t.Payload = data
+
+	// Parse into a map
+	var payload map[string]interface{}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return err
+	}
+
+	// Store in Object.Properties
+	if t.Object == nil {
+		t.Object = &semantic.SemanticObject{
+			Type: "Thing",
+		}
+	}
+	t.Object.Properties = payload
+
 	return nil
 }
 
 // SetResult sets the task result.
 func (t *AgentTask) SetResult(result *TaskResult) error {
+	if t.SemanticResult == nil {
+		t.SemanticResult = &semantic.SemanticResult{
+			Type: "Result",
+		}
+	}
+
+	// Store result data as JSON string in Output
 	data, err := json.Marshal(result)
 	if err != nil {
 		return err
 	}
-	t.Result = data
+
+	t.SemanticResult.Output = string(data)
 	return nil
 }
 
 // GetResult gets the task result.
 func (t *AgentTask) GetResult() (*TaskResult, error) {
-	if len(t.Result) == 0 {
+	if t.SemanticResult == nil || t.SemanticResult.Output == "" {
 		return nil, nil
 	}
 
+	// Parse Output JSON string back to TaskResult
 	var result TaskResult
-	if err := json.Unmarshal(t.Result, &result); err != nil {
+	if err := json.Unmarshal([]byte(t.SemanticResult.Output), &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-// TaskTypeToSemanticType converts legacy taskType to Schema.org Action type
-func TaskTypeToSemanticType(taskType string) string {
-	switch taskType {
-	case "deploy":
-		return "ActivateAction" // Deploy/start containers
-	case "delete":
-		return "DeleteAction"
-	case "stop":
-		return "DeactivateAction" // Stop containers
-	case "start":
-		return "ActivateAction"
-	case "restart":
-		return "ActivateAction" // Restart is activate
-	case "update":
-		return "UpdateAction"
-	case "health-check", "check":
-		return "CheckAction"
-	default:
-		return "Action" // Generic action
-	}
-}
-
-// StatusToActionStatus converts legacy status to Schema.org actionStatus
-func StatusToActionStatus(status string) string {
-	switch status {
-	case "pending":
-		return "PotentialActionStatus"
-	case "assigned":
-		return "PotentialActionStatus" // Assigned but not started
-	case "running":
-		return "ActiveActionStatus"
-	case "completed":
-		return "CompletedActionStatus"
-	case "failed":
-		return "FailedActionStatus"
-	case "cancelled":
-		return "FailedActionStatus" // Treat cancelled as failed
-	default:
-		return "PotentialActionStatus"
-	}
-}
-
-// SemanticTypeToTaskType converts Schema.org Action type to legacy taskType
-func SemanticTypeToTaskType(semanticType string) string {
-	switch semanticType {
-	case "ActivateAction":
-		return "deploy"
-	case "DeactivateAction":
-		return "stop"
-	case "DeleteAction":
-		return "delete"
-	case "UpdateAction":
-		return "update"
-	case "CheckAction":
-		return "check"
-	default:
-		return "deploy" // Default to deploy
-	}
-}
-
-// ActionStatusToStatus converts Schema.org actionStatus to legacy status
-func ActionStatusToStatus(actionStatus string) string {
-	switch actionStatus {
-	case "PotentialActionStatus":
-		return "pending"
-	case "ActiveActionStatus":
-		return "running"
-	case "CompletedActionStatus":
-		return "completed"
-	case "FailedActionStatus":
-		return "failed"
-	default:
-		return "pending"
-	}
-}
