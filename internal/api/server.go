@@ -22,7 +22,6 @@ import (
 	"evalgo.org/graphium/internal/integrity"
 	"evalgo.org/graphium/internal/scheduler"
 	"evalgo.org/graphium/internal/storage"
-	"evalgo.org/graphium/internal/web"
 )
 
 // Server represents the Graphium API server.
@@ -227,35 +226,22 @@ func (s *Server) setupRoutes() {
 	authRoutes.POST("/logout", s.logout, s.authMiddle.RequireAuth)
 	authRoutes.GET("/me", s.me, s.authMiddle.RequireAuth)
 
-	// User management routes
-	users := v1.Group("/users")
-	users.GET("", s.listUsers, s.authMiddle.RequireAdmin)
-	users.GET("/:id", s.getUser, s.authMiddle.RequireAdmin)
-	users.PUT("/:id", s.updateUser, s.authMiddle.RequireAdmin)
-	users.DELETE("/:id", s.deleteUser, s.authMiddle.RequireAdmin)
-	users.POST("/password", s.changePassword, s.authMiddle.RequireAuth)
-	users.POST("/api-keys", s.generateAPIKey, s.authMiddle.RequireAuth)
-	users.DELETE("/api-keys/:index", s.revokeAPIKey, s.authMiddle.RequireAuth)
-
 	// Agent management API routes
 	agents := v1.Group("/agents")
 	agents.POST("/:id/start", s.startAgent, ValidateIDFormat, s.authMiddle.RequireWrite)
 	agents.POST("/:id/stop", s.stopAgent, ValidateIDFormat, s.authMiddle.RequireWrite)
 	agents.POST("/:id/restart", s.restartAgent, ValidateIDFormat, s.authMiddle.RequireWrite)
 
-	// Web UI routes
-	webHandler := web.NewHandler(s.storage, s.config, &serverBroadcaster{server: s}, s.agentManager)
-
-	// Statistics routes (support both JWT and web session auth for web UI compatibility)
+	// Statistics routes (API only - JWT auth)
 	stats := v1.Group("/stats")
-	stats.GET("", s.getStatistics, webHandler.WebAuthMiddleware)
-	stats.GET("/containers/count", s.getContainerCount, webHandler.WebAuthMiddleware)
-	stats.GET("/hosts/count", s.getHostCount, webHandler.WebAuthMiddleware)
-	stats.GET("/distribution", s.getHostContainerDistribution, webHandler.WebAuthMiddleware)
+	stats.GET("", s.getStatistics, s.authMiddle.RequireRead)
+	stats.GET("/containers/count", s.getContainerCount, s.authMiddle.RequireRead)
+	stats.GET("/hosts/count", s.getHostCount, s.authMiddle.RequireRead)
+	stats.GET("/distribution", s.getHostContainerDistribution, s.authMiddle.RequireRead)
 
-	// Container logs routes (support web session auth for web UI compatibility)
-	v1.GET("/containers/:id/logs", s.getContainerLogs, ValidateIDFormat, webHandler.WebAuthMiddleware)
-	v1.GET("/containers/:id/logs/download", s.downloadContainerLogs, ValidateIDFormat, webHandler.WebAuthMiddleware)
+	// Container logs routes (API only - JWT auth)
+	v1.GET("/containers/:id/logs", s.getContainerLogs, ValidateIDFormat, s.authMiddle.RequireRead)
+	v1.GET("/containers/:id/logs/download", s.downloadContainerLogs, ValidateIDFormat, s.authMiddle.RequireRead)
 
 	// Integrity routes (database health and repair)
 	integrityRoutes := v1.Group("/integrity")
@@ -300,106 +286,6 @@ func (s *Server) setupRoutes() {
 	actions.DELETE("/:id", s.DeleteScheduledAction, ValidateIDFormat, s.authMiddle.RequireWrite)
 	actions.POST("/:id/execute", s.ExecuteScheduledAction, ValidateIDFormat, s.authMiddle.RequireWrite)
 	actions.GET("/:id/history", s.GetScheduledActionHistory, ValidateIDFormat, s.authMiddle.RequireRead)
-
-	// WebSocket routes (use web auth middleware for session cookie support)
-	ws := v1.Group("/ws")
-	ws.GET("/stats", s.GetWebSocketStats, webHandler.WebAuthMiddleware) // WebSocket stats
-	s.echo.Static("/static", "static")
-
-	// Public routes (redirect to login if not authenticated)
-	s.echo.GET("/", webHandler.Dashboard, webHandler.WebAuthMiddleware)
-
-	// Authentication routes (no auth required for login, required for logout)
-	webAuth := s.echo.Group("/web/auth")
-	webAuth.GET("/login", webHandler.LoginPage)
-	webAuth.POST("/login", webHandler.Login)
-	webAuth.GET("/logout", webHandler.Logout, webHandler.WebAuthMiddleware)
-
-	// Profile routes (auth required)
-	s.echo.GET("/web/profile", webHandler.Profile, webHandler.WebAuthMiddleware)
-	s.echo.POST("/web/profile/password", webHandler.ChangePassword, webHandler.WebAuthMiddleware)
-
-	// User management routes (auth required, admin for list/create/delete)
-	webUsers := s.echo.Group("/web/users")
-	webUsers.Use(webHandler.WebAuthMiddleware)
-	webUsers.GET("", webHandler.ListUsers, webHandler.WebAdminMiddleware)
-	webUsers.GET("/new", webHandler.NewUserForm, webHandler.WebAdminMiddleware)
-	webUsers.POST("/create", webHandler.CreateUser, webHandler.WebAdminMiddleware)
-	webUsers.GET("/:id", webHandler.ViewUser)
-	webUsers.GET("/:id/edit", webHandler.EditUserForm)
-	webUsers.POST("/:id/update", webHandler.UpdateUser)
-	webUsers.POST("/:id/delete", webHandler.DeleteUser, webHandler.WebAdminMiddleware)
-	webUsers.POST("/:id/api-keys/generate", webHandler.GenerateAPIKey)
-	webUsers.POST("/:id/api-keys/:index/revoke", webHandler.RevokeAPIKey)
-
-	// Container and host routes (authentication REQUIRED)
-	webGroup := s.echo.Group("/web")
-	webGroup.Use(webHandler.WebAuthMiddleware) // Require authentication for all web pages
-	webGroup.GET("/containers", webHandler.ContainersList)
-	webGroup.GET("/containers/table", webHandler.ContainersTable)
-	webGroup.GET("/containers/:id", webHandler.ContainerDetail)
-	webGroup.GET("/containers/:id/logs", webHandler.ContainerLogs)
-	webGroup.GET("/containers/:id/logs/stream", webHandler.StreamContainerLogs)
-	webGroup.POST("/containers/:id/delete", webHandler.DeleteContainer)
-	webGroup.POST("/containers/bulk/delete", webHandler.BulkDeleteContainers)
-	webGroup.POST("/containers/bulk/stop", webHandler.BulkStopContainers)
-	webGroup.POST("/containers/bulk/start", webHandler.BulkStartContainers)
-	webGroup.POST("/containers/bulk/restart", webHandler.BulkRestartContainers)
-	webGroup.GET("/hosts", webHandler.HostsList)
-	webGroup.GET("/hosts/table", webHandler.HostsTable)
-	webGroup.GET("/hosts/new", webHandler.CreateHostForm)
-	webGroup.POST("/hosts/create", webHandler.CreateHost)
-	webGroup.GET("/hosts/:id", webHandler.HostDetail)
-	webGroup.GET("/hosts/:id/edit", webHandler.EditHostForm)
-	webGroup.POST("/hosts/:id/update", webHandler.UpdateHost)
-	webGroup.POST("/hosts/:id/delete", webHandler.DeleteHost)
-	webGroup.GET("/stacks", webHandler.StacksList)
-	webGroup.GET("/stacks/table", webHandler.StacksTable)
-	webGroup.GET("/stacks/json", webHandler.GetStacksJSON)
-	webGroup.GET("/stacks/new", webHandler.DeployStackForm)
-	webGroup.POST("/stacks/deploy", webHandler.DeployStack)
-	webGroup.GET("/stacks/:id", webHandler.StackDetail)
-	webGroup.GET("/stacks/:id/edit", webHandler.EditStackForm)
-	webGroup.POST("/stacks/:id/update", webHandler.UpdateStack)
-	webGroup.GET("/stacks/:id/logs", webHandler.StackLogs)
-	webGroup.POST("/stacks/:id/start", webHandler.StartStack)
-	webGroup.POST("/stacks/:id/stop", webHandler.StopStack)
-	webGroup.POST("/stacks/:id/restart", webHandler.RestartStack)
-	webGroup.POST("/stacks/:id/delete", webHandler.DeleteStack)
-	webGroup.POST("/stacks/:id/containers/assign", webHandler.AssignContainersToStack)
-
-	// JSON-LD Stack Deployment routes (Web UI)
-	webGroup.GET("/stacks/jsonld/deploy", webHandler.JSONLDDeployPage)
-	webGroup.POST("/stacks/jsonld/deploy", webHandler.JSONLDDeploy)
-	webGroup.POST("/stacks/jsonld/validate", webHandler.JSONLDValidate)
-	webGroup.GET("/stacks/jsonld/deployments/:id", webHandler.JSONLDDeploymentDetail)
-
-	webGroup.GET("/topology", webHandler.TopologyView)
-
-	// Agent management routes (web UI)
-	webGroup.GET("/agents", webHandler.AgentsPage)
-	webGroup.GET("/agents/new", webHandler.CreateAgentFormHandler)
-	webGroup.POST("/agents/create", webHandler.CreateAgentHandler)
-	webGroup.GET("/agents/table", webHandler.AgentsTableHandler)
-	webGroup.GET("/agents/:id", webHandler.AgentDetailPage)
-	webGroup.POST("/agents/:id/start", webHandler.StartAgentHandler)
-	webGroup.POST("/agents/:id/stop", webHandler.StopAgentHandler)
-	webGroup.POST("/agents/:id/restart", webHandler.RestartAgentHandler)
-	webGroup.DELETE("/agents/:id", webHandler.DeleteAgentHandler)
-	webGroup.GET("/agents/:id/logs/download", webHandler.AgentLogsDownloadHandler)
-	webGroup.GET("/agents/:id/logs", webHandler.AgentLogsHandler)
-
-	// Scheduled Actions routes (web UI)
-	webGroup.GET("/actions", webHandler.ActionsPage)
-	webGroup.GET("/actions/new", webHandler.CreateActionFormHandler)
-	webGroup.POST("/actions/create", webHandler.CreateActionHandler)
-	webGroup.GET("/actions/table", webHandler.ActionsTableHandler)
-	webGroup.GET("/actions/:id", webHandler.ActionDetailPage)
-	webGroup.GET("/actions/:id/history", webHandler.ActionExecutionHistoryHandler)
-	webGroup.POST("/actions/:id/execute", webHandler.ExecuteActionHandler)
-	webGroup.POST("/actions/:id/toggle", webHandler.ToggleActionHandler)
-	webGroup.POST("/actions/:id/update", webHandler.UpdateActionHandler)
-	webGroup.DELETE("/actions/:id/delete", webHandler.DeleteActionHandler)
 }
 
 // runTaskMonitor watches for completed deletion tasks and cleans up stack metadata.
@@ -578,16 +464,6 @@ func (s *Server) BroadcastGraphEvent(eventType GraphEventType, data interface{})
 	} else {
 		s.debugLog("DEBUG: Successfully broadcast %s event to hub", eventType)
 	}
-}
-
-// serverBroadcaster adapts Server to web.EventBroadcaster interface
-type serverBroadcaster struct {
-	server *Server
-}
-
-// BroadcastGraphEvent implements web.EventBroadcaster
-func (sb *serverBroadcaster) BroadcastGraphEvent(eventType string, data interface{}) {
-	sb.server.BroadcastGraphEvent(GraphEventType(eventType), data)
 }
 
 // ServeHTTP allows Server to implement http.Handler for testing
