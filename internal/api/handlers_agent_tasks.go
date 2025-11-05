@@ -358,6 +358,10 @@ func (s *Server) createTask(c echo.Context) error {
 		})
 	}
 
+	// Normalize: populate semantic fields from legacy fields (or vice versa)
+	// This ensures backward compatibility regardless of which format was used
+	task.Normalize()
+
 	// Set defaults
 	if task.Type == "" {
 		task.Type = "AgentTask"
