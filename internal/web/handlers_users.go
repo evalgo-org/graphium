@@ -274,7 +274,7 @@ func (h *Handler) DeleteUser(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/web/users?error=Cannot+delete+yourself")
 	}
 
-	if err := h.storage.DeleteUser(userID, user.Rev); err != nil {
+	if err := h.storage.DeleteUser(userID); err != nil {
 		return c.Redirect(http.StatusFound, "/web/users?error=Failed+to+delete+user")
 	}
 

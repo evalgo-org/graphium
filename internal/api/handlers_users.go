@@ -162,8 +162,8 @@ func (s *Server) updateUser(c echo.Context) error {
 func (s *Server) deleteUser(c echo.Context) error {
 	userID := c.Param("id")
 
-	// Get user to check if they exist and get rev
-	user, err := s.storage.GetUser(userID)
+	// Get user to check if they exist
+	_, err := s.storage.GetUser(userID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
 	}
@@ -176,7 +176,7 @@ func (s *Server) deleteUser(c echo.Context) error {
 	}
 
 	// Delete user
-	if err := s.storage.DeleteUser(userID, user.Rev); err != nil {
+	if err := s.storage.DeleteUser(userID); err != nil {
 		return InternalError("Failed to delete user", err.Error())
 	}
 

@@ -1,181 +1,115 @@
-// Package storage provides user storage operations for authentication.
+// Package storage provides user storage operations using eve/auth.
 package storage
 
 import (
-	"fmt"
-	"time"
-
-	"eve.evalgo.org/db"
+	"eve.evalgo.org/auth"
 
 	"evalgo.org/graphium/models"
 )
 
-// SaveUser saves a user to the database
+// userStore is the eve/auth UserStore instance
+var userStore auth.UserStore
+
+// initUserStore initializes the user store with the CouchDB service
+func (s *Storage) initUserStore() {
+	if userStore == nil {
+		userStore = auth.NewCouchDBUserStore(s.service)
+	}
+}
+
+// SaveUser saves a user to the database using eve/auth storage
 func (s *Storage) SaveUser(user *models.User) error {
-	// Set default values
-	if user.Context == "" {
-		user.Context = "https://schema.org"
-	}
-	if user.Type == "" {
-		user.Type = "Person"
+	s.initUserStore()
+
+	// For new users, use CreateUser
+	if user.ID == "" {
+		return userStore.CreateUser(user)
 	}
 
-	resp, err := s.service.SaveGenericDocument(user)
-	if err != nil {
-		return err
-	}
-
-	// Update the user struct with the ID and Rev from CouchDB
-	user.ID = resp.ID
-	user.Rev = resp.Rev
-	return nil
+	// For existing users, use UpdateUser
+	return userStore.UpdateUser(user)
 }
 
-// GetUser retrieves a user by ID
+// GetUser retrieves a user by ID using eve/auth storage
 func (s *Storage) GetUser(id string) (*models.User, error) {
-	var user models.User
-	err := s.service.GetGenericDocument(id, &user)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-	return &user, nil
+	s.initUserStore()
+	return userStore.GetUser(id)
 }
 
-// GetUserByUsername retrieves a user by username
+// GetUserByUsername retrieves a user by username using eve/auth storage
 func (s *Storage) GetUserByUsername(username string) (*models.User, error) {
-	query := db.NewQueryBuilder().
-		Where("@type", "$eq", "Person").
-		And().
-		Where("username", "$eq", username).
-		Limit(1).
-		Build()
-
-	users, err := db.FindTyped[models.User](s.service, query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find user: %w", err)
-	}
-
-	if len(users) == 0 {
-		return nil, fmt.Errorf("user not found")
-	}
-
-	return &users[0], nil
+	s.initUserStore()
+	return userStore.GetUserByUsername(username)
 }
 
-// GetUserByEmail retrieves a user by email
+// GetUserByEmail retrieves a user by email using eve/auth storage
 func (s *Storage) GetUserByEmail(email string) (*models.User, error) {
-	query := db.NewQueryBuilder().
-		Where("@type", "$eq", "Person").
-		And().
-		Where("email", "$eq", email).
-		Limit(1).
-		Build()
-
-	users, err := db.FindTyped[models.User](s.service, query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find user: %w", err)
-	}
-
-	if len(users) == 0 {
-		return nil, fmt.Errorf("user not found")
-	}
-
-	return &users[0], nil
+	s.initUserStore()
+	return userStore.GetUserByEmail(email)
 }
 
-// ListUsers retrieves all users
+// ListUsers retrieves all users using eve/auth storage
 func (s *Storage) ListUsers() ([]*models.User, error) {
-	query := db.NewQueryBuilder().
-		Where("@type", "$eq", "Person").
-		Build()
-
-	users, err := db.FindTyped[models.User](s.service, query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list users: %w", err)
-	}
-
-	// Convert to pointer slice
-	result := make([]*models.User, len(users))
-	for i := range users {
-		result[i] = &users[i]
-	}
-
-	return result, nil
+	s.initUserStore()
+	return userStore.ListUsers()
 }
 
-// DeleteUser deletes a user by ID
-func (s *Storage) DeleteUser(id, rev string) error {
-	return s.service.DeleteDocument(id, rev)
+// UpdateUser updates a user using eve/auth storage
+func (s *Storage) UpdateUser(user *models.User) error {
+	s.initUserStore()
+	return userStore.UpdateUser(user)
 }
 
-// SaveRefreshToken saves a refresh token to the database
+// DeleteUser deletes a user using eve/auth storage
+func (s *Storage) DeleteUser(id string) error {
+	s.initUserStore()
+	return userStore.DeleteUser(id)
+}
+
+// RecordLoginAttempt records a login attempt using eve/auth storage
+func (s *Storage) RecordLoginAttempt(username string, success bool) error {
+	s.initUserStore()
+	return userStore.RecordLoginAttempt(username, success)
+}
+
+// SaveRefreshToken saves a refresh token using eve/auth storage
 func (s *Storage) SaveRefreshToken(token *models.RefreshToken) error {
-	if token.Context == "" {
-		token.Context = "https://schema.org"
-	}
-	if token.Type == "" {
-		token.Type = "RefreshToken"
-	}
-
-	_, err := s.service.SaveGenericDocument(token)
-	return err
+	s.initUserStore()
+	return userStore.SaveRefreshToken(token)
 }
 
-// GetRefreshToken retrieves a refresh token by ID
+// GetRefreshToken retrieves a refresh token by ID using eve/auth storage
 func (s *Storage) GetRefreshToken(id string) (*models.RefreshToken, error) {
-	var token models.RefreshToken
-	err := s.service.GetGenericDocument(id, &token)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get refresh token: %w", err)
-	}
-	return &token, nil
+	s.initUserStore()
+	return userStore.GetRefreshToken(id)
 }
 
-// RevokeRefreshToken revokes a refresh token
-func (s *Storage) RevokeRefreshToken(id string) error {
-	token, err := s.GetRefreshToken(id)
-	if err != nil {
-		return err
-	}
-
-	token.Revoked = true
-	return s.SaveRefreshToken(token)
-}
-
-// GetRefreshTokensByUserID retrieves all refresh tokens for a user
+// GetRefreshTokensByUserID retrieves all refresh tokens for a user using eve/auth storage
 func (s *Storage) GetRefreshTokensByUserID(userID string) ([]*models.RefreshToken, error) {
-	query := db.NewQueryBuilder().
-		Where("@type", "$eq", "RefreshToken").
-		And().
-		Where("user_id", "$eq", userID).
-		Build()
-
-	tokens, err := db.FindTyped[models.RefreshToken](s.service, query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find refresh tokens: %w", err)
-	}
-
-	// Convert to pointer slice
-	result := make([]*models.RefreshToken, len(tokens))
-	for i := range tokens {
-		result[i] = &tokens[i]
-	}
-
-	return result, nil
+	s.initUserStore()
+	return userStore.GetRefreshTokensByUserID(userID)
 }
 
-// SaveAuditLog saves an audit log entry
-func (s *Storage) SaveAuditLog(log *models.AuditLog) error {
-	if log.ID == "" {
-		log.ID = fmt.Sprintf("audit-%d", time.Now().UnixNano())
-	}
-	if log.Context == "" {
-		log.Context = "https://schema.org"
-	}
-	if log.Type == "" {
-		log.Type = "AuditLog"
-	}
+// RevokeRefreshToken revokes a refresh token using eve/auth storage
+func (s *Storage) RevokeRefreshToken(id string) error {
+	s.initUserStore()
+	return userStore.RevokeRefreshToken(id)
+}
 
-	_, err := s.service.SaveGenericDocument(log)
-	return err
+// DeleteExpiredRefreshTokens deletes expired refresh tokens using eve/auth storage
+func (s *Storage) DeleteExpiredRefreshTokens() error {
+	s.initUserStore()
+	return userStore.DeleteExpiredRefreshTokens()
+}
+
+// SaveAuditLog saves an audit log entry using eve/auth storage
+func (s *Storage) SaveAuditLog(log *models.AuditLog) error {
+	s.initUserStore()
+	return userStore.SaveAuditLog(log)
+}
+
+// GetAuditLogs retrieves audit logs using eve/auth storage
+func (s *Storage) GetAuditLogs(criteria auth.AuditSearchCriteria) ([]*models.AuditLog, error) {
+	s.initUserStore()
+	return userStore.GetAuditLogs(criteria)
 }
