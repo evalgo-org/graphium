@@ -24,6 +24,9 @@ func (a *Agent) startHTTPServer(ctx context.Context, port int) error {
 
 	router := mux.NewRouter()
 
+	// Semantic action endpoint - makes agent a first-class semantic service
+	router.HandleFunc("/v1/api/semantic/action", a.handleSemanticAction).Methods("POST")
+
 	// Health check endpoint
 	router.HandleFunc("/health", a.handleHealth).Methods("GET")
 
