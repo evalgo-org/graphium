@@ -151,14 +151,14 @@ func (s *Server) updateTaskStatus(c echo.Context) error {
 		if task.CompletedAt == nil {
 			task.CompletedAt = &now
 		}
-		task.Error = update.Error
+		task.ErrorMsg = update.Error
 		task.RetryCount++
 
 	case "cancelled":
 		if task.CompletedAt == nil {
 			task.CompletedAt = &now
 		}
-		task.Error = update.Error
+		task.ErrorMsg = update.Error
 	}
 
 	task.Status = update.Status

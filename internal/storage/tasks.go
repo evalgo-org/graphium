@@ -212,7 +212,7 @@ func (s *Storage) UpdateTaskStatus(taskID string, status string, errorMsg string
 	}
 
 	if errorMsg != "" {
-		task.Error = errorMsg
+		task.ErrorMsg = errorMsg
 	}
 
 	return s.UpdateTask(task)
@@ -262,7 +262,7 @@ func (s *Storage) FailTask(taskID string, errorMsg string) error {
 	now := time.Now()
 	task.Status = "failed"
 	task.CompletedAt = &now
-	task.Error = errorMsg
+	task.ErrorMsg = errorMsg
 
 	// Increment retry count
 	task.RetryCount++

@@ -3,11 +3,13 @@ package models
 import (
 	"encoding/json"
 	"time"
+
+	"eve.evalgo.org/semantic"
 )
 
 // AgentTask represents a task that an agent should execute.
-// This enables the server to delegate container lifecycle operations to agents
-// running on remote hosts, using a pull-based task queue model.
+// WORKFLOW-COMPATIBLE: Uses canonical semantic types from eve.evalgo.org/semantic
+// This enables full workflow integration with when's SemanticScheduledAction
 //
 // Task Flow:
 //  1. Server creates AgentTask and stores in database
@@ -15,100 +17,72 @@ import (
 //  3. Agent executes task locally
 //  4. Agent reports status back to server
 //
+// Semantic Mapping:
+//  - taskType → @type (ActivateAction, DeactivateAction, DeleteAction, UpdateAction)
+//  - status → actionStatus (PotentialActionStatus, ActiveActionStatus, CompletedActionStatus, FailedActionStatus)
+//  - agentId → agent (semantic.SemanticAgent)
+//  - payload → object (semantic.SemanticObject)
+//
 // Example JSON representation:
 //
 //	{
+//	  "@context": "https://schema.org",
 //	  "@id": "task:deploy-nginx-1",
-//	  "@type": "AgentTask",
-//	  "taskType": "deploy",
-//	  "status": "pending",
-//	  "agentId": "agent:vm1",
-//	  "hostId": "host:vm1",
-//	  "stackId": "stack:nginx-multihost",
-//	  "priority": 5,
-//	  "payload": {...}
+//	  "@type": "ActivateAction",
+//	  "actionStatus": "PotentialActionStatus",
+//	  "agent": {"@type": "SoftwareApplication", "name": "agent:vm1"},
+//	  "object": {...},
+//	  "startTime": "2024-01-01T10:00:00Z",
+//	  "endTime": "2024-01-01T10:05:00Z"
 //	}
 type AgentTask struct {
-	// ID is the unique task identifier (maps to CouchDB _id)
-	ID string `json:"@id" couchdb:"_id"`
-
-	// Rev is the CouchDB document revision
+	// CouchDB fields
+	ID  string `json:"@id" couchdb:"_id"`
 	Rev string `json:"_rev,omitempty" couchdb:"_rev"`
 
-	// Context is the JSON-LD @context (Schema.org vocabulary)
+	// JSON-LD semantic fields
 	Context string `json:"@context" couchdb:"@context"`
+	Type    string `json:"@type"`
 
-	// Type is the JSON-LD @type
-	Type string `json:"@type"`
+	// Schema.org Action properties (CANONICAL SEMANTIC TYPES)
+	Name           string                       `json:"name,omitempty"`           // Human-readable task name
+	Description    string                       `json:"description,omitempty"`    // Task description
+	ActionStatus   string                       `json:"actionStatus"`             // Canonical status (PotentialActionStatus, ActiveActionStatus, CompletedActionStatus, FailedActionStatus)
+	Agent          *semantic.SemanticAgent      `json:"agent,omitempty"`          // Agent executing the task
+	Object         *semantic.SemanticObject     `json:"object,omitempty"`         // Target object (container spec, etc.)
+	Instrument     *semantic.SemanticInstrument `json:"instrument,omitempty"`     // Tool/method used
+	SemanticResult *semantic.SemanticResult     `json:"semanticResult,omitempty"` // Semantic execution result
+	Error          *semantic.SemanticError      `json:"error,omitempty"`          // Error if failed
+	StartTime      *time.Time                   `json:"startTime,omitempty"`      // Execution start time
+	EndTime        *time.Time                   `json:"endTime,omitempty"`        // Execution end time
 
-	// TaskType defines what operation to perform
-	// Values: "deploy", "delete", "stop", "start", "restart", "update"
-	TaskType string `json:"taskType" couchdb:"index"`
+	// Workflow integration fields
+	DependsOn  []string                  `json:"requires,omitempty"` // Task dependencies (uses 'requires' for workflow compat)
+	Schedule   *semantic.SemanticSchedule `json:"schedule,omitempty"` // Optional schedule for recurring tasks
+	Properties map[string]interface{}    `json:"additionalProperty,omitempty"` // Additional metadata
 
-	// Status tracks the task lifecycle
-	// Values: "pending", "assigned", "running", "completed", "failed", "cancelled"
-	Status string `json:"status" couchdb:"index"`
+	// Task-specific fields
+	HostID         string    `json:"hostId" couchdb:"index"`                    // Target host
+	StackID        string    `json:"stackId,omitempty" couchdb:"index"`         // Stack association
+	ContainerID    string    `json:"containerId,omitempty" couchdb:"index"`     // Container ID
+	Priority       int       `json:"priority,omitempty"`                        // Execution priority (0-10)
+	CreatedAt      time.Time `json:"dateCreated" couchdb:"index"`               // Creation time
+	CreatedBy      string    `json:"createdBy,omitempty"`                       // Creator user
+	RetryCount     int       `json:"retryCount,omitempty"`                      // Retry attempts
+	MaxRetries     int       `json:"maxRetries,omitempty"`                      // Max retry limit
+	TimeoutSeconds int       `json:"timeoutSeconds,omitempty"`                  // Execution timeout
+	ScheduledBy    string    `json:"scheduledBy,omitempty" couchdb:"index"`     // Source ScheduledAction ID
 
-	// AgentID identifies which agent should execute this task
-	AgentID string `json:"agentId" couchdb:"index"`
-
-	// HostID identifies the target host
-	HostID string `json:"hostId" couchdb:"index"`
-
-	// StackID is the stack this task belongs to (optional)
-	StackID string `json:"stackId,omitempty" couchdb:"index"`
-
-	// ContainerID is the target container for single-container operations (optional)
-	ContainerID string `json:"containerId,omitempty" couchdb:"index"`
-
-	// Priority determines execution order (higher = more urgent)
-	// Range: 0-10, default: 5
-	// Example: delete tasks might have higher priority than deploy
-	Priority int `json:"priority,omitempty"`
-
-	// Payload contains task-specific data (JSON-encoded)
-	// Content depends on TaskType:
-	//  - deploy: DeployContainerPayload
-	//  - delete: DeleteContainerPayload
-	//  - stop/start/restart: ControlContainerPayload
-	Payload json.RawMessage `json:"payload"`
-
-	// CreatedAt is when the task was created
-	CreatedAt time.Time `json:"dateCreated" couchdb:"index"`
-
-	// CreatedBy is the user who created this task
-	CreatedBy string `json:"createdBy,omitempty"`
-
-	// AssignedAt is when the task was assigned to an agent
-	AssignedAt *time.Time `json:"assignedAt,omitempty"`
-
-	// StartedAt is when the agent started executing the task
-	StartedAt *time.Time `json:"startedAt,omitempty"`
-
-	// CompletedAt is when the task finished (success or failure)
-	CompletedAt *time.Time `json:"completedAt,omitempty"`
-
-	// Error contains error details if status is "failed"
-	Error string `json:"error,omitempty"`
-
-	// Result contains task execution results (optional, JSON-encoded)
-	Result json.RawMessage `json:"result,omitempty"`
-
-	// RetryCount tracks how many times this task has been retried
-	RetryCount int `json:"retryCount,omitempty"`
-
-	// MaxRetries is the maximum number of retry attempts (default: 3)
-	MaxRetries int `json:"maxRetries,omitempty"`
-
-	// TimeoutSeconds is how long the agent has to complete the task (default: 300)
-	TimeoutSeconds int `json:"timeoutSeconds,omitempty"`
-
-	// DependsOn lists task IDs that must complete before this task
-	DependsOn []string `json:"dependsOn,omitempty"`
-
-	// ScheduledBy is the ID of the ScheduledAction that created this task (optional)
-	// Links tasks created by the scheduler back to their source action
-	ScheduledBy string `json:"scheduledBy,omitempty" couchdb:"index"`
+	// Legacy fields (DEPRECATED - for backward compatibility)
+	TaskType    string          `json:"taskType,omitempty" couchdb:"index"`    // Deprecated: use @type
+	Status      string          `json:"status,omitempty" couchdb:"index"`      // Deprecated: use actionStatus
+	AgentID     string          `json:"agentId,omitempty" couchdb:"index"`     // Deprecated: use agent
+	Payload     json.RawMessage `json:"payload,omitempty"`                     // Deprecated: use object
+	Result      json.RawMessage `json:"result,omitempty"`                      // Deprecated: use semanticResult
+	AssignedAt  *time.Time      `json:"assignedAt,omitempty"`                  // Deprecated: use startTime
+	StartedAt   *time.Time      `json:"startedAt,omitempty"`                   // Deprecated: use startTime
+	CompletedAt *time.Time      `json:"completedAt,omitempty"`                 // Deprecated: use endTime
+	ErrorMsg    string          `json:"errorMsg,omitempty"`                    // Deprecated: use error
 }
 
 // Aliases for convenience and consistency with scheduler
@@ -234,9 +208,74 @@ type TaskResult struct {
 	Data map[string]interface{} `json:"data,omitempty"`
 }
 
+// Normalize ensures semantic fields are populated from legacy fields for backward compatibility
+func (t *AgentTask) Normalize() {
+	// Normalize Context
+	if t.Context == "" {
+		t.Context = "https://schema.org"
+	}
+
+	// Normalize Type from TaskType
+	if t.Type == "" && t.TaskType != "" {
+		t.Type = TaskTypeToSemanticType(t.TaskType)
+	}
+
+	// Normalize ActionStatus from Status
+	if t.ActionStatus == "" && t.Status != "" {
+		t.ActionStatus = StatusToActionStatus(t.Status)
+	}
+
+	// Normalize Agent from AgentID
+	if t.Agent == nil && t.AgentID != "" {
+		t.Agent = &semantic.SemanticAgent{
+			Type: "SoftwareApplication",
+			Name: t.AgentID,
+		}
+	}
+
+	// Normalize StartTime from StartedAt
+	if t.StartTime == nil && t.StartedAt != nil {
+		t.StartTime = t.StartedAt
+	}
+
+	// Normalize EndTime from CompletedAt
+	if t.EndTime == nil && t.CompletedAt != nil {
+		t.EndTime = t.CompletedAt
+	}
+
+	// Normalize Error from ErrorMsg
+	if t.Error == nil && t.ErrorMsg != "" {
+		t.Error = &semantic.SemanticError{
+			Type:    "Error",
+			Message: t.ErrorMsg,
+		}
+	}
+
+	// Store hostId and other task-specific fields in Properties
+	if t.Properties == nil {
+		t.Properties = make(map[string]interface{})
+	}
+	if t.HostID != "" {
+		t.Properties["hostId"] = t.HostID
+	}
+	if t.StackID != "" {
+		t.Properties["stackId"] = t.StackID
+	}
+	if t.ContainerID != "" {
+		t.Properties["containerId"] = t.ContainerID
+	}
+	if t.Priority > 0 {
+		t.Properties["priority"] = t.Priority
+	}
+}
+
 // IsExpired checks if the task has exceeded its timeout.
 func (t *AgentTask) IsExpired() bool {
-	if t.StartedAt == nil {
+	startTime := t.StartTime
+	if startTime == nil {
+		startTime = t.StartedAt // Fallback to legacy field
+	}
+	if startTime == nil {
 		return false
 	}
 
@@ -245,7 +284,7 @@ func (t *AgentTask) IsExpired() bool {
 		timeout = 300 // Default 5 minutes
 	}
 
-	return time.Since(*t.StartedAt) > time.Duration(timeout)*time.Second
+	return time.Since(*startTime) > time.Duration(timeout)*time.Second
 }
 
 // CanRetry checks if the task can be retried.
@@ -260,13 +299,27 @@ func (t *AgentTask) CanRetry() bool {
 
 // ShouldExecute checks if the task is ready to be executed by an agent.
 func (t *AgentTask) ShouldExecute(agentID string) bool {
-	// Task must be pending or assigned to this agent
-	if t.Status != "pending" && t.Status != "assigned" {
+	// Check semantic actionStatus first, fall back to legacy status
+	status := t.ActionStatus
+	if status == "" {
+		status = StatusToActionStatus(t.Status)
+	}
+
+	// Task must be pending or assigned
+	if status != "PotentialActionStatus" && status != "ActiveActionStatus" {
 		return false
 	}
 
+	// Check agent assignment (semantic first, legacy fallback)
+	taskAgentID := ""
+	if t.Agent != nil {
+		taskAgentID = t.Agent.Name
+	} else if t.AgentID != "" {
+		taskAgentID = t.AgentID
+	}
+
 	// Task must be assigned to this agent (or unassigned)
-	if t.AgentID != "" && t.AgentID != agentID {
+	if taskAgentID != "" && taskAgentID != agentID {
 		return false
 	}
 
@@ -309,4 +362,80 @@ func (t *AgentTask) GetResult() (*TaskResult, error) {
 		return nil, err
 	}
 	return &result, nil
+}
+
+// TaskTypeToSemanticType converts legacy taskType to Schema.org Action type
+func TaskTypeToSemanticType(taskType string) string {
+	switch taskType {
+	case "deploy":
+		return "ActivateAction" // Deploy/start containers
+	case "delete":
+		return "DeleteAction"
+	case "stop":
+		return "DeactivateAction" // Stop containers
+	case "start":
+		return "ActivateAction"
+	case "restart":
+		return "ActivateAction" // Restart is activate
+	case "update":
+		return "UpdateAction"
+	case "health-check", "check":
+		return "CheckAction"
+	default:
+		return "Action" // Generic action
+	}
+}
+
+// StatusToActionStatus converts legacy status to Schema.org actionStatus
+func StatusToActionStatus(status string) string {
+	switch status {
+	case "pending":
+		return "PotentialActionStatus"
+	case "assigned":
+		return "PotentialActionStatus" // Assigned but not started
+	case "running":
+		return "ActiveActionStatus"
+	case "completed":
+		return "CompletedActionStatus"
+	case "failed":
+		return "FailedActionStatus"
+	case "cancelled":
+		return "FailedActionStatus" // Treat cancelled as failed
+	default:
+		return "PotentialActionStatus"
+	}
+}
+
+// SemanticTypeToTaskType converts Schema.org Action type to legacy taskType
+func SemanticTypeToTaskType(semanticType string) string {
+	switch semanticType {
+	case "ActivateAction":
+		return "deploy"
+	case "DeactivateAction":
+		return "stop"
+	case "DeleteAction":
+		return "delete"
+	case "UpdateAction":
+		return "update"
+	case "CheckAction":
+		return "check"
+	default:
+		return "deploy" // Default to deploy
+	}
+}
+
+// ActionStatusToStatus converts Schema.org actionStatus to legacy status
+func ActionStatusToStatus(actionStatus string) string {
+	switch actionStatus {
+	case "PotentialActionStatus":
+		return "pending"
+	case "ActiveActionStatus":
+		return "running"
+	case "CompletedActionStatus":
+		return "completed"
+	case "FailedActionStatus":
+		return "failed"
+	default:
+		return "pending"
+	}
 }
