@@ -3,12 +3,12 @@ package commands
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"eve.evalgo.org/common"
 	"github.com/spf13/cobra"
 
 	"evalgo.org/graphium/internal/agents"
@@ -24,13 +24,19 @@ var serverCmd = &cobra.Command{
 }
 
 func runServer(cmd *cobra.Command, args []string) error {
+	// Setup structured logging
+	logger := common.ServiceLogger("graphium", "1.0.0")
+
 	// Initialize storage layer
+	logger.Info("Initializing storage layer")
 	store, err := storage.New(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to initialize storage: %w", err)
 	}
+	logger.WithField("database", cfg.CouchDB.Database).Info("Storage initialized")
 
 	// Initialize agent manager
+	logger.Info("Initializing agent manager")
 	agentManager, err := agents.NewManager(store, cfg)
 	if err != nil {
 		return fmt.Errorf("failed to initialize agent manager: %w", err)
@@ -40,9 +46,10 @@ func runServer(cmd *cobra.Command, args []string) error {
 	if err := agentManager.Start(); err != nil {
 		return fmt.Errorf("failed to start agent manager: %w", err)
 	}
-	log.Println("Agent manager started")
+	logger.Info("Agent manager started")
 
 	// Create API server
+	logger.Info("Creating API server")
 	server := api.New(cfg, store, agentManager)
 
 	// Setup graceful shutdown
@@ -54,6 +61,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 	defer stop()
 
 	// Start server in a goroutine
+	logger.WithField("port", cfg.Server.Port).Info("Starting API server")
 	errChan := make(chan error, 1)
 	go func() {
 		if err := server.Start(); err != nil {
@@ -64,11 +72,11 @@ func runServer(cmd *cobra.Command, args []string) error {
 	// Wait for shutdown signal or error
 	select {
 	case <-ctx.Done():
-		fmt.Println("\n⚠️  Shutdown signal received")
+		logger.Warn("Shutdown signal received")
 
 		// Stop agent manager first
 		if err := agentManager.Stop(); err != nil {
-			log.Printf("Warning: agent manager shutdown error: %v", err)
+			logger.WithError(err).Warn("Agent manager shutdown error")
 		}
 
 		// Create shutdown context with timeout
@@ -88,7 +96,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 	case err := <-errChan:
 		// Stop agent manager on error
 		if stopErr := agentManager.Stop(); stopErr != nil {
-			log.Printf("Warning: agent manager shutdown error: %v", stopErr)
+			logger.WithError(stopErr).Warn("Agent manager shutdown error")
 		}
 		return fmt.Errorf("server error: %w", err)
 	}

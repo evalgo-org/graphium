@@ -6,10 +6,10 @@ package api
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
+	"eve.evalgo.org/common"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -34,17 +34,25 @@ type Server struct {
 	integrity    *integrity.Service   // Database integrity service
 	agentManager *agents.Manager      // Agent process manager
 	scheduler    *scheduler.Scheduler // Scheduled actions scheduler
+	logger       *common.ContextLogger
 }
 
 // debugLog logs a message only if debug mode is enabled in config
 func (s *Server) debugLog(format string, args ...interface{}) {
 	if s.config.Server.Debug {
-		log.Printf(format, args...)
+		if len(args) > 0 {
+			s.logger.Debugf(format, args...)
+		} else {
+			s.logger.Debug(format)
+		}
 	}
 }
 
 // New creates a new API server instance.
 func New(cfg *config.Config, store *storage.Storage, agentMgr *agents.Manager) *Server {
+	// Create logger
+	logger := common.ServiceLogger("graphium-api", "1.0.0")
+
 	e := echo.New()
 
 	// Configure Echo
@@ -62,9 +70,9 @@ func New(cfg *config.Config, store *storage.Storage, agentMgr *agents.Manager) *
 	authMiddle := auth.NewMiddleware(cfg)
 
 	// Initialize integrity service
-	integrityService, err := integrity.NewService(store.GetDBService(), cfg, log.Default())
+	integrityService, err := integrity.NewService(store.GetDBService(), cfg, nil)
 	if err != nil {
-		log.Printf("Warning: Failed to initialize integrity service: %v", err)
+		logger.WithError(err).Warn("Failed to initialize integrity service")
 		// Continue without integrity service - it's optional
 		integrityService = nil
 	}
@@ -82,6 +90,7 @@ func New(cfg *config.Config, store *storage.Storage, agentMgr *agents.Manager) *
 		integrity:    integrityService,
 		agentManager: agentMgr,
 		scheduler:    sched,
+		logger:       logger,
 	}
 
 	// Start WebSocket hub in background
@@ -92,7 +101,7 @@ func New(cfg *config.Config, store *storage.Storage, agentMgr *agents.Manager) *
 
 	// Start scheduler for scheduled actions
 	sched.Start()
-	log.Println("Scheduled actions scheduler started")
+	logger.Info("Scheduled actions scheduler started")
 
 	// Setup middleware
 	server.setupMiddleware()
@@ -397,11 +406,11 @@ func (s *Server) Start() error {
 
 // Shutdown gracefully shuts down the server.
 func (s *Server) Shutdown(ctx context.Context) error {
-	fmt.Println("\n🛑 Shutting down Graphium API Server...")
+	s.logger.Info("Shutting down Graphium API Server")
 
 	// Stop scheduler
 	if s.scheduler != nil {
-		log.Println("Stopping scheduler...")
+		s.logger.Info("Stopping scheduler")
 		s.scheduler.Stop()
 	}
 
@@ -413,7 +422,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	// Close integrity service
 	if s.integrity != nil {
 		if err := s.integrity.Close(); err != nil {
-			log.Printf("Warning: error closing integrity service: %v", err)
+			s.logger.WithError(err).Warn("Error closing integrity service")
 		}
 	}
 
@@ -460,7 +469,7 @@ func (s *Server) BroadcastGraphEvent(eventType GraphEventType, data interface{})
 	}
 	s.debugLog("DEBUG: Broadcasting to %d WebSocket clients", s.wsHub.ClientCount())
 	if err := s.wsHub.BroadcastEvent(event); err != nil {
-		log.Printf("ERROR: Failed to broadcast event: %v", err)
+		s.logger.WithError(err).Error("Failed to broadcast event")
 	} else {
 		s.debugLog("DEBUG: Successfully broadcast %s event to hub", eventType)
 	}
