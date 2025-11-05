@@ -252,6 +252,16 @@ func (a *Agent) Start(ctx context.Context) error {
 		log.Printf("Warning: Failed to register host: %v", err)
 	}
 
+	// Register agent with registry service as a semantic service
+	if a.httpPort > 0 {
+		if err := a.registerWithRegistry(ctx); err != nil {
+			log.Printf("Warning: Failed to register with registry service: %v", err)
+		} else {
+			// Start registry heartbeat in background
+			go a.startRegistryHeartbeat(ctx)
+		}
+	}
+
 	// Perform initial sync
 	if err := a.syncContainers(ctx); err != nil {
 		log.Printf("Warning: Initial sync failed: %v", err)
