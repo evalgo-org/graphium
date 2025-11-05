@@ -177,6 +177,7 @@ func (s *Server) ExecuteScheduledAction(c echo.Context) error {
 
 	// Create a task from this action
 	task := &models.AgentTask{
+		Context:     "https://schema.org",
 		Type:        "AgentTask",
 		ID:          models.GenerateID("task"),
 		HostID:      action.Agent,

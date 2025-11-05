@@ -39,6 +39,7 @@ func (h *Handler) CreateDeploymentTasksForStack(stackID string, containerSpecs [
 		// Create task
 		task := &models.AgentTask{
 			ID:             fmt.Sprintf("task-deploy-%s-%s-%d", stackID, spec.Name, time.Now().Unix()),
+			Context:        "https://schema.org",
 			Type:           "AgentTask",
 			TaskType:       "deploy",
 			Status:         "pending",
@@ -111,6 +112,7 @@ func (h *Handler) CreateDeletionTasksForStack(stackID string, deploymentState *m
 		// Create task
 		task := &models.AgentTask{
 			ID:             fmt.Sprintf("task-delete-%s-%s-%d", stackID, containerName, time.Now().Unix()),
+			Context:        "https://schema.org",
 			Type:           "AgentTask",
 			TaskType:       "delete",
 			Status:         "pending",
@@ -164,6 +166,7 @@ func (h *Handler) CreateStopTasksForStack(stackID string, deploymentState *model
 		// Create task
 		task := &models.AgentTask{
 			ID:             fmt.Sprintf("task-stop-%s-%s-%d", stackID, containerName, time.Now().Unix()),
+			Context:        "https://schema.org",
 			Type:           "AgentTask",
 			TaskType:       "stop",
 			Status:         "pending",

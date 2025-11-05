@@ -35,6 +35,9 @@ type AgentTask struct {
 	// Rev is the CouchDB document revision
 	Rev string `json:"_rev,omitempty" couchdb:"_rev"`
 
+	// Context is the JSON-LD @context (Schema.org vocabulary)
+	Context string `json:"@context" couchdb:"@context"`
+
 	// Type is the JSON-LD @type
 	Type string `json:"@type"`
 

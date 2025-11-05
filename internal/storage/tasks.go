@@ -284,6 +284,7 @@ func (s *Storage) RetryTask(taskID string) (*models.AgentTask, error) {
 	// Create new task with same parameters
 	newTask := &models.AgentTask{
 		ID:             fmt.Sprintf("%s-retry-%d", originalTask.ID, originalTask.RetryCount+1),
+		Context:        "https://schema.org",
 		Type:           "AgentTask",
 		TaskType:       originalTask.TaskType,
 		Status:         "pending",
