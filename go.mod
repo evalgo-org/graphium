@@ -5,7 +5,7 @@ go 1.25
 require (
 	eve.evalgo.org v0.0.28
 	github.com/a-h/templ v0.3.960
-	github.com/docker/docker v28.5.1+incompatible
+	github.com/docker/docker v28.5.2+incompatible
 	github.com/docker/go-connections v0.6.0
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
